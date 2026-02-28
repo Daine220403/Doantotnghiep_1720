@@ -1,7 +1,7 @@
 @php
     $title = 'Danh sách tour';
 @endphp
-@extends('layouts.guest')
+@extends('layouts.app-guest')
 
 @section('content')
     <!-- PAGE HEADER (nền nhẹ + breadcrumb + search) -->

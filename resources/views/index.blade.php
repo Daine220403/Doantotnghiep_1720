@@ -1,7 +1,7 @@
 @php
     $title = 'Vie Travel - Nâng tầm trải nghiệm';
 @endphp
-@extends('layouts.guest')
+@extends('layouts.app-guest')
 @section('content')
     <!-- HERO -->
     <section class="relative pt-10 overflow-hidden">

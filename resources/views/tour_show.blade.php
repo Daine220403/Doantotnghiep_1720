@@ -2,7 +2,7 @@
     $title = 'Vie Travel - Chi tiết tour';
 @endphp
 
-@extends('layouts.guest')
+@extends('layouts.app-guest')
 
 @section('content')
     <!-- PAGE HEADER / BREADCRUMB -->

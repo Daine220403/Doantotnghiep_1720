@@ -2,7 +2,7 @@
     $title = 'Vie Travel - Đăng nhập';
 @endphp
 
-@extends('layouts.guest')
+@extends('layouts.app-guest')
 
 @section('content')
 <section class="pt-32 pb-20 bg-gray-50 min-h-screen">
@@ -21,9 +21,8 @@
 
                 <!-- Form -->
                 <div class="px-6 py-6">
-                    <form method="POST" action="#">
+                    <form method="POST" action="{{ route('signin.store') }}">
                         @csrf
-
                         <!-- Email -->
                         <div class="mb-4">
                             <label class="block mb-1 text-sm font-medium text-gray-700">
@@ -39,7 +38,7 @@
                             <label class="block mb-1 text-sm font-medium text-gray-700">
                                 Mật khẩu
                             </label>
-                            <input type="password" name="password" placeholder="••••••••" required
+                            <input min="6" type="password" name="password" placeholder="••••••••" required
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
                                        focus:ring-4 focus:ring-blue-100 focus:border-blue-500">
                         </div>
@@ -51,7 +50,7 @@
                                     class="w-4 h-4 rounded border-gray-300 focus:ring-blue-500">
                                 Ghi nhớ đăng nhập
                             </label>
-                            <a href="#" class="text-sm text-blue-600 hover:underline">
+                            <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:underline">
                                 Quên mật khẩu?
                             </a>
                         </div>

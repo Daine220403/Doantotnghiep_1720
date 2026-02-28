@@ -2,7 +2,7 @@
     $title = 'Vie Travel - Đăng ký';
 @endphp
 
-@extends('layouts.guest')
+@extends('layouts.app-guest')
 
 @section('content')
 <section class="pt-32 pb-20 bg-gray-50 min-h-screen">
@@ -21,7 +21,7 @@
 
                 <!-- Form -->
                 <div class="px-6 py-6">
-                    <form method="POST" action="#">
+                    <form method="POST" action="{{ route('signup.store') }}">
                         @csrf
 
                         <!-- Full name -->
@@ -29,30 +29,37 @@
                             <label class="block mb-1 text-sm font-medium text-gray-700">
                                 Họ và tên
                             </label>
-                            <input type="text" name="name" placeholder="Nguyễn Văn A" required
+                            <input value="{{ old('name') }}" type="text" name="name" placeholder="Nguyễn Văn A" required
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
                                        focus:ring-4 focus:ring-blue-100 focus:border-blue-500">
                         </div>
-
+                        @error('name')
+                            <div class="text-red-600 text-sm mb-4">{{ $message }}</div>
+                        @enderror
                         <!-- Email -->
                         <div class="mb-4">
                             <label class="block mb-1 text-sm font-medium text-gray-700">
                                 Email
                             </label>
-                            <input type="email" name="email" placeholder="example@email.com" required
+                            <input value="{{ old('email') }}" type="email" name="email" placeholder="example@email.com" required
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
                                        focus:ring-4 focus:ring-blue-100 focus:border-blue-500">
                         </div>
-
+                        @error('email')
+                            <div class="text-red-600 text-sm mb-4">{{ $message }}</div>
+                        @enderror
                         <!-- Phone -->
                         <div class="mb-4">
                             <label class="block mb-1 text-sm font-medium text-gray-700">
                                 Số điện thoại
                             </label>
-                            <input type="text" name="phone" placeholder="0xxx xxx xxx"
+                            <input value="{{ old('phone') }}" min="10" max="10" type="text" name="phone" placeholder="0xxx xxx xxx"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
                                        focus:ring-4 focus:ring-blue-100 focus:border-blue-500">
                         </div>
+                        @error('phone')
+                            <div class="text-red-600 text-sm mb-4">{{ $message }}</div>
+                        @enderror
 
                         <!-- Password -->
                         <div class="mb-4">
@@ -63,6 +70,9 @@
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
                                        focus:ring-4 focus:ring-blue-100 focus:border-blue-500">
                         </div>
+                        @error('password')
+                            <div class="text-red-600 text-sm mb-4">{{ $message }}</div>
+                        @enderror
 
                         <!-- Confirm password -->
                         <div class="mb-5">
@@ -73,6 +83,9 @@
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm
                                        focus:ring-4 focus:ring-blue-100 focus:border-blue-500">
                         </div>
+                        @error('password_confirmation')
+                            <div class="text-red-600 text-sm mb-4">{{ $message }}</div>
+                        @enderror
 
                         <!-- Terms -->
                         <div class="flex items-start gap-2 mb-5 text-sm text-gray-600">
