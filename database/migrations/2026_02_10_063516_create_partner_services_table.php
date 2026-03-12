@@ -21,6 +21,7 @@ return new class extends Migration {
             // Theo spec: không có timestamps
             $table->foreign('partner_id')->references('id')->on('partners')
                   ->cascadeOnDelete()->cascadeOnUpdate();
+            $table->timestamps();
         });
     }
 

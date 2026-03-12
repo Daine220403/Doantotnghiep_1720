@@ -51,14 +51,17 @@ class signin_upController extends Controller
     }
     public function logout(Request $request)
     {
+        $roles = Auth::user()->role; 
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        if(!Auth::check() && $request->session()->get('role') == 'customer')
-            {
-                return redirect()->route('home')->with('success', 'Đăng xuất thành công!');
-            }
-        else{
+        
+        if($roles === 'customer')
+        {
+            return redirect()->route('home')->with('success', 'Đăng xuất thành công!');
+        }
+        else
+        {
             return redirect()->route('login')->with('success', 'Đăng xuất thành công!');
         }
         

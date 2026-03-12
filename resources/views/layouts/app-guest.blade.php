@@ -11,7 +11,7 @@
 </head>
 
 <body class="bg-white text-gray-900">
-    <div class="container mx-auto">
+    <div class="container-fluid">
         <!-- NAVBAR -->
         <nav class="bg-white/90 backdrop-blur border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
             <div class="flex flex-wrap items-center justify-between max-w-screen-xl mx-auto px-4 py-2">

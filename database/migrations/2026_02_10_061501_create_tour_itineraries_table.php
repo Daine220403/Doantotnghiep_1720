@@ -14,8 +14,6 @@ return new class extends Migration {
             $table->integer('day_no')->index();
             $table->string('title', 255);
             $table->longText('content')->nullable();
-            $table->string('meals', 100)->nullable();
-            $table->string('hotel_name', 150)->nullable();
 
             $table->foreign('tour_id')->references('id')->on('tours')
                   ->cascadeOnDelete()->cascadeOnUpdate();

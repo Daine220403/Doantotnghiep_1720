@@ -15,6 +15,8 @@ return new class extends Migration {
 
             $table->foreign('tour_id')->references('id')->on('tours')
                   ->cascadeOnDelete()->cascadeOnUpdate();
+            
+            $table->timestamps();
         });
     }
 

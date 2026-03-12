@@ -17,9 +17,28 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
+
+        // user::factory()->create([
+        //     'name' => 'Admin',
+        //     'email' => 'admin@gmail.com',
+        //     'password' => bcrypt('admin123'),
+        //     'role' => 'admin',
+        //     'status' => 'active',
+        // ]);
+        // user::factory()->create([
+        //     'name' => 'User',
+        //     'email' => 'user@gmail.com',
+        //     'password' => bcrypt('user123'),
+        //     'role' => 'customer',
+        //     'status' => 'active',
+        // ]);
+        $this->call([
+            DemoTravelSeeder::class,
+            TourPolicySeeder::class,
         ]);
     }
 }

@@ -24,7 +24,7 @@
 
     <!-- Heading -->
     <div class="sidebar-heading">
-        Chức năng
+        Quản lý tour 
     </div>
 
     <!-- Nav Item - Pages partner Menu -->
@@ -32,13 +32,13 @@
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
             aria-expanded="true" aria-controls="collapseTwo">
             <i class="fas fa-hands-helping"></i>
-            <span>Đối tác</span>
+            <span>Tours</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng đối tác:</h6>
-                <a class="collapse-item" href="#">Danh sách đối tác</a>
-                <a class="collapse-item" href="#">Thêm đối tác</a>
+                <h6 class="collapse-header">Chức năng tour:</h6>
+                <a class="collapse-item" href="{{ route('admin.mana-tour.index') }}">Danh sách tours</a>
+                <a class="collapse-item" href="{{ route('admin.mana-tour.create') }}">Thêm tour</a>
             </div>
         </div>
     </li>

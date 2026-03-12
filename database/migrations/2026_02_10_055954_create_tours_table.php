@@ -15,7 +15,6 @@ return new class extends Migration {
 
             $table->enum('tour_type', ['domestic', 'international'])->index();
 
-            $table->text('summary')->nullable();
             $table->longText('description')->nullable();
 
             $table->integer('duration_days')->default(0);
@@ -26,7 +25,7 @@ return new class extends Migration {
 
             $table->decimal('base_price_from', 12, 2)->default(0);
 
-            $table->enum('status', ['draft', 'published', 'hidden'])->default('draft')->index();
+            $table->enum('status', ['draft', 'published',])->default('draft')->index();
 
             $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();
