@@ -21,14 +21,14 @@
                     <li><a href="{{ route('tours') }}" class="hover:text-sky-600">Tours</a></li>
                     <li class="opacity-60">/</li>
                     <li class="text-gray-900 font-medium line-clamp-1">
-                        {{ $tour->name ?? 'Tour Đà Lạt 3N2Đ - Săn mây & check-in' }}
+                        {{ $tour->title }}
                     </li>
                 </ol>
             </nav>
 
             <div class="flex flex-col gap-2">
                 <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-                    {{ $tour->name ?? 'Tour Đà Lạt 3N2Đ - Săn mây & check-in' }}
+                    {{ $tour->title }}
                 </h1>
 
                 <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
@@ -40,21 +40,21 @@
                     <span class="hidden md:inline text-gray-300">•</span>
 
                     <span class="inline-flex items-center gap-2">
-                        📍 <span class="line-clamp-1">{{ $tour->destination ?? 'Đà Lạt, Lâm Đồng' }}</span>
+                        <i class="fas fa-calendar-alt"></i> <span class="line-clamp-1">{{ $tour->destination_text }}</span>
                     </span>
 
                     <span class="hidden md:inline text-gray-300">•</span>
 
                     <span class="inline-flex items-center gap-2">
-                        ⏱ {{ $tour->duration ?? '3 ngày 2 đêm' }}
+                        <i class="fas fa-clock"></i> {{ $tour->duration_days }} ngày {{ $tour->duration_nights }} đêm
                     </span>
 
                     <span class="hidden md:inline text-gray-300">•</span>
 
                     <span
                         class="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold
-                        {{ ($tour->type ?? 'domestic') === 'international' ? 'bg-amber-50 text-amber-700' : 'bg-sky-50 text-sky-700' }}">
-                        {{ ($tour->type ?? 'domestic') === 'international' ? 'Tour quốc tế' : 'Tour trong nước' }}
+                        {{ ($tour->tour_type ?? 'domestic') === 'international' ? 'bg-amber-50 text-amber-700' : 'bg-sky-50 text-sky-700' }}">
+                        {{ ($tour->tour_type ?? 'domestic') === 'international' ? 'Tour quốc tế' : 'Tour trong nước' }}
                     </span>
                 </div>
             </div>
@@ -72,22 +72,16 @@
                 <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-2 p-2">
                         <div class="md:col-span-7">
-                            <img src="{{ $tour->cover_image ?? asset('storage/image/logo.png') }}"
+                            @php
+                                $coverImage = $tour->images->firstWhere('sort_order', 1) ?? $tour->images->first();
+                            @endphp
+                            <img src="{{ $coverImage ? asset('storage/' . $coverImage->url) : asset('storage/image/logo.png') }}"
                                 class="w-full h-72 md:h-80 object-cover rounded-xl" alt="cover">
                         </div>
                         <div class="md:col-span-5 grid grid-cols-2 gap-2">
-                            @php
-                                $imgs = $tour->images ?? [
-                                    asset('storage/image/logo.png'),
-                                    asset('storage/image/logo.png'),
-                                    asset('storage/image/logo.png'),
-                                    asset('storage/image/logo.png'),
-                                ];
-                            @endphp
-
-                            @foreach (array_slice($imgs, 0, 4) as $img)
-                                <img src="{{ $img }}" class="w-full h-36 md:h-[156px] object-cover rounded-xl"
-                                    alt="thumb">
+                            @foreach (array_slice($tour->images->toArray(), 0, 4) as $img)
+                                <img src="{{ asset('storage/' . $img['url']) }}"
+                                    class="w-full h-36 md:h-[156px] object-cover rounded-xl" alt="thumb">
                             @endforeach
                         </div>
                     </div>
@@ -97,15 +91,19 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div class="rounded-xl border border-gray-200 px-4 py-3">
                                 <div class="text-xs text-gray-500">Khởi hành</div>
-                                <div class="font-semibold text-gray-900">{{ $tour->departure ?? 'TP.HCM' }}</div>
+                                <div class="font-semibold text-gray-900">{{ $tour->departure_location }}</div>
                             </div>
                             <div class="rounded-xl border border-gray-200 px-4 py-3">
                                 <div class="text-xs text-gray-500">Phương tiện</div>
-                                <div class="font-semibold text-gray-900">{{ $tour->transport ?? 'Xe du lịch' }}</div>
-                            </div>
-                            <div class="rounded-xl border border-gray-200 px-4 py-3">
-                                <div class="text-xs text-gray-500">Khách sạn</div>
-                                <div class="font-semibold text-gray-900">{{ $tour->hotel ?? '3★' }}</div>
+                                @if ($tour->transport === 'bus')
+                                    <div class="font-semibold text-gray-900">Xe khách</div>
+                                @elseif ($tour->transport === 'plane')
+                                    <div class="font-semibold text-gray-900">Máy bay</div>
+                                @elseif ($tour->transport === 'train')
+                                    <div class="font-semibold text-gray-900">Tàu hỏa</div>
+                                @else
+                                    <div class="font-semibold text-gray-900">Xe du lịch</div>
+                                @endif
                             </div>
                             <div class="rounded-xl border border-gray-200 px-4 py-3">
                                 <div class="text-xs text-gray-500">Số chỗ</div>
@@ -163,7 +161,6 @@
                 </div>
 
                 <div id="tour-tab-content">
-
                     {{-- ================= LỊCH TRÌNH ================= --}}
                     <div class="p-4 rounded-lg bg-gray-50" id="itinerary" role="tabpanel" aria-labelledby="itinerary-tab">
 
@@ -172,28 +169,8 @@
                             <span class="text-xs text-gray-500">* Có thể thay đổi tùy thời tiết</span>
                         </div>
 
-                        @php
-                            $itinerary = $tour->itinerary ?? [
-                                [
-                                    'day' => 'Ngày 1',
-                                    'title' => 'TP.HCM → Đà Lạt | Check-in & ăn tối',
-                                    'content' => 'Di chuyển, nhận phòng, tham quan chợ đêm.',
-                                ],
-                                [
-                                    'day' => 'Ngày 2',
-                                    'title' => 'Săn mây Cầu Đất | Cafe | Hồ Tuyền Lâm',
-                                    'content' => 'Săn mây sáng sớm, trải nghiệm cafe, tham quan hồ.',
-                                ],
-                                [
-                                    'day' => 'Ngày 3',
-                                    'title' => 'Mua sắm đặc sản | Trở về',
-                                    'content' => 'Tự do mua sắm, trả phòng, về TP.HCM.',
-                                ],
-                            ];
-                        @endphp
-
                         <div class="space-y-4">
-                            @foreach ($itinerary as $i => $item)
+                            @foreach ($tour->itineraries as $i => $item)
                                 <div class="flex gap-4">
                                     <div class="flex flex-col items-center">
                                         <div
@@ -209,7 +186,7 @@
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span
                                                 class="text-xs font-semibold px-2 py-1 rounded-full bg-sky-50 text-sky-700">
-                                                {{ $item['day'] }}
+                                                {{ $item['day_no'] }}
                                             </span>
                                             <h3 class="font-semibold text-gray-900">{{ $item['title'] }}</h3>
                                         </div>
@@ -226,15 +203,7 @@
 
                         <h2 class="text-lg font-bold text-gray-900 mb-3">Tổng quan tour</h2>
                         <div class="prose max-w-none text-gray-700">
-                            {!! $tour->description ??
-                                '
-                                                                        <p>Hành trình khám phá Đà Lạt với lịch trình tối ưu, săn mây, check-in điểm hot, trải nghiệm ẩm thực.</p>
-                                                                        <ul>
-                                                                            <li>Check-in: Đồi chè Cầu Đất, hồ Tuyền Lâm</li>
-                                                                            <li>Ẩm thực đặc sản địa phương</li>
-                                                                            <li>Hướng dẫn viên chuyên nghiệp</li>
-                                                                        </ul>
-                                                                    ' !!}
+                            {!! $tour->description !!}
                         </div>
                     </div>
 
@@ -244,11 +213,13 @@
 
                         <h2 class="text-lg font-bold text-gray-900 mb-3">Bao gồm</h2>
                         <ul class="space-y-2 text-sm text-gray-700">
-                            @foreach ($tour->included ?? ['Xe đưa đón', 'Khách sạn', 'Vé tham quan', 'Ăn uống theo chương trình', 'Hướng dẫn viên'] as $x)
-                                <li class="flex gap-2">
-                                    <span class="text-green-600">✔</span>
-                                    <span>{{ $x }}</span>
-                                </li>
+                            @foreach ($tour->policies as $policy)
+                                @if ($policy->type === 'include')
+                                    <li class="flex gap-2">
+                                        <span class="text-green-600">✔</span>
+                                        <span>{{ $policy->content }}</span>
+                                    </li>
+                                @endif
                             @endforeach
                         </ul>
                     </div>
@@ -259,11 +230,13 @@
 
                         <h2 class="text-lg font-bold text-gray-900 mb-3">Không bao gồm</h2>
                         <ul class="space-y-2 text-sm text-gray-700">
-                            @foreach ($tour->excluded ?? ['Chi phí cá nhân', 'VAT', 'Tiền tip (tùy chọn)'] as $x)
-                                <li class="flex gap-2">
-                                    <span class="text-red-600">✖</span>
-                                    <span>{{ $x }}</span>
-                                </li>
+                            @foreach ($tour->policies as $policy)
+                                @if ($policy->type === 'exclude')
+                                    <li class="flex gap-2">
+                                        <span class="text-red-600">✖</span>
+                                        <span>{{ $policy->content }}</span>
+                                    </li>
+                                @endif
                             @endforeach
                         </ul>
                     </div>
@@ -282,70 +255,169 @@
 
                 <!-- REVIEWS -->
                 <div class="bg-white rounded-2xl border border-gray-200 p-5">
-                    <div class="flex items-center justify-between gap-3 mb-4">
-                        <h2 class="text-lg font-bold text-gray-900">Đánh giá</h2>
-                        <a href="#review-form" class="text-sm font-semibold text-sky-600 hover:text-sky-700">Viết đánh
-                            giá</a>
-                    </div>
-
                     @php
-                        $reviews = $reviews ?? [
-                            [
-                                'name' => 'Ngọc Anh',
-                                'rating' => 5,
-                                'time' => '2 ngày trước',
-                                'content' => 'Tour rất ok, HDV nhiệt tình, lịch trình hợp lý.',
-                            ],
-                            [
-                                'name' => 'Tuấn',
-                                'rating' => 4,
-                                'time' => '1 tuần trước',
-                                'content' => 'Khách sạn sạch, đồ ăn ổn, hơi mệt đoạn di chuyển.',
-                            ],
-                        ];
+                        // Danh sách review đã duyệt
+                        $approvedReviews = $tour->reviews ?? collect();
+
+                        $reviewCount = $approvedReviews->count();
+                        $avgRating = $reviewCount > 0 ? round($approvedReviews->avg('rating'), 1) : 0;
+
+                        // Điều kiện nghiệp vụ
+                        $isLoggedIn = auth()->check();
+
+                        // User đã từng đặt và hoàn thành tour này chưa
+                        // Biến này nên truyền từ controller sang sẽ tốt hơn
+                        $canReview = $canReview ?? false;
+
+                        // User đã review tour này chưa
+                        $hasReviewed = $hasReviewed ?? false;
+
+                        // Booking hợp lệ để review
+                        $reviewBooking = $reviewBooking ?? null;
                     @endphp
 
-                    <div class="space-y-4">
-                        @foreach ($reviews as $r)
-                            <div class="p-4 rounded-2xl border border-gray-200 bg-white">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div>
-                                        <div class="font-semibold text-gray-900">{{ $r['name'] }}</div>
-                                        <div class="text-xs text-gray-500">{{ $r['time'] }}</div>
-                                    </div>
-                                    <div class="text-sm text-amber-500">
-                                        {{ str_repeat('★', (int) $r['rating']) }}{{ str_repeat('☆', 5 - (int) $r['rating']) }}
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-700 mt-2">{{ $r['content'] }}</p>
+                    <!-- Header -->
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Đánh giá khách hàng</h2>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Chia sẻ trải nghiệm thực tế của khách đã tham gia tour
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-gray-900">{{ $avgRating }}</div>
+                                <div class="text-sm text-gray-500">{{ $reviewCount }} đánh giá</div>
                             </div>
-                        @endforeach
+                            <div class="text-amber-500 text-lg">
+                                {{ str_repeat('★', (int) round($avgRating)) }}{{ str_repeat('☆', 5 - (int) round($avgRating)) }}
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- REVIEW FORM (UI only) -->
-                    <div id="review-form" class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="font-bold text-gray-900 mb-3">Gửi đánh giá</h3>
-                        <form action="#" method="POST" class="space-y-3">
-                            @csrf
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <input type="text" name="name" placeholder="Họ tên"
-                                    class="rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                <select name="rating"
-                                    class="rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                    <option value="5">5 sao</option>
-                                    <option value="4">4 sao</option>
-                                    <option value="3">3 sao</option>
-                                    <option value="2">2 sao</option>
-                                    <option value="1">1 sao</option>
-                                </select>
+                    <!-- Nút viết đánh giá -->
+                    <div class="mb-5">
+                        @if ($isLoggedIn && $canReview && !$hasReviewed)
+                            <a href="#review-form"
+                                class="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100">
+                                Viết đánh giá
+                            </a>
+                        @elseif (!$isLoggedIn)
+                            <a href="{{ route('signin') }}"
+                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+                                Đăng nhập để đánh giá
+                            </a>
+                        @endif
+                    </div>
+
+                    <!-- Danh sách review -->
+                    @if ($reviewCount > 0)
+                        <div class="space-y-4">
+                            @foreach ($approvedReviews as $review)
+                                <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div class="font-semibold text-gray-900">
+                                                {{ $review->user->name ?? 'Khách hàng' }}
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}
+                                            </div>
+                                        </div>
+
+                                        <div class="text-sm text-amber-500 shrink-0">
+                                            {{ str_repeat('★', (int) $review->rating) }}{{ str_repeat('☆', 5 - (int) $review->rating) }}
+                                        </div>
+                                    </div>
+
+                                    @if (!empty($review->content))
+                                        <p class="mt-3 text-sm leading-6 text-gray-700">
+                                            {{ $review->content }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+                            <p class="text-sm text-gray-500">Hiện chưa có đánh giá nào cho tour này.</p>
+                        </div>
+                    @endif
+
+                    <!-- FORM REVIEW -->
+                    <div id="review-form" class="mt-6 border-t border-gray-200 pt-6">
+                        @if (!$isLoggedIn)
+                            <div class="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
+                                <p class="text-sm text-yellow-800">
+                                    Bạn cần đăng nhập để gửi đánh giá cho tour này.
+                                </p>
                             </div>
-                            <textarea name="content" rows="3" placeholder="Nội dung đánh giá..."
-                                class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none"></textarea>
-                            <button type="submit"
-                                class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
-                                Gửi đánh giá
-                            </button>
-                        </form>
+                        @elseif ($hasReviewed)
+                            <div class="rounded-2xl border border-green-200 bg-green-50 p-4">
+                                <p class="text-sm text-green-800 font-medium">
+                                    Bạn đã gửi đánh giá cho tour này rồi.
+                                </p>
+                            </div>
+                        @elseif (!$canReview)
+                            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                                <p class="text-sm text-blue-800">
+                                    Bạn chỉ có thể đánh giá sau khi đã đặt và hoàn thành tour này.
+                                </p>
+                            </div>
+                        @else
+                            <h3 class="mb-3 font-bold text-gray-900">Gửi đánh giá của bạn</h3>
+
+                            <form action="{{ route('reviews.store') }}" method="POST" class="space-y-4">
+                                @csrf
+
+                                {{-- tour_id + booking_id --}}
+                                <input type="hidden" name="tour_id" value="{{ $tour->id }}">
+                                <input type="hidden" name="booking_id" value="{{ $reviewBooking?->id }}">
+
+                                <div class="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                                    Người đánh giá:
+                                    <span class="font-semibold">{{ auth()->user()->name }}</span>
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-sm font-semibold text-gray-700">Số sao</label>
+                                    <select name="rating"
+                                        class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
+                                        required>
+                                        <option value="">-- Chọn số sao --</option>
+                                        <option value="5" {{ old('rating') == 5 ? 'selected' : '' }}>5 sao - Rất hài
+                                            lòng</option>
+                                        <option value="4" {{ old('rating') == 4 ? 'selected' : '' }}>4 sao - Hài lòng
+                                        </option>
+                                        <option value="3" {{ old('rating') == 3 ? 'selected' : '' }}>3 sao - Bình
+                                            thường</option>
+                                        <option value="2" {{ old('rating') == 2 ? 'selected' : '' }}>2 sao - Chưa tốt
+                                        </option>
+                                        <option value="1" {{ old('rating') == 1 ? 'selected' : '' }}>1 sao - Không
+                                            hài lòng</option>
+                                    </select>
+                                    @error('rating')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label class="mb-2 block text-sm font-semibold text-gray-700">Nội dung đánh giá</label>
+                                    <textarea name="content" rows="4"
+                                        placeholder="Chia sẻ trải nghiệm của bạn về lịch trình, hướng dẫn viên, khách sạn, bữa ăn..."
+                                        class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100">{{ old('content') }}</textarea>
+                                    @error('content')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <button type="submit"
+                                    class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+                                    Gửi đánh giá
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
 

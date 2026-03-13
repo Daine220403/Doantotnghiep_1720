@@ -109,6 +109,7 @@ class DemoTravelSeeder extends Seeder
                 'duration_nights' => 2,
                 'departure_location' => 'TP.HCM',
                 'destination_text' => 'Đà Lạt',
+                'transport' => 'bus',
                 'base_price_from' => 3500000,
                 'status' => 'published',
                 'created_by' => $tourManagerId,

@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('tour_images', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tour_id')->index();
-            $table->string('url', 255);
+            $table->string('url', 255)->nullable();
             $table->integer('sort_order')->default(0)->index();
 
             $table->foreign('tour_id')->references('id')->on('tours')

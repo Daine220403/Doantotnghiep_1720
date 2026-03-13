@@ -3,12 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\signin_upController;
-
+use App\Http\Controllers\indexController;
 
 Route::prefix('/')->group(function () {
-    Route::get('/', function () {
-        return view('index');
-    })->name('home');
+    Route::get('/', [indexController::class, 'index'])->name('home'); 
 
     Route::get('/dang-nhap', [signin_upController::class, 'signin'])->name('signin');
     Route::post('/dang-nhap-store', [signin_upController::class, 'signinStore'])->name('signin.store');
@@ -22,10 +20,7 @@ Route::prefix('/')->group(function () {
         Route::get('/', function () {
             return view('tours.tours');
         })->name('tours');
-
-        Route::get('/{slug}', function () {
-            return view('tours.tour_show');
-        })->name('tours.show');
+        Route::get('/{slug}', [indexController::class, 'show'])->name('tours.show'); 
     });
 });
 

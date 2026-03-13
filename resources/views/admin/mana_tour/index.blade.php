@@ -122,8 +122,11 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
 
-                                        <form action="#" method="POST" class="d-inline"
-                                            onsubmit="return confirm('Bạn chắc chắn muốn xóa tour: Tour Đà Lạt 3N2Đ ?');">
+                                        <form action="{{ route('admin.mana-tour.destroy', $tour->id) }}" 
+                                            method="POST" class="d-inline"
+                                            onsubmit="return confirm('Bạn chắc chắn muốn xóa tour: {{ $tour->title }} ?');">
+                                            @csrf
+                                            @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
                                                 <i class="fas fa-trash"></i>
                                             </button>

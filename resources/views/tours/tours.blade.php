@@ -249,7 +249,7 @@
 
                 </div>
 
-                <!-- PAGINATION (đẹp hơn) -->
+                <!-- PAGINATION -->
                 <div class="mt-10 flex justify-center">
                     <nav class="flex items-center gap-2">
                         <a href="{{ route('tours.show', 'slug-example') }}"

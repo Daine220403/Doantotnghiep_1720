@@ -109,59 +109,109 @@
             </div>
 
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                @for ($i = 1; $i <= 4; $i++)
+                @foreach ($tours as $tour)
                     <!-- TOUR CARD -->
                     <div
-                        class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden">
+                        class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition overflow-hidden">
 
                         <!-- IMAGE -->
-                        <div class="relative">
-                            <img src="{{ asset('storage/image/bg.png') }}" alt="Tour Thái Lan"
-                                class="w-full h-52 object-cover">
+                        <div class="relative overflow-hidden">
+                            <img src="{{ asset('storage/' . $tour->images->first()->url) }}" alt="Tour"
+                                class="w-full h-52 object-cover transition duration-300 group-hover:scale-105">
 
-                            <!-- Voucher badge -->
+                            <!-- soft gradient bottom -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent">
+                            </div>
+
                             <span
-                                class="absolute top-3 left-3 bg-red-500 text-white text-sm font-semibold px-3 py-1 rounded">
-                                Tặng Voucher 500k
+                                class="absolute top-3 left-3 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">
+                                @foreach ($tour->departures as $departure)
+                                    {{ \Carbon\Carbon::parse($departure->start_date)->format('d/m/Y') }}
+                                @endforeach
+                                {{-- {{ $tour->departures->start_date->format('d/m/Y') }} --}}
                             </span>
+                            @foreach ($tour->departures as $departure)
+                                @php
+                                    $status_text = '';
+                                    $status_class = '';
+
+                                    $remaining = $departure->capacity_total - $departure->capacity_booked;
+
+                                    if ($remaining > 10) {
+                                        $status_text = 'Còn chỗ';
+                                        $status_class = 'bg-green-500';
+                                    } elseif ($remaining > 0) {
+                                        $status_text = 'Sắp hết chỗ';
+                                        $status_class = 'bg-yellow-500';
+                                    } else {
+                                        $status_text = 'Hết chỗ';
+                                        $status_class = 'bg-red-500';
+                                    }
+                                @endphp
+                            @endforeach
+                            <span
+                                class="absolute top-3 right-3 text-white text-xs font-semibold px-3 py-1 rounded-lg {{ $status_class }}">
+                                {{ $status_text }}
+                            </span>
+
+                            <!-- quick action (UI) -->
+                            <div class="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                <button
+                                    class="w-9 h-9 rounded-full bg-white/90 backdrop-blur border border-gray-200 hover:bg-white">
+                                    ❤
+                                </button>
+                                <button
+                                    class="w-9 h-9 rounded-full bg-white/90 backdrop-blur border border-gray-200 hover:bg-white">
+                                    ⇪
+                                </button>
+                            </div>
                         </div>
 
                         <!-- CONTENT -->
                         <div class="p-4">
                             <!-- Title -->
-                            <h3 class="font-bold text-[17px] leading-snug text-blue-700 hover:text-blue-800 line-clamp-2">
-                                Tour Thái Lan 5N4Đ: HCM – Bangkok – Pattaya – Quần Thể Suanthai – Icon Siam
+                            <h3
+                                class="font-bold text-[16px] leading-snug text-blue-700 group-hover:text-sky-600 transition line-clamp-2">
+                                {{ $tour->title }}
                             </h3>
+
+                            <!-- meta line -->
+                            <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+                                <span class="inline-flex items-center gap-1"><i class="fas fa-calendar-alt"></i> {{ $tour->duration_days }}N{{ $tour->duration_nights }}Đ</span>
+                                <span class="inline-flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> {{ $tour->departure_location }}</span>
+                            </div>
 
                             <!-- Rating -->
                             <div class="flex items-center gap-2 mt-2 text-sm">
-                                <span class="bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded">
-                                    10.0
+                                <span class="bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-lg">
+                                    5.0
                                 </span>
                                 <span class="text-green-600 font-medium">Tuyệt vời</span>
                                 <span class="text-gray-500">| 2 đánh giá</span>
                             </div>
 
-                            <!-- Highlights -->
-                            <ul class="mt-3 text-sm text-sky-600 space-y-1">
-                                <li>• Trải nghiệm cưỡi voi</li>
-                                <li>• Chợ nổi bốn miền</li>
-                                <li>• Tặng xôi xoài</li>
-                                <li>• Xem show Colosseum</li>
-                            </ul>
-
                             <!-- Price -->
-                            <div class="mt-4 text-right">
-                                <div class="text-sm text-gray-400 line-through">
-                                    7.390.000 đ
+                            <div class="mt-4 flex items-end justify-between">
+                                <div class="text-xs text-gray-500">
+                                    Giá từ
+                                    <div class="text-sm text-gray-400 line-through">{{ number_format($tour->base_price_from,0,',','.') }} đ</div>
                                 </div>
                                 <div class="text-2xl font-extrabold text-orange-500">
-                                    6.290.000 đ
+                                    @foreach ($tour->departures as $departure)
+                                        {{ number_format($departure->price_adult,0,',','.') }} đ
+                                    @endforeach
+                                    
                                 </div>
                             </div>
+
+                            <!-- Button -->
+                            <a href="{{ route('tours.show', $tour->slug) }}"
+                                class="mt-4 block text-center bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+                                Xem chi tiết
+                            </a>
                         </div>
                     </div>
-                @endfor
+                @endforeach
             </div>
         </div>
     </section>

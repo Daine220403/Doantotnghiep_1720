@@ -20,6 +20,7 @@ class Tours extends Model
         'duration_nights',
         'departure_location',
         'destination_text',
+        'transport',
         'base_price_from',
         'status',
     ];
@@ -40,5 +41,9 @@ class Tours extends Model
     public function policies()
     {
         return $this->hasMany(tour_policies::class, 'tour_id');
+    }
+    public function reviews()
+    {
+        return $this->hasMany(reviews::class, 'tour_id');
     }
 }

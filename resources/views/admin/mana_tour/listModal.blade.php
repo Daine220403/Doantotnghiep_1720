@@ -1,3 +1,8 @@
+<style>
+    .cke_notification {
+        display: none !important;
+    }
+</style>
 @foreach ($tours as $tour)
     @php
         $firstImage = $tour->images->first();
@@ -269,6 +274,28 @@
                         <h6 class="font-weight-bold mb-3 text-primary">Thông tin chung</h6>
 
                         <div class="row">
+                            <div class="col-lg-12 mb-3">
+                                <div class="border rounded p-2">
+                                    <div class="d-flex flex-wrap" style="gap:8px;">
+                                        @forelse ($tour->images as $image)
+                                            <img src="{{ asset('storage/' . $image->url) }}"
+                                                alt="{{ $tour->title }}"
+                                                style="width: 120px; height: 80px; object-fit: cover; border-radius: 6px;">
+                                        @empty
+                                            <img src="https://via.placeholder.com/120x80" alt="No image"
+                                                style="width: 120px; height: 80px; object-fit: cover; border-radius: 6px;">
+                                        @endforelse
+                                    </div>
+                                    <div class="mt-3">
+                                        <input type="file" name="images[]" accept="image/*" multiple
+                                            class="form-control">
+                                    </div>
+
+                                    <small class="text-muted d-block mt-2">
+                                        Ảnh tour (tour_images)
+                                    </small>
+                                </div>
+                            </div>
                             <div class="col-md-6 mb-3">
                                 <label>Mã tour (code)</label>
                                 <input type="text" class="form-control" value="{{ $tour->code }}" disabled>
@@ -329,7 +356,7 @@
 
                             <div class="col-md-12 mb-3">
                                 <label>Mô tả</label>
-                                <textarea name="description" id="description_editor" rows="4" class="form-control">{{ $tour->description }}</textarea>
+                                <textarea name="description" id="description_editor_{{ $tour->id }}" rows="4" class="form-control">{{ $tour->description }}</textarea>
                             </div>
 
                             <h6 class="col-md-12 font-weight-bold text-primary">Bao gồm / Không bao gồm</h6>
@@ -546,7 +573,16 @@
     </div>
 @endforeach
 <script>
-    CKEDITOR.replace('description_editor');
+    @foreach ($tours as $tour) // Lặp qua tất cả các tour trong danh sách $tours
+        // Kiểm tra xem CKEditor đã được khởi tạo cho textarea có id 'description_editor_{id}' chưa
+        if (!CKEDITOR.instances['description_editor_{{ $tour->id }}']) {
+
+            // Nếu chưa có instance CKEditor thì tiến hành khởi tạo editor cho textarea đó
+            CKEDITOR.replace('description_editor_{{ $tour->id }}');
+
+        }
+    @endforeach
+    // CKEDITOR.replace('description_editor');
 </script>
 <script>
     (function() {

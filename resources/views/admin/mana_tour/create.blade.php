@@ -69,7 +69,15 @@
                                 <div class="alert alert-danger">{{ $message }}</div>
                             </div>
                         @enderror
-
+                        <div class="col-md-6 mb-3">
+                            <label>Phương tiện</label>
+                            <select name="transport" id="transport" class="form-control">
+                                <option value="bus">Xe khách</option>
+                                <option value="plane">Máy bay</option>
+                                <option value="train">Tàu hỏa</option>
+                                <option value="car">Ô tô</option>
+                            </select>
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label>Giá từ</label>
                             <input type="number" name="base_price_from" class="form-control">

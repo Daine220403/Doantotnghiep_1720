@@ -22,7 +22,8 @@ return new class extends Migration {
 
             $table->string('departure_location', 150)->nullable();
             $table->string('destination_text', 255)->nullable();
-
+            $table->enum('transport', ['bus', 'plane', 'train', 'car'])->default('bus'); // e.g., "Bus", "Plane"
+            
             $table->decimal('base_price_from', 12, 2)->default(0);
 
             $table->enum('status', ['draft', 'published',])->default('draft')->index();
