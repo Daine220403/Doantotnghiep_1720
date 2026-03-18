@@ -17,10 +17,9 @@ Route::prefix('/')->group(function () {
 
 
     route::prefix('/tours')->group(function () {
-        Route::get('/', function () {
-            return view('tours.tours');
-        })->name('tours');
-        Route::get('/{slug}', [indexController::class, 'show'])->name('tours.show'); 
+        Route::get('/', [indexController::class, 'tours'])->name('tours'); 
+        Route::get('/{slug}', [indexController::class, 'show'])->name('tours.show');
+        Route::post('/checkout', [indexController::class, 'checkout'])->name('tours.checkout');
     });
 });
 

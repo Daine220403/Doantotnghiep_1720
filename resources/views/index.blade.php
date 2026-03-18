@@ -110,51 +110,53 @@
 
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach ($tours as $tour)
+                    @php
+                        $departure = $tour->departures->first();
+
+                        $status_text = 'Đang cập nhật';
+                        $status_class = 'bg-gray-500';
+
+                        if ($departure) {
+                            $remaining = $departure->capacity_total - $departure->capacity_booked;
+
+                            if ($remaining > 10) {
+                                $status_text = 'Còn chỗ';
+                                $status_class = 'bg-green-500';
+                            } elseif ($remaining > 0) {
+                                $status_text = 'Sắp hết chỗ';
+                                $status_class = 'bg-yellow-500';
+                            } else {
+                                $status_text = 'Hết chỗ';
+                                $status_class = 'bg-red-500';
+                            }
+                        }
+                    @endphp
+
                     <!-- TOUR CARD -->
                     <div
                         class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition overflow-hidden">
 
                         <!-- IMAGE -->
                         <div class="relative overflow-hidden">
-                            <img src="{{ asset('storage/' . $tour->images->first()->url) }}" alt="Tour"
+                            <img src="{{ $tour->images->first() ? asset('storage/' . $tour->images->first()->url) : asset('storage/image/bg.png') }}"
+                                alt="{{ $tour->title }}"
                                 class="w-full h-52 object-cover transition duration-300 group-hover:scale-105">
 
-                            <!-- soft gradient bottom -->
                             <div class="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent">
                             </div>
 
-                            <span
-                                class="absolute top-3 left-3 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">
-                                @foreach ($tour->departures as $departure)
+                            @if ($departure)
+                                <span
+                                    class="absolute top-3 left-3 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">
                                     {{ \Carbon\Carbon::parse($departure->start_date)->format('d/m/Y') }}
-                                @endforeach
-                                {{-- {{ $tour->departures->start_date->format('d/m/Y') }} --}}
-                            </span>
-                            @foreach ($tour->departures as $departure)
-                                @php
-                                    $status_text = '';
-                                    $status_class = '';
+                                </span>
+                            @endif
 
-                                    $remaining = $departure->capacity_total - $departure->capacity_booked;
-
-                                    if ($remaining > 10) {
-                                        $status_text = 'Còn chỗ';
-                                        $status_class = 'bg-green-500';
-                                    } elseif ($remaining > 0) {
-                                        $status_text = 'Sắp hết chỗ';
-                                        $status_class = 'bg-yellow-500';
-                                    } else {
-                                        $status_text = 'Hết chỗ';
-                                        $status_class = 'bg-red-500';
-                                    }
-                                @endphp
-                            @endforeach
                             <span
                                 class="absolute top-3 right-3 text-white text-xs font-semibold px-3 py-1 rounded-lg {{ $status_class }}">
                                 {{ $status_text }}
                             </span>
 
-                            <!-- quick action (UI) -->
                             <div class="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition">
                                 <button
                                     class="w-9 h-9 rounded-full bg-white/90 backdrop-blur border border-gray-200 hover:bg-white">
@@ -169,38 +171,69 @@
 
                         <!-- CONTENT -->
                         <div class="p-4">
-                            <!-- Title -->
                             <h3
                                 class="font-bold text-[16px] leading-snug text-blue-700 group-hover:text-sky-600 transition line-clamp-2">
                                 {{ $tour->title }}
                             </h3>
 
-                            <!-- meta line -->
                             <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                                <span class="inline-flex items-center gap-1"><i class="fas fa-calendar-alt"></i> {{ $tour->duration_days }}N{{ $tour->duration_nights }}Đ</span>
-                                <span class="inline-flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> {{ $tour->departure_location }}</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    {{ $tour->duration_days }}N{{ $tour->duration_nights }}Đ
+                                </span>
+                                <span class="inline-flex items-center gap-1">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ $tour->departure_location }}
+                                </span>
                             </div>
 
                             <!-- Rating -->
+                            @php
+                                $rating = round($tour->reviews_avg_rating, 1);
+                                $count = $tour->reviews_count;
+
+                                if ($rating >= 4.5) {
+                                    $rating_text = 'Tuyệt vời';
+                                } elseif ($rating >= 4.0) {
+                                    $rating_text = 'Rất tốt';
+                                } elseif ($rating >= 3.0) {
+                                    $rating_text = 'Tốt';
+                                } elseif ($rating > 0) {
+                                    $rating_text = 'Bình thường';
+                                } else {
+                                    $rating_text = 'Chưa có đánh giá';
+                                }
+                            @endphp
+
                             <div class="flex items-center gap-2 mt-2 text-sm">
+
                                 <span class="bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-lg">
-                                    5.0
+                                    {{ number_format($rating, 1) ?: '0.0' }}
                                 </span>
-                                <span class="text-green-600 font-medium">Tuyệt vời</span>
-                                <span class="text-gray-500">| 2 đánh giá</span>
+
+                                <span class="text-green-600 font-medium">
+                                    {{ $rating_text }}
+                                </span>
+
+                                <span class="text-gray-500">
+                                    | {{ $count }} đánh giá
+                                </span>
+
                             </div>
 
                             <!-- Price -->
                             <div class="mt-4 flex items-end justify-between">
                                 <div class="text-xs text-gray-500">
                                     Giá từ
-                                    <div class="text-sm text-gray-400 line-through">{{ number_format($tour->base_price_from,0,',','.') }} đ</div>
+                                    @if ($departure && $tour->base_price_from > $departure->price_adult)
+                                        <div class="text-sm text-gray-400 line-through">
+                                            {{ number_format($tour->base_price_from, 0, ',', '.') }} đ
+                                        </div>
+                                    @endif
                                 </div>
+
                                 <div class="text-2xl font-extrabold text-orange-500">
-                                    @foreach ($tour->departures as $departure)
-                                        {{ number_format($departure->price_adult,0,',','.') }} đ
-                                    @endforeach
-                                    
+                                    {{ number_format($departure?->price_adult ?? $tour->base_price_from, 0, ',', '.') }} đ
                                 </div>
                             </div>
 

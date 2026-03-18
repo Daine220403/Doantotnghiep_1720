@@ -10,8 +10,14 @@ class orders extends Model
     protected $primaryKey = 'id';
     protected $fillable = [
         'order_code',
-        'total_price',
-        'status'
+        'user_id',
+        'contact_name',
+        'contact_phone',
+        'contact_email',
+        'subtotal',
+        'discount_total',
+        'total_amount',
+        'status',
     ];
 
 }

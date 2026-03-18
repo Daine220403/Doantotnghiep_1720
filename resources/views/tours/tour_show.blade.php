@@ -33,8 +33,8 @@
 
                 <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                     <span class="inline-flex items-center gap-2">
-                        ⭐ <b class="text-gray-900">{{ $tour->rating ?? '4.8' }}</b>
-                        <span>({{ $tour->reviews_count ?? 128 }} đánh giá)</span>
+                        ⭐ <b class="text-gray-900">{{ number_format($tour->average_rating, 1) }}</b>
+                        <span>({{ $tour->reviews_count }} đánh giá)</span>
                     </span>
 
                     <span class="hidden md:inline text-gray-300">•</span>
@@ -429,85 +429,59 @@
                             tất cả</a>
                     </div>
 
-                    @php
-                        $relatedTours = $relatedTours ?? [
-                            [
-                                'name' => 'Tour Nha Trang 3N2Đ',
-                                'price' => 2890000,
-                                'img' => asset('storage/image/logo.png'),
-                            ],
-                            [
-                                'name' => 'Tour Phú Quốc 3N2Đ',
-                                'price' => 3590000,
-                                'img' => asset('storage/image/logo.png'),
-                            ],
-                            ['name' => 'Tour Sapa 3N2Đ', 'price' => 3290000, 'img' => asset('storage/image/logo.png')],
-                        ];
-                    @endphp
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        @foreach ($relatedTours as $rt)
-                            <a href="#"
-                                class="group rounded-2xl border border-gray-200 overflow-hidden bg-white hover:shadow-md transition">
-                                <img src="{{ $rt['img'] }}" class="w-full h-36 object-cover" alt="related">
-                                <div class="p-4">
-                                    <div
-                                        class="font-semibold text-gray-900 line-clamp-2 group-hover:text-sky-700 transition">
-                                        {{ $rt['name'] }}
+                    @if ($relatedTours->isEmpty())
+                        <p class="text-sm text-gray-500">Hiện chưa có tour liên quan phù hợp.</p>
+                    @else
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            @foreach ($relatedTours as $rt)
+                                <a href="{{ route('tours.show', $rt->slug) }}"
+                                    class="group rounded-2xl border border-gray-200 overflow-hidden bg-white hover:shadow-md transition">
+                                    <img src="{{ $rt->main_image }}" class="w-full h-36 object-cover" alt="related">
+                                    <div class="p-4">
+                                        <div
+                                            class="font-semibold text-gray-900 line-clamp-2 group-hover:text-sky-700 transition">
+                                            {{ $rt->title }}
+                                        </div>
+                                        <div class="mt-2 flex items-center justify-between">
+                                            <span class="text-sm text-gray-500">Từ</span>
+                                            <span class="font-bold text-sky-700">
+                                                {{ number_format($rt->display_price, 0, ',', '.') }}đ
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="mt-2 flex items-center justify-between">
-                                        <span class="text-sm text-gray-500">Từ</span>
-                                        <span class="font-bold text-sky-700">
-                                            {{ number_format($rt['price'], 0, ',', '.') }}đ
-                                        </span>
-                                    </div>
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             </div>
 
             <!-- RIGHT / BOOKING SIDEBAR -->
             <aside class="lg:col-span-4">
-                <div class="sticky top-28 space-y-4">
+                {{-- sticky : dùng để neo --}}
+                <div class="top-24 space-y-4">
                     <div class="bg-white rounded-2xl border border-gray-200 p-5">
 
-                        <form action="#" method="POST" class="mt-6 space-y-4">
+                        <form action="{{ route('tours.checkout') }}" method="POST" class="mt-6 space-y-4">
                             @csrf
 
+                            <input type="hidden" name="tour_id" value="{{ $tour->id }}">
                             <!-- CHỌN NGÀY -->
                             <div>
                                 <label class="text-sm font-semibold text-gray-700">Chọn ngày khởi hành</label>
                                 <select id="scheduleSelect" name="schedule_id"
                                     class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-
-                                    @php
-                                        $schedules = $schedules ?? [
-                                            [
-                                                'id' => 1,
-                                                'date' => '2026-02-19',
-                                                'seat_left' => 12,
-                                                'price_adult' => 17990000,
-                                                'price_child' => 14617500,
-                                            ],
-                                            [
-                                                'id' => 2,
-                                                'date' => '2026-02-21',
-                                                'seat_left' => 8,
-                                                'price_adult' => 18990000,
-                                                'price_child' => 14990000,
-                                            ],
-                                        ];
-                                    @endphp
-
-                                    @foreach ($schedules as $s)
+                                    @forelse ($schedules as $s)
                                         <option value="{{ $s['id'] }}" data-adult="{{ $s['price_adult'] }}"
-                                            data-child="{{ $s['price_child'] }}">
+                                            data-child="{{ $s['price_child'] }}"
+                                            data-meeting="{{ $s['meeting_point'] }}">
                                             {{ \Carbon\Carbon::parse($s['date'])->format('d/m/Y') }}
                                             — Còn {{ $s['seat_left'] }} chỗ
                                         </option>
-                                    @endforeach
+                                        {{-- <input type="hidden" name="schedule_{{ $s['id'] }}" value="{{ $s['id'] }}"> --}}
+                                    @empty
+                                        <option value="" disabled>Hiện chưa có lịch khởi hành phù hợp</option>
+                                    @endforelse
                                 </select>
                             </div>
                             <!-- GIÁ THEO NGƯỜI -->
@@ -522,6 +496,30 @@
                                     <div id="childPrice" class="text-xl font-bold text-gray-900">0 VND</div>
                                 </div>
                             </div>
+
+                            {{-- Điểm tập trung --}}
+                            @php
+                                $firstSchedule = $schedules->first();
+                                $initialMeetingPoint =
+                                    $firstSchedule['meeting_point'] ?? ($tour->departure_location ?? 'Đang cập nhật');
+                            @endphp
+                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Điểm tập trung</span>
+                                    <b id="meetingPointValue" class="text-gray-900">{{ $initialMeetingPoint }}</b>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    * Thông tin có thể thay đổi, vui lòng kiểm tra lại khi đặt tour
+                                </div>
+                            </div>
+
+                            {{-- note --}}
+                            <div class="text-xs text-gray-500 mt-1">
+                                <textarea name="note"
+                                    class="w-full border border-gray-300 rounded-lg p-3 focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none"
+                                    rows="4"></textarea>
+                            </div>
+
                             <!-- SỐ LƯỢNG -->
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
@@ -548,15 +546,19 @@
                             </div>
 
                             <!-- ACTION -->
-                            <button type="submit"
-                                class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
-                                Đặt tour ngay
-                            </button>
-
-                            <button type="button"
-                                class="w-full rounded-xl bg-white border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus:ring-4 focus:ring-gray-200">
-                                Liên hệ tư vấn
-                            </button>
+                            {{-- kiểm tra đăng nhập trước khi submit --}}
+                            @if (Auth::check() && Auth::user()->role === 'customer')
+                                <button type="submit"
+                                    class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+                                    Đặt tour ngay
+                                </button>
+                            @else
+                                <button type="button"
+                                    class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200"
+                                    onclick="alert('Vui lòng đăng nhập trước khi đặt tour!')">
+                                    Đặt tour ngay
+                                </button>
+                            @endif
                         </form>
                     </div>
                 </div>
@@ -571,12 +573,25 @@
                 const adultPriceEl = document.getElementById('adultPrice');
                 const childPriceEl = document.getElementById('childPrice');
                 const totalPriceEl = document.getElementById('totalPrice');
+                const meetingPointEl = document.getElementById('meetingPointValue');
+
+                const defaultMeetingPoint = @json($tour->departure_location ?? 'Đang cập nhật');
 
                 function formatVND(number) {
                     return new Intl.NumberFormat('vi-VN').format(number) + ' VND';
                 }
 
                 function updatePrice() {
+                    if (!scheduleSelect || scheduleSelect.selectedIndex === -1) {
+                        adultPriceEl.innerText = formatVND(0);
+                        childPriceEl.innerText = formatVND(0);
+                        totalPriceEl.innerText = formatVND(0);
+                        if (meetingPointEl) {
+                            meetingPointEl.innerText = defaultMeetingPoint;
+                        }
+                        return;
+                    }
+
                     const selected = scheduleSelect.options[scheduleSelect.selectedIndex];
 
                     const priceAdult = parseInt(selected.dataset.adult);
@@ -590,6 +605,11 @@
                     totalPriceEl.innerText = formatVND(
                         (priceAdult * adults) + (priceChild * children)
                     );
+
+                    if (meetingPointEl) {
+                        const meeting = selected.dataset.meeting || defaultMeetingPoint;
+                        meetingPointEl.innerText = meeting;
+                    }
                 }
 
                 scheduleSelect.addEventListener('change', updatePrice);

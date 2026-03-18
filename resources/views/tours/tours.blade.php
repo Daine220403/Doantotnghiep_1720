@@ -27,19 +27,23 @@
                 <!-- quick search -->
                 <div class="w-full lg:w-[460px]">
                     <div class="bg-white/90 backdrop-blur border border-gray-200 rounded-2xl shadow-sm p-3">
-                        <div class="flex items-center gap-2">
-                            <input type="text" placeholder="Tìm tour: Thái Lan, Phú Quốc, Đà Nẵng..."
+                        <form class="flex items-center gap-2" method="GET" action="{{ route('tours') }}">
+                            <input type="text" name="q" value="{{ request('q') }}"
+                                placeholder="Tìm tour: Thái Lan, Phú Quốc, Đà Nẵng..."
                                 class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500">
-                            <button
+                            <button type="submit"
                                 class="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 focus:ring-4 focus:ring-sky-200">
                                 Tìm
                             </button>
-                        </div>
+                        </form>
                         <div class="mt-2 flex flex-wrap gap-2">
                             <span class="text-xs text-gray-500">Gợi ý:</span>
-                            <a href="#" class="text-xs text-sky-600 hover:underline">Bangkok</a>
-                            <a href="#" class="text-xs text-sky-600 hover:underline">Phú Quốc</a>
-                            <a href="#" class="text-xs text-sky-600 hover:underline">Đà Nẵng</a>
+                            <a href="{{ route('tours', ['q' => 'Bangkok']) }}"
+                                class="text-xs text-sky-600 hover:underline">Bangkok</a>
+                            <a href="{{ route('tours', ['q' => 'Phú Quốc']) }}"
+                                class="text-xs text-sky-600 hover:underline">Phú Quốc</a>
+                            <a href="{{ route('tours', ['q' => 'Đà Nẵng']) }}"
+                                class="text-xs text-sky-600 hover:underline">Đà Nẵng</a>
                         </div>
                     </div>
                 </div>
@@ -53,22 +57,28 @@
 
             <!-- FILTER (đẹp hơn + xoá lọc + range giá) -->
             <aside class="lg:col-span-1 sticky top-28 h-fit">
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+                <form method="GET" action="{{ route('tours') }}"
+                    class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-bold text-lg">Bộ lọc</h3>
-                        <a href="#" class="text-sm text-gray-500 hover:text-sky-600 hover:underline">Xoá lọc</a>
+                        <a href="{{ route('tours') }}" class="text-sm text-gray-500 hover:text-sky-600 hover:underline">Xoá
+                            lọc</a>
                     </div>
 
                     <!-- Destination -->
                     <div class="mb-5">
                         <label class="text-sm font-semibold text-gray-700">Điểm đến</label>
-                        <select
+                        <select name="destination"
                             class="mt-2 w-full rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
-                            <option>Tất cả</option>
-                            <option>Phú Quốc</option>
-                            <option>Đà Nẵng</option>
-                            <option>Bangkok</option>
-                            <option>Singapore</option>
+                            <option value="all">Tất cả</option>
+                            <option value="Phú Quốc" {{ request('destination') == 'Phú Quốc' ? 'selected' : '' }}>Phú Quốc
+                            </option>
+                            <option value="Đà Nẵng" {{ request('destination') == 'Đà Nẵng' ? 'selected' : '' }}>Đà Nẵng
+                            </option>
+                            <option value="Bangkok" {{ request('destination') == 'Bangkok' ? 'selected' : '' }}>Bangkok
+                            </option>
+                            <option value="Singapore" {{ request('destination') == 'Singapore' ? 'selected' : '' }}>
+                                Singapore</option>
                         </select>
                     </div>
 
@@ -77,11 +87,15 @@
                         <label class="text-sm font-semibold text-gray-700">Loại tour</label>
                         <div class="mt-2 space-y-2 text-sm">
                             <label class="flex items-center gap-2">
-                                <input type="checkbox" class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                                <input type="checkbox" name="tour_type[]" value="domestic"
+                                    {{ collect(request('tour_type', []))->contains('domestic') ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
                                 <span>Tour trong nước</span>
                             </label>
                             <label class="flex items-center gap-2">
-                                <input type="checkbox" class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                                <input type="checkbox" name="tour_type[]" value="international"
+                                    {{ collect(request('tour_type', []))->contains('international') ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
                                 <span>Tour quốc tế</span>
                             </label>
                         </div>
@@ -90,12 +104,13 @@
                     <!-- Duration -->
                     <div class="mb-5">
                         <label class="text-sm font-semibold text-gray-700">Số ngày</label>
-                        <select
+                        <select name="duration"
                             class="mt-2 w-full rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
-                            <option>Tất cả</option>
-                            <option>1 – 3 ngày</option>
-                            <option>4 – 6 ngày</option>
-                            <option>Trên 6 ngày</option>
+                            <option value="">Tất cả</option>
+                            <option value="1-3" {{ request('duration') == '1-3' ? 'selected' : '' }}>1 – 3 ngày</option>
+                            <option value="4-6" {{ request('duration') == '4-6' ? 'selected' : '' }}>4 – 6 ngày</option>
+                            <option value="7plus" {{ request('duration') == '7plus' ? 'selected' : '' }}>Trên 6 ngày
+                            </option>
                         </select>
                     </div>
 
@@ -113,9 +128,9 @@
                         </div>
 
                         <div class="mt-3 grid grid-cols-2 gap-3">
-                            <input type="text" placeholder="Từ (đ)"
+                            <input type="text" name="price_min" value="{{ request('price_min') }}" placeholder="Từ (đ)"
                                 class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500">
-                            <input type="text" placeholder="Đến (đ)"
+                            <input type="text" name="price_max" value="{{ request('price_max') }}" placeholder="Đến (đ)"
                                 class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500">
                         </div>
                     </div>
@@ -128,7 +143,7 @@
                     <p class="mt-3 text-xs text-gray-500">
                         Mẹo: chọn điểm đến + số ngày để ra kết quả chính xác hơn.
                     </p>
-                </div>
+                </form>
             </aside>
 
             <!-- TOUR LIST -->
@@ -137,58 +152,74 @@
                 <div
                     class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div class="text-sm text-gray-600">
-                        Hiển thị <b class="text-gray-900">12</b> tour
+                        @php
+                            $from = $tours->firstItem();
+                            $to = $tours->lastItem();
+                            $total = $tours->total();
+                        @endphp
+                        Hiển thị
+                        <b class="text-gray-900">{{ $from }}–{{ $to }}</b>
+                        trên tổng
+                        <b class="text-gray-900">{{ $total }}</b>
+                        tour
+                        @if (request('q'))
+                            cho từ khóa
+                            <span class="font-semibold text-sky-600">"{{ request('q') }}"</span>
+                        @endif
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <select class="rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
-                            <option>Sắp xếp theo</option>
-                            <option>Giá thấp → cao</option>
-                            <option>Giá cao → thấp</option>
-                            <option>Đánh giá cao</option>
-                            <option>Mới nhất</option>
-                        </select>
+                        <form method="GET" action="{{ route('tours') }}" class="flex items-center gap-2">
+                            @if (request('q'))
+                                <input type="hidden" name="q" value="{{ request('q') }}">
+                            @endif
+                            <select name="sort" onchange="this.form.submit()"
+                                class="rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
+                                <option value="">Sắp xếp theo</option>
+                                <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>
+                                    Giá thấp → cao
+                                </option>
+                                <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>
+                                    Giá cao → thấp
+                                </option>
+                                <option value="rating_desc" {{ request('sort') == 'rating_desc' ? 'selected' : '' }}>
+                                    Đánh giá cao
+                                </option>
+                                <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>
+                                    Mới nhất
+                                </option>
+                            </select>
+                        </form>
                     </div>
                 </div>
 
                 <!-- GRID -->
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                    @for ($i = 1; $i <= 9; $i++)
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @forelse ($tours as $tour)
                         <div
                             class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition overflow-hidden">
 
                             <!-- IMAGE -->
                             <div class="relative overflow-hidden">
-                                <img src="{{ asset('storage/image/bg.png') }}" alt="Tour"
+                                <img src="{{ $tour->main_image }}" alt="{{ $tour->title }}"
                                     class="w-full h-52 object-cover transition duration-300 group-hover:scale-105">
 
                                 <!-- soft gradient bottom -->
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent">
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent">
                                 </div>
 
-                                @php
-                                    $departures = ['🗓 19/02', '🗓 22/02', '🗓 01/03'];
-                                    $statuses = [
-                                        ['text' => '✔ Còn chỗ', 'class' => 'bg-emerald-600'],
-                                        ['text' => '⏳ Sắp hết chỗ', 'class' => 'bg-amber-500'],
-                                        ['text' => '🔥 Nhiều người quan tâm', 'class' => 'bg-pink-600'],
-                                    ];
-
-                                    $departure = $departures[array_rand($departures)];
-                                    $status = $statuses[array_rand($statuses)];
-                                @endphp
+                                @if ($tour->display_departure)
+                                    <span
+                                        class="absolute top-3 left-3 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">
+                                        🗓 {{ $tour->display_departure }}
+                                    </span>
+                                @endif
 
                                 <span
-                                    class="absolute top-3 left-3 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">
-                                    {{ $departure }}
+                                    class="absolute top-3 right-3 {{ $tour->status_class }} text-white text-xs font-bold px-2 py-1 rounded-lg">
+                                    {{ $tour->status_text }}
                                 </span>
-
-                                <span
-                                    class="absolute top-3 right-3 {{ $status['class'] }} text-white text-xs font-bold px-2 py-1 rounded-lg">
-                                    {{ $status['text'] }}
-                                </span>
-
 
                                 <!-- quick action (UI) -->
                                 <div
@@ -208,63 +239,63 @@
                             <div class="p-4">
                                 <!-- Title -->
                                 <h3
-                                    class="font-bold text-[16px] leading-snug text-blue-700 group-hover:text-sky-600 transition line-clamp-2">
-                                    Tour Thái Lan 5N4Đ: HCM – Bangkok – Pattaya – Icon Siam
+                                    class="font-bold text-[16px] leading-snug text-blue-700 group-hover:text-sky-600 transition line-clamp-2 min-h-[48px]">
+                                    {{ $tour->title }}
                                 </h3>
 
                                 <!-- meta line -->
                                 <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                                    <span class="inline-flex items-center gap-1">🗓 5N4Đ</span>
-                                    <span class="inline-flex items-center gap-1">📍 Bangkok</span>
+                                    <span class="inline-flex items-center gap-1">🗓 {{ $tour->duration_text }}</span>
+                                    <span class="inline-flex items-center gap-1">📍
+                                        {{ $tour->destination_display }}</span>
                                 </div>
 
                                 <!-- Rating -->
                                 <div class="flex items-center gap-2 mt-2 text-sm">
                                     <span class="bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-lg">
-                                        5.0
+                                        {{ $tour->average_rating > 0 ? number_format($tour->average_rating, 1) : '0.0' }}
                                     </span>
-                                    <span class="text-green-600 font-medium">Tuyệt vời</span>
-                                    <span class="text-gray-500">| 2 đánh giá</span>
+                                    <span class="text-green-600 font-medium">{{ $tour->rating_text }}</span>
+                                    <span class="text-gray-500">| {{ $tour->reviews_count }} đánh giá</span>
                                 </div>
 
                                 <!-- Price -->
                                 <div class="mt-4 flex items-end justify-between">
+
+                                    <!-- Giá từ -->
                                     <div class="text-xs text-gray-500">
                                         Giá từ
-                                        <div class="text-sm text-gray-400 line-through">7.390.000 đ</div>
+                                        @if ($tour->display_old_price)
+                                            <div class="text-sm text-gray-400 line-through">
+                                                {{ number_format($tour->display_old_price, 0, ',', '.') }} đ
+                                            </div>
+                                        @endif
                                     </div>
+
+                                    <!-- Giá chính -->
                                     <div class="text-2xl font-extrabold text-orange-500">
-                                        6.290.000 đ
+                                        {{ number_format($tour->display_price, 0, ',', '.') }} đ
                                     </div>
+
                                 </div>
 
                                 <!-- Button -->
-                                <a href="{{ route('tours.show', 'slug-example') }}"
+                                <a href="{{ route('tours.show', $tour->slug) }}"
                                     class="mt-4 block text-center bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
                                     Xem chi tiết
                                 </a>
                             </div>
                         </div>
-                    @endfor
-
+                    @empty
+                        <div class="col-span-full text-center py-10 text-gray-500">
+                            Hiện chưa có tour nào đang mở bán.
+                        </div>
+                    @endforelse
                 </div>
 
                 <!-- PAGINATION -->
                 <div class="mt-10 flex justify-center">
-                    <nav class="flex items-center gap-2">
-                        <a href="{{ route('tours.show', 'slug-example') }}"
-                            class="px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">«</a>
-
-                        <a href="{{ route('tours.show', 'slug-example') }}"
-                            class="px-4 py-2 rounded-xl bg-sky-600 text-white font-semibold">1</a>
-                        <a href="{{ route('tours.show', 'slug-example') }}"
-                            class="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">2</a>
-                        <a href="{{ route('tours.show', 'slug-example') }}"
-                            class="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">3</a>
-
-                        <a href="{{ route('tours.show', 'slug-example') }}"
-                            class="px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">»</a>
-                    </nav>
+                    {{ $tours->links('pagination::tailwind') }}
                 </div>
 
             </div>
