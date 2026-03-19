@@ -24,7 +24,7 @@
 
     <!-- Heading -->
     <div class="sidebar-heading">
-        Quản lý tour 
+        Quản lý tour
     </div>
 
     <!-- Nav Item - Pages partner Menu -->
@@ -48,13 +48,13 @@
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
             aria-expanded="true" aria-controls="collapseUtilities">
             <i class="fab fa-servicestack"></i>
-            <span>Dịch vụ</span>
+            <span>Booking</span>
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng dịch vụ:</h6>
-                <a class="collapse-item" href="#">Danh sách dịch vụ</a>
-                <a class="collapse-item" href="#">Thêm dịch vụ</a>
+                <h6 class="collapse-header">Chức năng booking:</h6>
+                <a class="collapse-item" href="{{ route('admin.mana-booking.index') }}">Danh sách booking</a>
+                <a class="collapse-item" href="#">Danh sách khách hàng</a>
             </div>
         </div>
     </li>
@@ -64,29 +64,29 @@
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree"
             aria-expanded="true" aria-controls="collapseThree">
             <i class="fab fa-product-hunt"></i>
-            <span>Sản phẩm</span>
+            <span>Hướng dẫn viên</span>
         </a>
         <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng sản phẩm:</h6>
-                <a class="collapse-item" href="#">Danh sách sản phẩm</a>
-                <a class="collapse-item" href="#">Thêm sản phẩm</a>
+                <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
+                <a class="collapse-item" href="#">Danh sách HDV</a>
+                <a class="collapse-item" href="#">Phân công HDV</a>
             </div>
         </div>
     </li>
-    
+
     <!-- Nav Item - News Menu -->
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFour"
             aria-expanded="true" aria-controls="collapseFour">
             <i class="fas fa-newspaper"></i>
-            <span>Tin tức</span>
+            <span>Dịch vụ</span>
         </a>
         <div id="collapseFour" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng tin tức:</h6>
-                <a class="collapse-item" href="#">Danh sách tin tức</a>
-                <a class="collapse-item" href="#">Thêm tin tức</a>
+                <h6 class="collapse-header">Chức năng dịch vụ:</h6>
+                <a class="collapse-item" href="#">Danh sách dịch vụ</a>
+                <a class="collapse-item" href="#">Thêm dịch vụ</a>
             </div>
         </div>
     </li>
@@ -107,7 +107,7 @@
             </div>
         </div>
     </li>
-    
+
     <!-- Nav Item - Contact Menu -->
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSix"

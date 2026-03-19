@@ -2,6 +2,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\toursController;
+use App\Http\Controllers\admin\bookingController;
 
 Route::prefix('/admin')->middleware(['auth','admin'])->group(function () {
     Route::get('/', function () {
@@ -15,11 +16,11 @@ Route::prefix('/admin')->middleware(['auth','admin'])->group(function () {
         Route::put('/{id}', [toursController::class, 'update'])->name('admin.mana-tour.update'); // xử lý cập nhật tour || done
         Route::delete('/{id}', [toursController::class, 'destroy'])->name('admin.mana-tour.destroy'); // xử lý xóa tour || 
     });
-    // tours/{slug}
-    // Route::get('/tours/{slug}', function () {
-    //     return view('tour_show');
-    // })->name('tours.show');
-    // Route::get('/danh-sach-tour', function () {
-    //     return view('admin.mana_tour.index');
-    // })->name('admin.mana-tour');
+
+    Route::prefix('/bookings')->group(function () {
+        Route::get('/', [bookingController::class, 'index'])->name('admin.mana-booking.index'); // danh sách booking
+        Route::get('/{id}', [bookingController::class, 'show'])->name('admin.mana-booking.show'); // xem chi tiết booking
+        Route::put('/{id}/status', [bookingController::class, 'updateStatus'])->name('admin.mana-booking.update-status'); // cập nhật trạng thái booking
+    });
+
 });

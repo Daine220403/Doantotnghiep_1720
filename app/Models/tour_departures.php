@@ -19,4 +19,9 @@ class tour_departures extends Model
         'price_child',
         'status',
     ];
+
+    public function tour()
+    {
+        return $this->belongsTo(Tours::class, 'tour_id');
+    }
 }

@@ -9,7 +9,7 @@ class bookings extends Model
     protected $table = 'bookings';
     protected $primaryKey = 'id';
     protected $fillable = [
-        'tour_id',
+        'order_id',
         'departure_id',
         'note',
         'status'
@@ -23,5 +23,10 @@ class bookings extends Model
     public function order()
     {
         return $this->belongsTo(orders::class, 'order_id');
+    }
+
+    public function passengers()
+    {
+        return $this->hasMany(booking_passengers::class, 'booking_id');
     }
 }

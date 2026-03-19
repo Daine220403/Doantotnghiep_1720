@@ -19,5 +19,8 @@ class orders extends Model
         'total_amount',
         'status',
     ];
-
+    public function orderDetails()
+    {
+        return $this->hasMany(order_details::class, 'order_id');
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\Tours;
 use App\Models\Bookings;
 use App\Models\Reviews;
 use App\Models\orders;
+use App\Models\order_details;
 use App\Models\tour_departures;
 use Illuminate\Support\Facades\Auth;
 
@@ -321,7 +322,6 @@ class indexController extends Controller
 
     public function checkout(Request $request)
     {
-        dd('Chờ xử lý', $request->all());
         // kiểm tra đăng nhập
         if (!Auth::check()) {
             return redirect()->route('signin')->with('error', 'Vui lòng đăng nhập để đặt tour');
@@ -396,7 +396,42 @@ class indexController extends Controller
             'status' => 'pending',
         ]);
 
-        $departure->increment('capacity_booked', $totalGuests);
+        // Thêm chi tiết đơn hàng cho người lớn
+        if ($adults > 0) {
+            order_details::create([
+                'order_id' => $order->id,
+                'item_type' => 'tour',
+                'item_id' => $tour->id,
+                'item_name' => $tour->title . ' - Người lớn',
+                'qty' => $adults,
+                'unit_price' => $priceAdult,
+                'line_total' => $adults * $priceAdult,
+                'meta' => json_encode([
+                    'schedule_id' => $departure->id,
+                    'schedule_date' => $departure->start_date,
+                    'type' => 'adult',
+                ]),
+            ]);
+        }
+
+        // Thêm chi tiết đơn hàng cho trẻ em (nếu có)
+        if ($children > 0) {
+            order_details::create([
+                'order_id' => $order->id,
+                'item_type' => 'tour',
+                'item_id' => $tour->id,
+                'item_name' => $tour->title . ' - Trẻ em',
+                'qty' => $children,
+                'unit_price' => $priceChild,
+                'line_total' => $children * $priceChild,
+                'meta' => json_encode([
+                    'schedule_id' => $departure->id,
+                    'schedule_date' => $departure->start_date,
+                    'type' => 'child',
+                ]),
+            ]);
+        }
+        $departure->increment('capacity_booked', $totalGuests); // Cập nhật số chỗ đã đặt
 
         return redirect()
             ->route('tours.show', $tour->slug)
