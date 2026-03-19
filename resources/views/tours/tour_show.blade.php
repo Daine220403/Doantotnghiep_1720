@@ -462,7 +462,7 @@
                 <div class="top-24 space-y-4">
                     <div class="bg-white rounded-2xl border border-gray-200 p-5">
 
-                        <form action="{{ route('tours.checkout') }}" method="POST" class="mt-6 space-y-4">
+                        <form action="{{ url('/vnpay_payment') }}" method="POST" class="mt-6 space-y-4">
                             @csrf
 
                             <input type="hidden" name="tour_id" value="{{ $tour->id }}">
@@ -548,10 +548,13 @@
                             <!-- ACTION -->
                             {{-- kiểm tra đăng nhập trước khi submit --}}
                             @if (Auth::check() && Auth::user()->role === 'customer')
-                                <button type="submit"
+                            
+                                <button type="submit" name="redirect"
                                     class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
                                     Đặt tour ngay
                                 </button>
+
+                                
                             @else
                                 <button type="button"
                                     class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200"

@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\signin_upController;
 use App\Http\Controllers\indexController;
+use App\Http\Controllers\paymentController;
 
 Route::prefix('/')->group(function () {
     Route::get('/', [indexController::class, 'index'])->name('home'); 
@@ -19,9 +20,15 @@ Route::prefix('/')->group(function () {
     route::prefix('/tours')->group(function () {
         Route::get('/', [indexController::class, 'tours'])->name('tours'); 
         Route::get('/{slug}', [indexController::class, 'show'])->name('tours.show');
-        Route::post('/checkout', [indexController::class, 'checkout'])->name('tours.checkout');
+        // Checkout + thanh toán VNPay
+        Route::post('/checkout', [paymentController::class, 'vnpay_payment'])->name('tours.checkout');
     });
 });
+
+Route::post('/vnpay_payment', [paymentController::class, 'vnpay_payment'])->name('vnpay_payment');
+
+// URL VNPay redirect về sau khi thanh toán
+Route::get('/vnpay/return', [paymentController::class, 'vnpayReturn'])->name('vnpay.return');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
