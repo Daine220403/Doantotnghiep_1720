@@ -23,4 +23,10 @@ Route::prefix('/admin')->middleware(['auth','admin'])->group(function () {
         Route::put('/{id}/status', [bookingController::class, 'updateStatus'])->name('admin.mana-booking.update-status'); // cập nhật trạng thái booking
     });
 
+    // Danh sách khách hàng theo tour
+    Route::prefix('/customer-tours')->group(function () {
+        Route::get('/', [bookingController::class, 'tourCustomerIndex'])->name('admin.customer-tour.index'); // danh sách tour
+        Route::get('/{id}', [bookingController::class, 'tourCustomerShow'])->name('admin.customer-tour.show'); // chi tiết khách theo tour
+    });
+
 });

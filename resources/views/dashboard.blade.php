@@ -1,6 +1,5 @@
 @php
 	$title = 'Vie Travel - Dashboard của tôi';
-	$user = auth()->user();
 @endphp
 
 @extends('layouts.app-guest')
@@ -40,10 +39,15 @@
 					<div>
 						<p class="text-sm text-gray-500">Tổng đơn đặt tour</p>
 						<p class="text-2xl font-bold text-gray-900">
-							{{-- Sau này có thể truyền số đơn thực tế từ controller --}}
-							<span>0</span>
+							<span>{{ $totalOrders }}</span>
 						</p>
-						<p class="text-xs text-gray-400 mt-1">Bạn chưa có đơn nào. Hãy bắt đầu hành trình mới!</p>
+						<p class="text-xs text-gray-400 mt-1">
+							@if ($totalOrders > 0)
+								{{ $totalPaidOrders }} đơn đã thanh toán, tổng chi tiêu {{ number_format($totalSpent, 0, ',', '.') }} đ
+							@else
+								Bạn chưa có đơn nào. Hãy bắt đầu hành trình mới!
+							@endif
+						</p>
 					</div>
 				</div>
 
@@ -54,9 +58,15 @@
 					<div>
 						<p class="text-sm text-gray-500">Tour sắp khởi hành</p>
 						<p class="text-2xl font-bold text-gray-900">
-							<span>0</span>
+							<span>{{ $upcomingCount }}</span>
 						</p>
-						<p class="text-xs text-gray-400 mt-1">Chưa có chuyến đi nào sắp diễn ra.</p>
+						<p class="text-xs text-gray-400 mt-1">
+							@if ($upcomingCount > 0)
+								Bạn có {{ $upcomingCount }} chuyến đi sắp diễn ra.
+							@else
+								Chưa có chuyến đi nào sắp diễn ra.
+							@endif
+						</p>
 					</div>
 				</div>
 
@@ -86,14 +96,55 @@
 						</a>
 					</div>
 
-					<div class="border border-dashed border-gray-200 rounded-xl p-6 text-center text-sm text-gray-500">
-						<p class="mb-2">Hiện tại bạn chưa có tour nào sắp khởi hành.</p>
-						<p class="mb-4">Hãy tìm kiếm một hành trình phù hợp cho kỳ nghỉ sắp tới.</p>
-						<a href="{{ route('tours') }}"
-							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
-							Bắt đầu đặt tour
-						</a>
-					</div>
+					@if ($upcomingBookings->isEmpty())
+						<div class="border border-dashed border-gray-200 rounded-xl p-6 text-center text-sm text-gray-500">
+							<p class="mb-2">Hiện tại bạn chưa có tour nào sắp khởi hành.</p>
+							<p class="mb-4">Hãy tìm kiếm một hành trình phù hợp cho kỳ nghỉ sắp tới.</p>
+							<a href="{{ route('tours') }}"
+								class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+								Bắt đầu đặt tour
+							</a>
+						</div>
+					@else
+						<div class="overflow-x-auto">
+							<table class="min-w-full text-sm">
+								<thead>
+									<tr class="text-left text-xs font-semibold text-gray-500 border-b border-gray-100">
+										<th class="py-2 pr-4">Tour</th>
+										<th class="py-2 pr-4">Ngày khởi hành</th>
+										<th class="py-2 pr-4">Mã đơn</th>
+										<th class="py-2 pr-4">Trạng thái</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-gray-100">
+									@foreach ($upcomingBookings as $booking)
+										@php
+											$tour = optional($booking->departure)->tour;
+											$order = $booking->order;
+										@endphp
+										<tr>
+											<td class="py-2 pr-4">
+												<div class="font-semibold text-gray-900 line-clamp-1">{{ $tour->title ?? 'Tour đã ẩn' }}</div>
+												<div class="text-xs text-gray-500">{{ $tour->destination_text ?? '' }}</div>
+											</td>
+											<td class="py-2 pr-4 text-xs text-gray-700">
+												{{ optional($booking->departure)->start_date ? \Carbon\Carbon::parse($booking->departure->start_date)->format('d/m/Y') : '-' }}
+											</td>
+											<td class="py-2 pr-4 text-xs text-gray-700">
+												{{ $order->order_code ?? '-' }}
+											</td>
+											<td class="py-2 pr-4 text-xs">
+												<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold
+														{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : 'bg-amber-50 text-amber-700') }}">
+													{{ ucfirst($booking->status) }}
+												</span>
+											</td>
+										</tr>
+									@endforeach
+								</tbody>
+							</table>
+						</div>
+					@endif
 				</div>
 
 				{{-- ACCOUNT INFO --}}

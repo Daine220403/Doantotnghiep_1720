@@ -513,13 +513,6 @@
                                 </div>
                             </div>
 
-                            {{-- note --}}
-                            <div class="text-xs text-gray-500 mt-1">
-                                <textarea name="note"
-                                    class="w-full border border-gray-300 rounded-lg p-3 focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none"
-                                    rows="4"></textarea>
-                            </div>
-
                             <!-- SỐ LƯỢNG -->
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
@@ -532,6 +525,22 @@
                                     <input id="childQty" type="number" name="children" min="0" value="0"
                                         class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
                                 </div>
+                            </div>
+
+                            <!-- THÔNG TIN HÀNH KHÁCH -->
+                            <div class="mt-2 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-semibold text-gray-700">Thông tin hành khách</span>
+                                    <span class="text-xs text-gray-500">Tự động sinh theo số lượng người lớn/trẻ em</span>
+                                </div>
+                                <div id="passengerContainer" class="space-y-3"></div>
+                            </div>
+
+                            {{-- note --}}
+                            <div class="text-xs text-gray-500 mt-1">
+                                <textarea name="note"
+                                    class="w-full border border-gray-300 rounded-lg p-3 focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none"
+                                    rows="4" placeholder="Ghi chú thêm cho booking (nếu có)"></textarea>
                             </div>
 
                             <!-- TẠM TÍNH -->
@@ -577,11 +586,92 @@
                 const childPriceEl = document.getElementById('childPrice');
                 const totalPriceEl = document.getElementById('totalPrice');
                 const meetingPointEl = document.getElementById('meetingPointValue');
+                const passengerContainer = document.getElementById('passengerContainer');
 
                 const defaultMeetingPoint = @json($tour->departure_location ?? 'Đang cập nhật');
 
                 function formatVND(number) {
                     return new Intl.NumberFormat('vi-VN').format(number) + ' VND';
+                }
+
+                function renderPassengers() {
+                    if (!passengerContainer) return;
+
+                    const adults = parseInt(adultQty.value) || 0;
+                    const children = parseInt(childQty.value) || 0;
+
+                    passengerContainer.innerHTML = '';
+
+                    let index = 0;
+                    let displayIndex = 1;
+
+                    for (let i = 0; i < adults; i++) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
+                        wrapper.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Người lớn</div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label class="text-xs text-gray-600">Họ tên</label>
+                                    <input type="text" name="passengers[${index}][full_name]" required
+                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-600">Giới tính</span>
+                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
+                                            <span>Nam</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
+                                            <span>Nữ</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="passengers[${index}][passenger_type]" value="adult">
+                            </div>
+                        `;
+                        passengerContainer.appendChild(wrapper);
+                        index++;
+                        displayIndex++;
+                    }
+
+                    for (let i = 0; i < children; i++) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
+                        wrapper.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Trẻ em</div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label class="text-xs text-gray-600">Họ tên</label>
+                                    <input type="text" name="passengers[${index}][full_name]" required
+                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-600">Giới tính</span>
+                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
+                                            <span>Nam</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
+                                            <span>Nữ</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="passengers[${index}][passenger_type]" value="child">
+                            </div>
+                        `;
+                        passengerContainer.appendChild(wrapper);
+                        index++;
+                        displayIndex++;
+                    }
                 }
 
                 function updatePrice() {
@@ -613,6 +703,8 @@
                         const meeting = selected.dataset.meeting || defaultMeetingPoint;
                         meetingPointEl.innerText = meeting;
                     }
+
+                    renderPassengers();
                 }
 
                 scheduleSelect.addEventListener('change', updatePrice);

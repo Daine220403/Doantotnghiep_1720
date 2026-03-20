@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\tour_images;
+use App\Models\bookings;
+use App\Models\tour_departures;
 
 class Tours extends Model
 {
@@ -45,5 +47,17 @@ class Tours extends Model
     public function reviews()
     {
         return $this->hasMany(reviews::class, 'tour_id');
+    }
+
+    public function bookings()
+    {
+        return $this->hasManyThrough( 
+            bookings::class,
+            tour_departures::class,
+            'tour_id',      // Foreign key on tour_departures table...
+            'departure_id', // Foreign key on bookings table...
+            'id',           // Local key on tours table...
+            'id'            // Local key on tour_departures table...
+        );
     }
 }

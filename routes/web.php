@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\signin_upController;
 use App\Http\Controllers\indexController;
 use App\Http\Controllers\paymentController;
+use App\Http\Controllers\dashboardController;
 
 Route::prefix('/')->group(function () {
     Route::get('/', [indexController::class, 'index'])->name('home'); 
@@ -30,9 +31,9 @@ Route::post('/vnpay_payment', [paymentController::class, 'vnpay_payment'])->name
 // URL VNPay redirect về sau khi thanh toán
 Route::get('/vnpay/return', [paymentController::class, 'vnpayReturn'])->name('vnpay.return');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+Route::get('/dashboard', [dashboardController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

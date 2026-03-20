@@ -5,6 +5,7 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\bookings;
+use App\Models\Tours;
 
 class bookingController extends Controller
 {
@@ -42,4 +43,28 @@ class bookingController extends Controller
 
         return redirect()->back()->with('success', 'Cập nhật trạng thái booking thành công.');
     }
+
+    // Danh sách tour để xem khách đã booking
+    public function tourCustomerIndex()
+    {
+        $tours = Tours::withCount('bookings')
+            ->with('departures')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.mana_booking.tour_index', compact('tours'));
+    }
+
+    // Chi tiết 1 tour: thông tin tour + danh sách khách đã booking
+    public function tourCustomerShow($id)
+    {
+        $tour = Tours::with([
+            'departures.bookings.order',
+            'departures.bookings.passengers',
+        ])->findOrFail($id);
+
+        return view('admin.mana_booking.tour_show', compact('tour'));
+    }
+
+
 }

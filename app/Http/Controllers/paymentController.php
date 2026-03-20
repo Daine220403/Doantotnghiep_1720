@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Tours;
-use App\Models\Bookings;
+use App\Models\bookings;
+use App\Models\booking_passengers;
 use App\Models\orders;
 use App\Models\order_details;
 use App\Models\tour_departures;
@@ -25,14 +26,22 @@ class paymentController extends Controller
             'schedule_id' => ['required', 'exists:tour_departures,id'],
             'adults' => ['required', 'integer', 'min:1'],
             'children' => ['nullable', 'integer', 'min:0'],
+            'note' => ['nullable', 'string'],
+            'passengers' => ['required', 'array'],
+            'passengers.*.full_name' => ['required', 'string', 'max:150'],
+            'passengers.*.passenger_type' => ['required', 'in:adult,child,infant'],
+            'passengers.*.gender' => ['nullable', 'in:male,female,other'],
+            'passengers.*.dob' => ['nullable', 'date'],
+            'passengers.*.id_no' => ['nullable', 'string', 'max:50'],
+            'passengers.*.special_request' => ['nullable', 'string'],
         ], [], [
             'tour_id' => 'tour',
             'schedule_id' => 'lịch khởi hành',
             'adults' => 'số lượng người lớn',
             'children' => 'số lượng trẻ em',
-            'contact_name' => 'họ tên liên hệ',
-            'contact_phone' => 'số điện thoại liên hệ',
-            'contact_email' => 'email liên hệ',
+            'note' => 'ghi chú',
+            'passengers' => 'danh sách hành khách',
+            'passengers.*.full_name' => 'tên hành khách',
         ]);
 
         $contact_name = Auth::user()->name ?? 'Khách hàng';
@@ -59,6 +68,13 @@ class paymentController extends Controller
         $children = (int) ($data['children'] ?? 0);
         $totalGuests = $adults + $children;
 
+        $passengersInput = $request->input('passengers', []);
+        if (count($passengersInput) !== $totalGuests) {
+            return back()->withErrors([
+                'passengers' => 'Số lượng hành khách không khớp với số người lớn + trẻ em',
+            ])->withInput();
+        }
+
         $remaining = $departure->capacity_total - $departure->capacity_booked;
         if ($totalGuests > $remaining) {
             return back()->withErrors([
@@ -73,8 +89,9 @@ class paymentController extends Controller
         $discountTotal = 0;
         $totalAmount = $subtotal - $discountTotal;
 
+        // Mã đơn ngắn gọn hơn: OD + yymmddHis (không thêm random)
         $order = orders::create([
-            'order_code' => 'OD' . now()->format('YmdHis') . rand(100, 999),
+            'order_code' => 'OD' . now()->format('ymdHis'),
             'user_id' => Auth::id(),
             'contact_name' => $contact_name,
             'contact_phone' => $contact_phone,
@@ -85,12 +102,24 @@ class paymentController extends Controller
             'status' => 'pending',
         ]);
 
-        Bookings::create([
+        $booking = bookings::create([
             'order_id' => $order->id,
             'departure_id' => $departure->id,
-            'note' => null,
+            'note' => $data['note'] ?? null,
             'status' => 'pending',
         ]);
+
+        foreach ($passengersInput as $p) {
+            booking_passengers::create([
+                'booking_id' => $booking->id,
+                'full_name' => $p['full_name'],
+                'gender' => $p['gender'] ?? null,
+                'dob' => $p['dob'] ?? null,
+                'id_no' => $p['id_no'] ?? null,
+                'passenger_type' => $p['passenger_type'] ?? 'adult',
+                'special_request' => $p['special_request'] ?? null,
+            ]);
+        }
 
         if ($adults > 0) {
             order_details::create([
@@ -276,7 +305,7 @@ class paymentController extends Controller
             $order = orders::where('order_code', $orderCode)->first();
 
             if ($order) {
-                $booking = Bookings::where('order_id', $order->id)->first();
+                $booking = bookings::where('order_id', $order->id)->first();
                 $payment = payments::where('order_id', $order->id)
                     ->where('method', 'vnpay')
                     ->latest()

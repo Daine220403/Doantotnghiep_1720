@@ -54,7 +54,7 @@
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Chức năng booking:</h6>
                 <a class="collapse-item" href="{{ route('admin.mana-booking.index') }}">Danh sách booking</a>
-                <a class="collapse-item" href="#">Danh sách khách hàng</a>
+                <a class="collapse-item" href="{{ route('admin.customer-tour.index') }}">Danh sách khách hàng</a>
             </div>
         </div>
     </li>

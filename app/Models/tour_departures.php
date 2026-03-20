@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\bookings;
 
 class tour_departures extends Model
 {
@@ -23,5 +24,10 @@ class tour_departures extends Model
     public function tour()
     {
         return $this->belongsTo(Tours::class, 'tour_id');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(bookings::class, 'departure_id');
     }
 }
