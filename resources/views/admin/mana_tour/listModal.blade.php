@@ -337,6 +337,20 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
+                                <label>Phương tiện</label>
+                                <select name="transport" class="form-control">
+                                    <option value="bus" {{ $tour->transport == 'bus' ? 'selected' : '' }}>
+                                        Xe khách</option>
+                                    <option value="plane" {{ $tour->transport == 'plane' ? 'selected' : '' }}>
+                                        Máy bay</option>
+                                    <option value="train" {{ $tour->transport == 'train' ? 'selected' : '' }}>
+                                        Tàu hỏa</option>
+                                    <option value="car" {{ $tour->transport == 'car' ? 'selected' : '' }}>
+                                        Ô tô</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
                                 <label>Giá từ</label>
                                 <input type="number" name="base_price_from" class="form-control"
                                     value="{{ $tour->base_price_from }}">

@@ -310,7 +310,7 @@ class toursController extends Controller
             'images.*.mimes' => 'Ảnh phải có định dạng jpg, jpeg, png hoặc webp.',
             'images.*.max' => 'Mỗi ảnh không được vượt quá 2MB.',
         ]);
-
+        // dd($request->all());
         // 1. Cập nhật tour
         $tour->update([
             'title' => $request->title,
@@ -369,28 +369,54 @@ class toursController extends Controller
             ]);
         }
 
-        // 4. Departures: xoá cũ và thêm lại
-        // lưu ý: nếu có lịch khởi hành nào đã được booking thì không được xoá mà phải cập nhật, nhưng ở đây để đơn giản nên sẽ xoá hết và thêm lại
-        //nếu đã có booking thì sẽ không cho xoá 
-        $hasBookedDepartures = tour_departures::where('tour_id', $tour->id)->where('capacity_booked', '>', 0)->exists();
-        if ($hasBookedDepartures) {
-            return redirect()->route('admin.mana-tour.index')->with('error', 'Không thể cập nhật tour vì có lịch khởi hành đã được đặt chỗ.');
+        // 4. Departures: cập nhật từng lịch, không xoá những lịch đã có booking
+        $existingDepartures = tour_departures::where('tour_id', $tour->id)->get()->keyBy('id'); // lấy danh sách lịch khởi hành hiện có của tour, keyBy id để dễ truy cập
+
+        $submittedDepartures = $request->departures;  // danh sách lịch khởi hành gửi từ form
+        $submittedIds = collect($submittedDepartures)->pluck('id')->filter()->all(); // lấy danh sách id của các lịch khởi hành đã tồn tại (có id) từ form để so sánh với existingDepartures
+        // dd($submittedDepartures,$submittedIds);
+        // Cập nhật hoặc tạo mới các lịch khởi hành gửi từ form
+        foreach ($submittedDepartures as $departure) {
+            $departureId = $departure['id'] ?? null;
+
+            if ($departureId && isset($existingDepartures[$departureId])) { // lịch đã tồn tại, cập nhật
+                $model = $existingDepartures[$departureId];
+
+                $model->update([
+                    'start_date' => $departure['start_date'],
+                    'end_date' => $departure['end_date'],
+                    'meeting_point' => $departure['meeting_point'],
+                    'capacity_total' => $departure['capacity_total'],
+                    'capacity_booked' => $departure['capacity_booked'] ?? $model->capacity_booked,
+                    'price_adult' => $departure['price_adult'],
+                    'price_child' => $departure['price_child'] ?? 0,
+                    'status' => $departure['status'],
+                ]);
+            } else {
+                // lịch mới thêm
+                tour_departures::create([
+                    'tour_id' => $tour->id,
+                    'start_date' => $departure['start_date'],
+                    'end_date' => $departure['end_date'],
+                    'meeting_point' => $departure['meeting_point'],
+                    'capacity_total' => $departure['capacity_total'],
+                    'capacity_booked' => $departure['capacity_booked'] ?? 0,
+                    'price_adult' => $departure['price_adult'],
+                    'price_child' => $departure['price_child'] ?? 0,
+                    'status' => $departure['status'],
+                ]);
+            }
         }
 
-        tour_departures::where('tour_id', $tour->id)->delete();
-
-        foreach ($request->departures as $departure) {
-            tour_departures::create([
-                'tour_id' => $tour->id,
-                'start_date' => $departure['start_date'],
-                'end_date' => $departure['end_date'],
-                'meeting_point' => $departure['meeting_point'],
-                'capacity_total' => $departure['capacity_total'],
-                'capacity_booked' => $departure['capacity_booked'] ?? 0,
-                'price_adult' => $departure['price_adult'],
-                'price_child' => $departure['price_child'] ?? 0,
-                'status' => $departure['status'],
-            ]);
+        // Xoá những lịch không còn trong form và chưa có booking
+        foreach ($existingDepartures as $existing) {
+            if (!in_array($existing->id, $submittedIds)) {
+                if ($existing->capacity_booked > 0) {
+                    // đã có booking thì giữ lại, không xoá
+                    continue;
+                }
+                $existing->delete();
+            }
         }
 
         // 5. Images: nếu upload ảnh mới thì xoá ảnh cũ và lưu lại
