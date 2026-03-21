@@ -182,7 +182,7 @@
                         <p class="mb-0 text-muted small">Chưa có khách booking cho lịch khởi hành này.</p>
                     @else
                         <div class="table-responsive">
-                            <table id="dataTable" class="table table-bordered table-hover table-sm align-middle" width="100%" cellspacing="0">
+                            <table class="table table-bordered table-hover table-sm align-middle" width="100%" cellspacing="0">
                                 <thead class="bg-light">
                                     <tr class="text-center">
                                         <th>#</th>

@@ -1,14 +1,25 @@
 <?php
+
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\toursController;
 use App\Http\Controllers\admin\bookingController;
+use App\Http\Controllers\admin\TourAssignmentController;
+use App\Http\Controllers\admin\guideController;
 
-Route::prefix('/admin')->middleware(['auth','admin'])->group(function () {
+Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', function () {
         return view('admin.index');
     })->name('admin.index');
 
+    // Quản lý Hướng dẫn viên
+    Route::get('/guides', [guideController::class, 'index'])->name('admin.mana-guide.index');
+    Route::get('/guides/{guide}/assign-tours', [guideController::class, 'showTours'])->name('admin.mana-guide.tours');
+    Route::get('/guides/{guide}/tours/{tour}/departures', [guideController::class, 'showDepartures'])->name('admin.mana-guide.tour-departures');
+    // Phân công Hướng dẫn viên cho lịch khởi hành
+    Route::post('/departures/{departure}/assign-guide', [TourAssignmentController::class, 'assign'])
+        ->name('admin.departures.assign-guide');
+        
     Route::prefix('/tours')->group(function () {
         Route::get('/', [toursController::class, 'index'])->name('admin.mana-tour.index'); // danh sách tour || done
         Route::get('/create', [toursController::class, 'create'])->name('admin.mana-tour.create'); // form tạo tour || done
@@ -32,5 +43,4 @@ Route::prefix('/admin')->middleware(['auth','admin'])->group(function () {
     // Chốt đoàn cho 1 lịch khởi hành
     Route::post('/departures/{departure}/confirm', [toursController::class, 'confirmDeparture'])
         ->name('admin.departures.confirm');
-
 });

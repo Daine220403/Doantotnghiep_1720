@@ -10,6 +10,7 @@ use App\Models\tour_itineraries;
 use App\Models\tour_departures;
 use App\Models\tour_policies;
 use App\Models\bookings;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,10 +21,16 @@ class toursController extends Controller
         $tours = Tours::with([
             'images',
             'itineraries',
-            'departures',
+            'departures.assignment.guide',
             'policies'
         ])->latest()->get();
-        return view('admin.mana_tour.index', compact('tours'));
+
+        $guides = User::where('role', 'tour_guide')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.mana_tour.index', compact('tours', 'guides'));
     }
 
     public function create()

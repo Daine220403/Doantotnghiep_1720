@@ -208,6 +208,7 @@
                                             <th class="text-right">Giá NL</th>
                                             <th class="text-right">Giá TE</th>
                                             <th class="text-center">Trạng thái</th>
+                                            <th>Hướng dẫn viên</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -227,10 +228,23 @@
                                                 <td class="text-center">
                                                     <span class="badge badge-success">{{ $departure->status }}</span>
                                                 </td>
+                                                <td>
+                                                    @php
+                                                        $assignment = $departure->assignment;
+                                                    @endphp
+                                                    @if ($assignment && $assignment->guide)
+                                                        <span class="font-weight-bold">{{ $assignment->guide->name }}</span>
+                                                        @if ($assignment->guide->phone)
+                                                            <small class="text-muted d-block">{{ $assignment->guide->phone }}</small>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-muted">Chưa phân công</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="8" class="text-center text-muted">Chưa có lịch khởi
+                                                <td colspan="9" class="text-center text-muted">Chưa có lịch khởi
                                                     hành</td>
                                             </tr>
                                         @endforelse

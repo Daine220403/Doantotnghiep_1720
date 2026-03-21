@@ -70,8 +70,7 @@
         <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
-                <a class="collapse-item" href="#">Danh sách HDV</a>
-                <a class="collapse-item" href="#">Phân công HDV</a>
+                <a class="collapse-item" href="{{ route('admin.mana-guide.index') }}">Danh sách HDV</a>
             </div>
         </div>
     </li>
