@@ -31,7 +31,7 @@
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
             aria-expanded="true" aria-controls="collapseTwo">
-            <i class="fas fa-hands-helping"></i>
+            <i class="fas fa-plane"></i>
             <span>Tours</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
@@ -44,17 +44,18 @@
     </li>
 
     <!-- Nav Item - Service Menu -->
+    <!-- Nav Item - Booking Menu -->
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
             aria-expanded="true" aria-controls="collapseUtilities">
-            <i class="fab fa-servicestack"></i>
-            <span>Booking</span>
+            <i class="fas fa-ticket-alt"></i>
+            <span>Đặt tour & khách</span>
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng booking:</h6>
-                <a class="collapse-item" href="{{ route('admin.mana-booking.index') }}">Danh sách booking</a>
-                <a class="collapse-item" href="{{ route('admin.customer-tour.index') }}">Danh sách khách hàng</a>
+                <h6 class="collapse-header">Quản lý đặt tour:</h6>
+                <a class="collapse-item" href="{{ route('admin.mana-booking.index') }}">Đơn đặt tour</a>
+                <a class="collapse-item" href="{{ route('admin.customer-tour.index') }}">Khách theo tour</a>
             </div>
         </div>
     </li>

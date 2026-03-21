@@ -9,6 +9,7 @@ use App\Models\tour_images;
 use App\Models\tour_itineraries;
 use App\Models\tour_departures;
 use App\Models\tour_policies;
+use App\Models\bookings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -69,7 +70,7 @@ class toursController extends Controller
             'departures.*.capacity_booked' => 'nullable|integer|min:0',
             'departures.*.price_adult' => 'required|numeric|min:0',
             'departures.*.price_child' => 'nullable|numeric|min:0',
-            'departures.*.status' => 'required|in:open,closed,full,cancelled',
+            'departures.*.status' => 'required|in:draft,open,closed,sold_out,cancelled,confirmed,completed',
 
             // images
             'images' => 'nullable|array',
@@ -469,5 +470,44 @@ class toursController extends Controller
         $tour->delete();
 
         return redirect()->route('admin.mana-tour.index')->with('success', 'Xóa tour thành công!');
+    }
+
+    public function confirmDeparture(tour_departures $departure)
+    {
+        // kiểm tra lịch tối thiểu để chốt đoàn, ít nhất phải 1 nữa tổng số chỗ
+        if ($departure->capacity_booked < ceil($departure->capacity_total / 2)) {
+            return back()->with('error', 'Không thể chốt đoàn cho lịch khởi hành này vì chưa đủ số lượng khách tối thiểu.');
+        }
+        if (!in_array($departure->status, ['open', 'sold_out'])) {
+            return back()->with('error', 'Chỉ có thể chốt đoàn với lịch đang mở hoặc sắp hết chỗ.');
+        }
+
+        if ($departure->start_date < now()->toDateString()) {
+            return back()->with('error', 'Không thể chốt đoàn cho lịch đã quá hạn khởi hành.');
+        }
+
+        // kiểm tra đã thanh toán hết chưa
+        $unpaidBookings = bookings::where('departure_id', $departure->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->whereHas('order', function ($q) {
+                $q->where('status', '!=', 'paid');
+            })
+            ->count();
+        if ($unpaidBookings > 0) {
+            return back()->with('error', 'Không thể chốt đoàn vì còn ' . $unpaidBookings . ' booking chưa thanh toán.');
+        }
+        // cập nhật trạng thái chốt đoàn cho lịch
+        $departure->status = 'confirmed';
+        $departure->save();
+
+        // cập nhật trạng thái booking tương ứng sang confirmed (chỉ với booking chưa hủy/hoàn tất)
+        bookings::where('departure_id', $departure->id)
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereHas('order', function ($q) {
+                $q->where('status', 'paid');
+            })
+            ->update(['status' => 'confirmed']);
+
+        return back()->with('success', 'Đã chốt đoàn cho lịch khởi hành này.');
     }
 }

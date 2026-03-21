@@ -118,7 +118,7 @@
                                         <th class="py-2 pr-4">Ngày khởi hành</th>
                                         <th class="py-2 pr-4">Mã đơn</th>
                                         <th class="py-2 pr-4">Trạng thái</th>
-                                        <th class="py-2 pr-4">Thao tác</th>
+                                        <th class="py-2 pr-4 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
@@ -143,32 +143,35 @@
                                             <td class="py-2 pr-4 text-xs">
                                                 <span
                                                     class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold
-												{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : 'bg-amber-50 text-amber-700') }}">
+										{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : 'bg-amber-50 text-amber-700') }}">
                                                     {{ ucfirst($booking->status) }}
                                                 </span>
                                             </td>
-                                            <td class="py-2 pr-4 text-xs">
-                                                @if ($booking->status === 'pending' && $order)
-                                                    <div class="flex flex-wrap gap-2">
+                                            <td class="py-2 pl-4 pr-0 text-xs text-right">
+                                                <div class="flex justify-end gap-2">
+                                                    @if ($booking->status === 'pending' && isset($order) && in_array($order->status, ['pending', 'failed']))
                                                         <form action="{{ route('dashboard.bookings.pay', $booking->id) }}" method="POST">
                                                             @csrf
                                                             <button type="submit"
-                                                                class="inline-flex items-center px-2 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
+                                                                class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
                                                                 Thanh toán
                                                             </button>
                                                         </form>
                                                         <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
-                                                            onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn này?');">
+                                                            onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
                                                             @csrf
                                                             <button type="submit"
-                                                                class="inline-flex items-center px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-[11px] font-semibold hover:bg-rose-100">
+                                                                class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-50">
                                                                 Hủy
                                                             </button>
                                                         </form>
-                                                    </div>
-                                                @else
-                                                    <span class="text-gray-400 text-[11px]">-</span>
-                                                @endif
+                                                    @endif
+
+                                                    <a href="{{ route('dashboard.bookings.show', $booking->id) }}"
+                                                        class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-50">
+                                                        Xem hóa đơn
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -249,7 +252,7 @@
                                     <th class="py-2 pr-4">Tổng tiền</th>
                                     <th class="py-2 pr-4">Trạng thái</th>
                                     <th class="py-2 pr-4">Ngày đặt</th>
-                                    <th class="py-2 pr-4">Thao tác</th>
+                                    <th class="py-2 pr-4 text-right">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -276,35 +279,38 @@
                                         <td class="py-2 pr-4 text-xs">
                                             <span
                                                 class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold
-												{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : ($booking->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'cancelled' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'))) }}">
+													{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : ($booking->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'cancelled' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'))) }}">
                                                 {{ ucfirst($booking->status) }}
                                             </span>
                                         </td>
                                         <td class="py-2 pr-4 text-xs text-gray-700">
                                             {{ optional($booking->created_at)->format('d/m/Y H:i') ?? '-' }}
                                         </td>
-                                        <td class="py-2 pr-4 text-xs">
-                                            @if ($booking->status === 'pending' && $order)
-                                                <div class="flex flex-wrap gap-2">
+                                        <td class="py-2 pl-4 pr-0 text-xs text-right">
+                                            <div class="flex justify-end gap-2">
+                                                @if ($booking->status === 'pending' && isset($order) && in_array($order->status, ['pending', 'failed']))
                                                     <form action="{{ route('dashboard.bookings.pay', $booking->id) }}" method="POST">
                                                         @csrf
                                                         <button type="submit"
-                                                            class="inline-flex items-center px-2 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
+                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
                                                             Thanh toán
                                                         </button>
                                                     </form>
                                                     <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
-                                                        onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn này?');">
+                                                        onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
                                                         @csrf
                                                         <button type="submit"
-                                                            class="inline-flex items-center px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-[11px] font-semibold hover:bg-rose-100">
+                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-50">
                                                             Hủy
                                                         </button>
                                                     </form>
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400 text-[11px]">-</span>
-                                            @endif
+                                                @endif
+
+                                                <a href="{{ route('dashboard.bookings.show', $booking->id) }}"
+                                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-50">
+                                                    Xem hóa đơn
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

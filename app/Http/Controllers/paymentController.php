@@ -63,7 +63,7 @@ class paymentController extends Controller
             return back()->withErrors(['schedule_id' => 'Lịch khởi hành đã quá hạn'])->withInput();
         }
 
-        if (!in_array($departure->status, ['open', 'sold_out'])) {
+        if (!in_array($departure->status, ['open', 'sold_out', 'confirmed'])) {
             return back()->withErrors(['schedule_id' => 'Lịch khởi hành không khả dụng'])->withInput();
         }
 

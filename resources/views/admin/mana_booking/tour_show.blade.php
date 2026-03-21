@@ -143,9 +143,38 @@
                         {{ \Carbon\Carbon::parse($departure->start_date)->format('d/m/Y') }} -
                         {{ \Carbon\Carbon::parse($departure->end_date)->format('d/m/Y') }}
                     </h6>
-                    <div class="small text-muted">
-                        Số chỗ: {{ $departure->capacity_booked }} / {{ $departure->capacity_total }}
-                        | Doanh thu: {{ number_format($currentRevenue, 0, ',', '.') }} đ
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="small text-muted mr-3">
+                            Số chỗ: {{ $departure->capacity_booked }} / {{ $departure->capacity_total }}
+                            | Doanh thu: {{ number_format($currentRevenue, 0, ',', '.') }} đ
+                        </div>
+                        <div>
+                            @php
+                                $statusLabels = [
+                                    'draft' => 'Nháp',
+                                    'open' => 'Đang mở',
+                                    'closed' => 'Đã đóng',
+                                    'sold_out' => 'Hết chỗ',
+                                    'cancelled' => 'Đã hủy',
+                                    'confirmed' => 'Đã chốt đoàn',
+                                    'completed' => 'Hoàn tất',
+                                ];
+                                $departureStatus = $departure->status;
+                            @endphp
+                            <span class="badge badge-pill badge-info mr-2">
+                                {{ $statusLabels[$departureStatus] ?? $departureStatus }}
+                            </span>
+
+                            @if(in_array($departure->status, ['open', 'sold_out']) && $departure->start_date >= now()->toDateString())
+                                <form action="{{ route('admin.departures.confirm', $departure->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-primary"
+                                        onclick="return confirm('Bạn có chắc chắn muốn chốt đoàn cho lịch khởi hành này?');">
+                                        Chốt đoàn
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -153,7 +182,7 @@
                         <p class="mb-0 text-muted small">Chưa có khách booking cho lịch khởi hành này.</p>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover table-sm align-middle" width="100%" cellspacing="0">
+                            <table id="dataTable" class="table table-bordered table-hover table-sm align-middle" width="100%" cellspacing="0">
                                 <thead class="bg-light">
                                     <tr class="text-center">
                                         <th>#</th>

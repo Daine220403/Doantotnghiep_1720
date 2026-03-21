@@ -235,7 +235,7 @@ class indexController extends Controller
         // Danh sách lịch khởi hành (chỉ lấy các lịch còn mở / chưa quá hạn)
         $schedules = $tour->departures
             ->where('start_date', '>=', now()->toDateString())
-            ->whereIn('status', ['open', 'sold_out'])
+            ->whereIn('status', ['open', 'sold_out', 'confirmed'])
             ->sortBy('start_date')
             ->map(function ($dep) {
                 $seatLeft = max($dep->capacity_total - $dep->capacity_booked, 0); // đảm bảo không âm

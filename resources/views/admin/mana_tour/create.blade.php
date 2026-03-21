@@ -398,10 +398,13 @@
                         <div class="col-md-12 mb-3">
                             <label>Trạng thái</label>
                             <select name="departures[${index}][status]" class="form-control">
+                                <option value="draft">draft</option>
                                 <option value="open">open</option>
                                 <option value="closed">closed</option>
-                                <option value="full">full</option>
+                                <option value="sold_out">sold_out</option>
                                 <option value="cancelled">cancelled</option>
+                                <option value="confirmed">confirmed</option>
+                                <option value="completed">completed</option>
                             </select>
                         </div>
                     </div>

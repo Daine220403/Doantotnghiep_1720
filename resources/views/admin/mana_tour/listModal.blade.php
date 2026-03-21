@@ -551,18 +551,14 @@
 
                                         <div class="col-md-12 mb-3">
                                             <label>Trạng thái</label>
-                                            <select name="departures[{{ $index }}][status]"
-                                                class="form-control">
-                                                <option value="open"
-                                                    {{ $departure->status == 'open' ? 'selected' : '' }}>open</option>
-                                                <option value="closed"
-                                                    {{ $departure->status == 'closed' ? 'selected' : '' }}>closed
-                                                </option>
-                                                <option value="full"
-                                                    {{ $departure->status == 'full' ? 'selected' : '' }}>full</option>
-                                                <option value="cancelled"
-                                                    {{ $departure->status == 'cancelled' ? 'selected' : '' }}>cancelled
-                                                </option>
+                                            <select name="departures[{{ $index }}][status]" class="form-control">
+                                                <option value="draft" {{ $departure->status == 'draft' ? 'selected' : '' }}>draft</option>
+                                                <option value="open" {{ $departure->status == 'open' ? 'selected' : '' }}>open</option>
+                                                <option value="closed" {{ $departure->status == 'closed' ? 'selected' : '' }}>closed</option>
+                                                <option value="sold_out" {{ $departure->status == 'sold_out' ? 'selected' : '' }}>sold_out</option>
+                                                <option value="cancelled" {{ $departure->status == 'cancelled' ? 'selected' : '' }}>cancelled</option>
+                                                <option value="confirmed" {{ $departure->status == 'confirmed' ? 'selected' : '' }}>confirmed</option>
+                                                <option value="completed" {{ $departure->status == 'completed' ? 'selected' : '' }}>completed</option>
                                             </select>
                                         </div>
                                     </div>
@@ -681,10 +677,13 @@
                         <div class="col-md-12 mb-3">
                             <label>Trạng thái</label>
                             <select name="departures[${index}][status]" class="form-control">
+                                <option value="draft">draft</option>
                                 <option value="open">open</option>
                                 <option value="closed">closed</option>
-                                <option value="full">full</option>
+                                <option value="sold_out">sold_out</option>
                                 <option value="cancelled">cancelled</option>
+                                <option value="confirmed">confirmed</option>
+                                <option value="completed">completed</option>
                             </select>
                         </div>
                     </div>

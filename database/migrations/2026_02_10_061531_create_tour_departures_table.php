@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->decimal('price_adult', 12, 2)->default(0);
             $table->decimal('price_child', 12, 2)->default(0);
 
-            $table->enum('status', ['draft', 'open', 'closed', 'sold_out', 'cancelled'])
+            $table->enum('status', ['draft', 'open', 'closed', 'sold_out', 'cancelled','confirmed','completed'])
                   ->default('draft')->index();
 
             $table->timestamps();

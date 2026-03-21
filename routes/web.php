@@ -36,6 +36,9 @@ Route::get('/dashboard', [dashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard/bookings/{booking}', [dashboardController::class, 'showBooking'])
+        ->name('dashboard.bookings.show');
+
     Route::post('/dashboard/bookings/{booking}/pay', [paymentController::class, 'payBooking']) // Thanh toán cho booking cụ thể
         ->name('dashboard.bookings.pay');
 

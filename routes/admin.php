@@ -29,4 +29,8 @@ Route::prefix('/admin')->middleware(['auth','admin'])->group(function () {
         Route::get('/{id}', [bookingController::class, 'tourCustomerShow'])->name('admin.customer-tour.show'); // chi tiết khách theo tour
     });
 
+    // Chốt đoàn cho 1 lịch khởi hành
+    Route::post('/departures/{departure}/confirm', [toursController::class, 'confirmDeparture'])
+        ->name('admin.departures.confirm');
+
 });

@@ -14,7 +14,7 @@
         <div class="card shadow mb-4">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover table-sm align-middle" width="100%" cellspacing="0">
+                    <table id="dataTable" class="table table-sm table-bordered table-hover align-middle" width="100%" cellspacing="0">
                         <thead class="bg-light">
                             <tr class="text-center">
                                 <th>#</th>
@@ -23,7 +23,6 @@
                                 <th>Điểm đi</th>
                                 <th>Điểm đến</th>
                                 <th>Thời gian</th>
-                                <th>Số chỗ đã đặt / Tổng chỗ</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
@@ -38,17 +37,6 @@
                                     <td class="text-left">{{ $tour->destination_text }}</td>
                                     <td class="text-center">
                                         {{ $tour->duration_days }}N{{ $tour->duration_nights }}Đ
-                                    </td>
-                                    <td class="text-center">
-                                        @php
-                                            $totalCapacity = $tour->departures->sum('capacity_total');
-                                            $totalBooked = $tour->departures->sum('capacity_booked');
-                                        @endphp
-                                        @if($totalCapacity > 0)
-                                            <span class="badge badge-primary">{{ $totalBooked }} / {{ $totalCapacity }}</span>
-                                        @else
-                                            <span class="text-muted small">Chưa có lịch khởi hành</span>
-                                        @endif
                                     </td>
                                     <td class="text-center">
                                         <a href="{{ route('admin.customer-tour.show', $tour->id) }}" class="btn btn-sm btn-primary">

@@ -60,6 +60,26 @@ class dashboardController extends Controller
         ));
     }
 
+    public function showBooking($bookingId)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('signin');
+        }
+
+        $booking = bookings::with(['order', 'departure.tour', 'passengers'])
+            ->where('id', $bookingId)
+            ->whereHas('order', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->firstOrFail();
+
+        return view('bookings.show', [
+            'user' => $user,
+            'booking' => $booking,
+        ]);
+    }
+
     public function cancelBooking($bookingId)
     {
         $user = Auth::user();
@@ -82,7 +102,7 @@ class dashboardController extends Controller
                 ->with('error', 'Đơn không hợp lệ để hủy');
         }
 
-        DB::transaction(function () use ($booking, $order) {
+        DB::transaction(function () use ($booking, $order) { // đảm bảo tính toàn vẹn dữ liệu khi cập nhật nhiều bảng
             $order->status = 'cancelled';
             $order->save();
 
