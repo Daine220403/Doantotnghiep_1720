@@ -19,6 +19,9 @@ class tour_departures extends Model
         'capacity_booked',
         'price_adult',
         'price_child',
+        'price_infant',
+        'price_youth',
+        'single_room_surcharge',
         'status',
     ];
 

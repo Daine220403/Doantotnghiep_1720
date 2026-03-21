@@ -77,6 +77,9 @@ class toursController extends Controller
             'departures.*.capacity_booked' => 'nullable|integer|min:0',
             'departures.*.price_adult' => 'required|numeric|min:0',
             'departures.*.price_child' => 'nullable|numeric|min:0',
+            'departures.*.price_infant' => 'nullable|numeric|min:0',
+            'departures.*.price_youth' => 'nullable|numeric|min:0',
+            'departures.*.single_room_surcharge' => 'nullable|numeric|min:0',
             'departures.*.status' => 'required|in:draft,open,closed,sold_out,cancelled,confirmed,completed',
 
             // images
@@ -125,6 +128,9 @@ class toursController extends Controller
             'departures.*.price_adult.required' => 'Vui lòng nhập giá người lớn.',
             'departures.*.price_adult.numeric' => 'Giá người lớn phải là số.',
             'departures.*.price_child.numeric' => 'Giá trẻ em phải là số.',
+            'departures.*.price_infant.numeric' => 'Giá trẻ nhỏ phải là số.',
+            'departures.*.price_youth.numeric' => 'Giá em bé phải là số.',
+            'departures.*.single_room_surcharge.numeric' => 'Phụ thu phòng đơn phải là số.',
             'departures.*.status.required' => 'Vui lòng chọn trạng thái lịch khởi hành.',
             'departures.*.status.in' => 'Trạng thái lịch khởi hành không hợp lệ.',
 
@@ -201,6 +207,9 @@ class toursController extends Controller
                 'capacity_booked' => $departure['capacity_booked'] ?? 0,
                 'price_adult' => $departure['price_adult'],
                 'price_child' => $departure['price_child'] ?? 0,
+                'price_infant' => $departure['price_infant'] ?? 0,
+                'price_youth' => $departure['price_youth'] ?? 0,
+                'single_room_surcharge' => $departure['single_room_surcharge'] ?? 0,
                 'status' => $departure['status'],
             ]);
         }
@@ -262,6 +271,9 @@ class toursController extends Controller
             'departures.*.capacity_booked' => 'nullable|integer|min:0',
             'departures.*.price_adult' => 'required|numeric|min:0',
             'departures.*.price_child' => 'nullable|numeric|min:0',
+            'departures.*.price_infant' => 'nullable|numeric|min:0',
+            'departures.*.price_youth' => 'nullable|numeric|min:0',
+            'departures.*.single_room_surcharge' => 'nullable|numeric|min:0',
             'departures.*.status' => 'required|in:open,closed,full,cancelled',
 
             // images
@@ -310,6 +322,9 @@ class toursController extends Controller
             'departures.*.price_adult.required' => 'Vui lòng nhập giá người lớn.',
             'departures.*.price_adult.numeric' => 'Giá người lớn phải là số.',
             'departures.*.price_child.numeric' => 'Giá trẻ em phải là số.',
+            'departures.*.price_infant.numeric' => 'Giá trẻ nhỏ phải là số.',
+            'departures.*.price_youth.numeric' => 'Giá em bé phải là số.',
+            'departures.*.single_room_surcharge.numeric' => 'Phụ thu phòng đơn phải là số.',
             'departures.*.status.required' => 'Vui lòng chọn trạng thái lịch khởi hành.',
             'departures.*.status.in' => 'Trạng thái lịch khởi hành không hợp lệ.',
 
@@ -398,6 +413,9 @@ class toursController extends Controller
                     'capacity_booked' => $departure['capacity_booked'] ?? $model->capacity_booked,
                     'price_adult' => $departure['price_adult'],
                     'price_child' => $departure['price_child'] ?? 0,
+                    'price_infant' => $departure['price_infant'] ?? 0,
+                    'price_youth' => $departure['price_youth'] ?? 0,
+                    'single_room_surcharge' => $departure['single_room_surcharge'] ?? 0,
                     'status' => $departure['status'],
                 ]);
             } else {
@@ -411,6 +429,9 @@ class toursController extends Controller
                     'capacity_booked' => $departure['capacity_booked'] ?? 0,
                     'price_adult' => $departure['price_adult'],
                     'price_child' => $departure['price_child'] ?? 0,
+                    'price_infant' => $departure['price_infant'] ?? 0,
+                    'price_youth' => $departure['price_youth'] ?? 0,
+                    'single_room_surcharge' => $departure['single_room_surcharge'] ?? 0,
                     'status' => $departure['status'],
                 ]);
             }

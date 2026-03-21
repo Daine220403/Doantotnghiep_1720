@@ -179,12 +179,35 @@
                                     <tr>
                                         <td class="py-2 pr-4 text-gray-900">{{ $p->full_name }}</td>
                                         <td class="py-2 pr-4 text-gray-700">
-                                            {{ $p->passenger_type === 'adult' ? 'Người lớn' : 'Trẻ em' }}
+                                            @switch($p->passenger_type)
+                                                @case('adult')
+                                                    Người lớn
+                                                @break
+                                                @case('child')
+                                                    Trẻ em
+                                                @break
+                                                @case('infant')
+                                                    Trẻ nhỏ
+                                                @break
+                                                @case('youth')
+                                                    Em bé
+                                                @break
+                                                @default
+                                                    Khác
+                                            @endswitch
                                         </td>
                                         <td class="py-2 pr-4 text-gray-700">
-                                            {{ $p->date_of_birth ? \Carbon\Carbon::parse($p->date_of_birth)->format('d/m/Y') : '-' }}
+                                            {{ $p->dob ? \Carbon\Carbon::parse($p->dob)->format('d/m/Y') : '-' }}
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-700">{{ $p->gender === 'male' ? 'Nam' : 'Nữ' }}</td>
+                                        <td class="py-2 pr-4 text-gray-700">
+                                            @if ($p->gender === 'male')
+                                                Nam
+                                            @elseif($p->gender === 'female')
+                                                Nữ
+                                            @else
+                                                Khác
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

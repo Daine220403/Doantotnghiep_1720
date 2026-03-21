@@ -29,10 +29,12 @@ class paymentController extends Controller
             'schedule_id' => ['required', 'exists:tour_departures,id'],
             'adults' => ['required', 'integer', 'min:1'],
             'children' => ['nullable', 'integer', 'min:0'],
+            'infants' => ['nullable', 'integer', 'min:0'],
+            'youths' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string'],
             'passengers' => ['required', 'array'],
             'passengers.*.full_name' => ['required', 'string', 'max:150'],
-            'passengers.*.passenger_type' => ['required', 'in:adult,child,infant'],
+            'passengers.*.passenger_type' => ['required', 'in:adult,child,infant,youth'],
             'passengers.*.gender' => ['nullable', 'in:male,female,other'],
             'passengers.*.dob' => ['nullable', 'date'],
             'passengers.*.id_no' => ['nullable', 'string', 'max:50'],
@@ -42,6 +44,8 @@ class paymentController extends Controller
             'schedule_id' => 'lịch khởi hành',
             'adults' => 'số lượng người lớn',
             'children' => 'số lượng trẻ em',
+            'infants' => 'số lượng trẻ nhỏ',
+            'youths' => 'số lượng em bé',
             'note' => 'ghi chú',
             'passengers' => 'danh sách hành khách',
             'passengers.*.full_name' => 'tên hành khách',
@@ -69,12 +73,14 @@ class paymentController extends Controller
 
         $adults = (int) $data['adults'];
         $children = (int) ($data['children'] ?? 0);
-        $totalGuests = $adults + $children;
+        $infants = (int) ($data['infants'] ?? 0);
+        $youths = (int) ($data['youths'] ?? 0);
+        $totalGuests = $adults + $children + $infants + $youths;
 
         $passengersInput = $request->input('passengers', []);
         if (count($passengersInput) !== $totalGuests) {
             return back()->withErrors([
-                'passengers' => 'Số lượng hành khách không khớp với số người lớn + trẻ em',
+                'passengers' => 'Số lượng hành khách không khớp với tổng số khách (người lớn, trẻ em, trẻ nhỏ, em bé)',
             ])->withInput();
         }
 
@@ -87,8 +93,15 @@ class paymentController extends Controller
 
         $priceAdult = (float) $departure->price_adult;
         $priceChild = (float) $departure->price_child;
+        $priceInfant = (float) $departure->price_infant;
+        $priceYouth = (float) $departure->price_youth;
+        $singleSurcharge = $request->boolean('single_room') ? (float) $departure->single_room_surcharge : 0;
 
-        $subtotal = $adults * $priceAdult + $children * $priceChild;
+        $subtotal = $adults * $priceAdult
+            + $children * $priceChild
+            + $infants * $priceInfant
+            + $youths * $priceYouth
+            + $singleSurcharge;
         $discountTotal = 0;
         $totalAmount = $subtotal - $discountTotal;
 
@@ -154,6 +167,57 @@ class paymentController extends Controller
                     'schedule_id' => $departure->id,
                     'schedule_date' => $departure->start_date,
                     'type' => 'child',
+                ]),
+            ]);
+        }
+
+        if ($infants > 0) {
+            order_details::create([
+                'order_id' => $order->id,
+                'item_type' => 'tour',
+                'item_id' => $tour->id,
+                'item_name' => $tour->title . ' - Trẻ nhỏ',
+                'qty' => $infants,
+                'unit_price' => $priceInfant,
+                'line_total' => $infants * $priceInfant,
+                'meta' => json_encode([
+                    'schedule_id' => $departure->id,
+                    'schedule_date' => $departure->start_date,
+                    'type' => 'infant',
+                ]),
+            ]);
+        }
+
+        if ($youths > 0) {
+            order_details::create([
+                'order_id' => $order->id,
+                'item_type' => 'tour',
+                'item_id' => $tour->id,
+                'item_name' => $tour->title . ' - Em bé',
+                'qty' => $youths,
+                'unit_price' => $priceYouth,
+                'line_total' => $youths * $priceYouth,
+                'meta' => json_encode([
+                    'schedule_id' => $departure->id,
+                    'schedule_date' => $departure->start_date,
+                    'type' => 'youth',
+                ]),
+            ]);
+        }
+
+        if ($singleSurcharge > 0) {
+            order_details::create([
+                'order_id' => $order->id,
+                'item_type' => 'surcharge',
+                'item_id' => $tour->id,
+                'item_name' => $tour->title . ' - Phụ thu phòng đơn',
+                'qty' => 1,
+                'unit_price' => $singleSurcharge,
+                'line_total' => $singleSurcharge,
+                'meta' => json_encode([
+                    'schedule_id' => $departure->id,
+                    'schedule_date' => $departure->start_date,
+                    'type' => 'single_room_surcharge',
                 ]),
             ]);
         }

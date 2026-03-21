@@ -395,7 +395,25 @@
                                 class="form-control" value="0">
                         </div>
 
-                        <div class="col-md-12 mb-3">
+                        <div class="col-md-3 mb-3">
+                            <label>Giá trẻ nhỏ</label>
+                            <input type="number" min="0" name="departures[${index}][price_infant]"
+                                class="form-control" value="0">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label>Giá em bé</label>
+                            <input type="number" min="0" name="departures[${index}][price_youth]"
+                                class="form-control" value="0">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label>Phụ thu phòng đơn</label>
+                            <input type="number" min="0" name="departures[${index}][single_room_surcharge]"
+                                class="form-control" value="0">
+                        </div>
+
+                        <div class="col-md-12 mb-3 mt-2">
                             <label>Trạng thái</label>
                             <select name="departures[${index}][status]" class="form-control">
                                 <option value="draft">draft</option>

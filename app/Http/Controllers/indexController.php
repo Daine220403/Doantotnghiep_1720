@@ -246,6 +246,9 @@ class indexController extends Controller
                     'seat_left' => $seatLeft,
                     'price_adult' => (int) $dep->price_adult,
                     'price_child' => (int) $dep->price_child,
+                    'price_infant' => (int) $dep->price_infant,
+                    'price_youth' => (int) $dep->price_youth,
+                    'single_room_surcharge' => (int) $dep->single_room_surcharge,
                     'meeting_point' => $dep->meeting_point,
                 ];
             })

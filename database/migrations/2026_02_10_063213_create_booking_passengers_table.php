@@ -17,7 +17,7 @@ return new class extends Migration {
 
             $table->string('id_no', 50)->nullable()->index();
 
-            $table->enum('passenger_type', ['adult', 'child', 'infant'])->index();
+            $table->enum('passenger_type', ['adult', 'child', 'infant', 'youth'])->index();
 
             $table->text('special_request')->nullable();
             $table->timestamps();

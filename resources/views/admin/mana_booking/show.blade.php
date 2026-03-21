@@ -191,9 +191,17 @@
                                 <span class="text-muted">Số lượng người lớn: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'adult')->count() }}</span></span>
                                 <span class="font-weight-bold">/{{ number_format($departure->price_adult, 0, ',', '.') }} đ</span>
                             </p>
-                            <p class="mb-0">
+                            <p class="mb-2">
                                 <span class="text-muted">Số lượng trẻ em: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'child')->count() }}</span></span>
                                 <span class="font-weight-bold">/{{ number_format($departure->price_child, 0, ',', '.') }} đ</span>
+                            </p>
+                            <p class="mb-2">
+                                <span class="text-muted">Số lượng trẻ nhỏ: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'infant')->count() }}</span></span>
+                                <span class="font-weight-bold">/{{ number_format($departure->price_infant, 0, ',', '.') }} đ</span>
+                            </p>
+                            <p class="mb-0">
+                                <span class="text-muted">Số lượng em bé: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'youth')->count() }}</span></span>
+                                <span class="font-weight-bold">/{{ number_format($departure->price_youth, 0, ',', '.') }} đ</span>
                             </p>
                         @else
                             <p class="mb-0 text-muted">Không có thông tin lịch khởi hành.</p>

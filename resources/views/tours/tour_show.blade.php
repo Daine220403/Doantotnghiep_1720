@@ -243,16 +243,6 @@
 
                 </div>
 
-                <!-- MAP -->
-                <div class="bg-white rounded-2xl border border-gray-200 p-5">
-                    <h2 class="text-lg font-bold text-gray-900 mb-3">Bản đồ</h2>
-                    <div class="rounded-2xl overflow-hidden border border-gray-200">
-                        {{-- Anh thay iframe theo tour thực tế (lat/lng hoặc embed link) --}}
-                        <iframe class="w-full h-72" src="https://www.google.com/maps?q=Da%20Lat&output=embed"
-                            loading="lazy"></iframe>
-                    </div>
-                </div>
-
                 <!-- REVIEWS -->
                 <div class="bg-white rounded-2xl border border-gray-200 p-5">
                     @php
@@ -474,6 +464,9 @@
                                     @forelse ($schedules as $s)
                                         <option value="{{ $s['id'] }}" data-adult="{{ $s['price_adult'] }}"
                                             data-child="{{ $s['price_child'] }}"
+                                            data-infant="{{ $s['price_infant'] }}"
+                                            data-youth="{{ $s['price_youth'] }}"
+                                            data-single="{{ $s['single_room_surcharge'] }}"
                                             data-meeting="{{ $s['meeting_point'] }}">
                                             {{ \Carbon\Carbon::parse($s['date'])->format('d/m/Y') }}
                                             — Còn {{ $s['seat_left'] }} chỗ
@@ -487,13 +480,27 @@
                             <!-- GIÁ THEO NGƯỜI -->
                             <div class="space-y-4">
                                 <div>
-                                    <div class="text-sm text-gray-500">Người lớn (trên 11 tuổi)</div>
+                                    <div class="text-sm text-gray-500">Người lớn (từ 12 tuổi trở lên)</div>
                                     <div id="adultPrice" class="text-xl font-bold text-gray-900">0 VND</div>
                                 </div>
 
                                 <div>
-                                    <div class="text-sm text-gray-500">Trẻ em (2–11 tuổi)</div>
+                                    <div class="text-sm text-gray-500">Trẻ em (5–11 tuổi)</div>
                                     <div id="childPrice" class="text-xl font-bold text-gray-900">0 VND</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-sm text-gray-500">Trẻ nhỏ (2–4 tuổi)</div>
+                                    <div id="infantPrice" class="text-xl font-bold text-gray-900">0 VND</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-sm text-gray-500">Em bé (dưới 2 tuổi)</div>
+                                    <div id="youthPrice" class="text-xl font-bold text-gray-900">0 VND</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-500">Phụ thu phòng đơn</div>
+                                    <div id="singleRoomPrice" class="text-xl font-bold text-gray-900">0 VND</div>
                                 </div>
                             </div>
 
@@ -521,8 +528,18 @@
                                         class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
                                 </div>
                                 <div>
-                                    <label class="text-sm font-semibold text-gray-700">Trẻ em</label>
+                                    <label class="text-sm font-semibold text-gray-700">Trẻ em (5–11 tuổi)</label>
                                     <input id="childQty" type="number" name="children" min="0" value="0"
+                                        class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-sm font-semibold text-gray-700">Trẻ nhỏ (2–4 tuổi)</label>
+                                    <input id="infantQty" type="number" name="infants" min="0" value="0"
+                                        class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-sm font-semibold text-gray-700">Em bé (dưới 2 tuổi)</label>
+                                    <input id="youthQty" type="number" name="youths" min="0" value="0"
                                         class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
                                 </div>
                             </div>
@@ -541,6 +558,15 @@
                                 <textarea name="note"
                                     class="w-full border border-gray-300 rounded-lg p-3 focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none"
                                     rows="4" placeholder="Ghi chú thêm cho booking (nếu có)"></textarea>
+                            </div>
+
+                            {{-- Phụ thu phòng đơn --}}
+                            <div class="mt-2 flex items-center justify-between text-sm">
+                                <label class="flex items-center gap-2 text-gray-700">
+                                    <input type="checkbox" id="singleRoomCheckbox" name="single_room" value="1"
+                                        class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                                    <span>Tôi muốn ở phòng đơn (áp dụng phụ thu)</span>
+                                </label>
                             </div>
 
                             <!-- TẠM TÍNH -->
@@ -581,12 +607,18 @@
                 const scheduleSelect = document.getElementById('scheduleSelect');
                 const adultQty = document.getElementById('adultQty');
                 const childQty = document.getElementById('childQty');
+                const infantQty = document.getElementById('infantQty');
+                const youthQty = document.getElementById('youthQty');
 
                 const adultPriceEl = document.getElementById('adultPrice');
                 const childPriceEl = document.getElementById('childPrice');
+                const infantPriceEl = document.getElementById('infantPrice');
+                const youthPriceEl = document.getElementById('youthPrice');
+                const singleRoomPriceEl = document.getElementById('singleRoomPrice');
                 const totalPriceEl = document.getElementById('totalPrice');
                 const meetingPointEl = document.getElementById('meetingPointValue');
                 const passengerContainer = document.getElementById('passengerContainer');
+                const singleRoomCheckbox = document.getElementById('singleRoomCheckbox');
 
                 const defaultMeetingPoint = @json($tour->departure_location ?? 'Đang cập nhật');
 
@@ -599,6 +631,8 @@
 
                     const adults = parseInt(adultQty.value) || 0;
                     const children = parseInt(childQty.value) || 0;
+                    const infants = parseInt(infantQty.value) || 0;
+                    const youths = parseInt(youthQty.value) || 0;
 
                     passengerContainer.innerHTML = '';
 
@@ -672,12 +706,83 @@
                         index++;
                         displayIndex++;
                     }
+
+                    for (let i = 0; i < infants; i++) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
+                        wrapper.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Trẻ nhỏ</div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label class="text-xs text-gray-600">Họ tên</label>
+                                    <input type="text" name="passengers[${index}][full_name]" required
+                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-600">Giới tính</span>
+                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
+                                            <span>Nam</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
+                                            <span>Nữ</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="passengers[${index}][passenger_type]" value="infant">
+                            </div>
+                        `;
+                        passengerContainer.appendChild(wrapper);
+                        index++;
+                        displayIndex++;
+                    }
+
+                    for (let i = 0; i < youths; i++) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
+                        wrapper.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Em bé</div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label class="text-xs text-gray-600">Họ tên</label>
+                                    <input type="text" name="passengers[${index}][full_name]" required
+                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-600">Giới tính</span>
+                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
+                                            <span>Nam</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1">
+                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
+                                            <span>Nữ</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="passengers[${index}][passenger_type]" value="youth">
+                            </div>
+                        `;
+                        passengerContainer.appendChild(wrapper);
+                        index++;
+                        displayIndex++;
+                    }
                 }
 
                 function updatePrice() {
                     if (!scheduleSelect || scheduleSelect.selectedIndex === -1) {
                         adultPriceEl.innerText = formatVND(0);
                         childPriceEl.innerText = formatVND(0);
+                        infantPriceEl.innerText = formatVND(0);
+                        youthPriceEl.innerText = formatVND(0);
+                        singleRoomPriceEl.innerText = formatVND(0);
                         totalPriceEl.innerText = formatVND(0);
                         if (meetingPointEl) {
                             meetingPointEl.innerText = defaultMeetingPoint;
@@ -689,15 +794,31 @@
 
                     const priceAdult = parseInt(selected.dataset.adult);
                     const priceChild = parseInt(selected.dataset.child);
+                    const priceInfant = parseInt(selected.dataset.infant);
+                    const priceYouth = parseInt(selected.dataset.youth);
+                    const singleSurcharge = parseInt(selected.dataset.single);
 
                     const adults = parseInt(adultQty.value) || 0;
                     const children = parseInt(childQty.value) || 0;
+                    const infants = parseInt(infantQty.value) || 0;
+                    const youths = parseInt(youthQty.value) || 0;
 
                     adultPriceEl.innerText = formatVND(priceAdult);
                     childPriceEl.innerText = formatVND(priceChild);
-                    totalPriceEl.innerText = formatVND(
-                        (priceAdult * adults) + (priceChild * children)
-                    );
+                    infantPriceEl.innerText = formatVND(priceInfant);
+                    youthPriceEl.innerText = formatVND(priceYouth);
+                    singleRoomPriceEl.innerText = formatVND(singleSurcharge);
+
+                    let total = (priceAdult * adults)
+                        + (priceChild * children)
+                        + (priceInfant * infants)
+                        + (priceYouth * youths);
+
+                    if (singleRoomCheckbox && singleRoomCheckbox.checked && singleSurcharge > 0) {
+                        total += singleSurcharge;
+                    }
+
+                    totalPriceEl.innerText = formatVND(total);
 
                     if (meetingPointEl) {
                         const meeting = selected.dataset.meeting || defaultMeetingPoint;
@@ -710,6 +831,11 @@
                 scheduleSelect.addEventListener('change', updatePrice);
                 adultQty.addEventListener('input', updatePrice);
                 childQty.addEventListener('input', updatePrice);
+                infantQty.addEventListener('input', updatePrice);
+                youthQty.addEventListener('input', updatePrice);
+                if (singleRoomCheckbox) {
+                    singleRoomCheckbox.addEventListener('change', updatePrice);
+                }
 
                 updatePrice(); // init
             </script>

@@ -207,6 +207,8 @@
                                             <th class="text-center">Đã đặt</th>
                                             <th class="text-right">Giá NL</th>
                                             <th class="text-right">Giá TE</th>
+                                            <th class="text-right">Giá Trẻ nhỏ</th>
+                                            <th class="text-right">Giá Em bé</th>
                                             <th class="text-center">Trạng thái</th>
                                             <th>Hướng dẫn viên</th>
                                         </tr>
@@ -225,6 +227,10 @@
                                                     {{ number_format($departure->price_adult, 0, ',', '.') }}</td>
                                                 <td class="text-right">
                                                     {{ number_format($departure->price_child, 0, ',', '.') }}</td>
+                                                <td class="text-right">
+                                                    {{ number_format($departure->price_infant, 0, ',', '.') }}</td>
+                                                <td class="text-right">
+                                                    {{ number_format($departure->price_youth, 0, ',', '.') }}</td>
                                                 <td class="text-center">
                                                     <span class="badge badge-success">{{ $departure->status }}</span>
                                                 </td>
@@ -561,6 +567,27 @@
                                             <input type="number" min="0"
                                                 name="departures[{{ $index }}][price_child]"
                                                 class="form-control" value="{{ $departure->price_child }}">
+                                        </div>
+
+                                        <div class="col-md-3 mb-3">
+                                            <label>Giá trẻ nhỏ</label>
+                                            <input type="number" min="0"
+                                                name="departures[{{ $index }}][price_infant]"
+                                                class="form-control" value="{{ $departure->price_infant }}">
+                                        </div>
+
+                                        <div class="col-md-3 mb-3">
+                                            <label>Giá em bé</label>
+                                            <input type="number" min="0"
+                                                name="departures[{{ $index }}][price_youth]"
+                                                class="form-control" value="{{ $departure->price_youth }}">
+                                        </div>
+
+                                        <div class="col-md-3 mb-3">
+                                            <label>Phụ thu phòng đơn</label>
+                                            <input type="number" min="0"
+                                                name="departures[{{ $index }}][single_room_surcharge]"
+                                                class="form-control" value="{{ $departure->single_room_surcharge }}">
                                         </div>
 
                                         <div class="col-md-12 mb-3">

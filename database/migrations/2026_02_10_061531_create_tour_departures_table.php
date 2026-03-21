@@ -19,9 +19,14 @@ return new class extends Migration {
             $table->integer('capacity_total')->default(0);
             $table->integer('capacity_booked')->default(0);
 
-            $table->decimal('price_adult', 12, 2)->default(0);
-            $table->decimal('price_child', 12, 2)->default(0);
+            $table->decimal('price_adult', 12, 2)->default(0); // Giá áp dụng cho khách từ 12 tuổi trở lên
+            $table->decimal('price_child', 12, 2)->default(0); // Giá áp dụng cho khách từ 5 đến dưới 11 tuổi (có thể là giá riêng hoặc miễn phí)            
+            $table->decimal('price_infant', 12, 2)->default(0); // Giá áp dụng cho khách từ 2 đến dưới 5 tuổi (có thể là giá riêng hoặc miễn phí)  
+            $table->decimal('price_youth', 12, 2)->default(0); // Giá áp dụng cho khách dưới 2 tuổi (có thể là giá riêng hoặc miễn phí)
 
+            // Phụ thu phòng đơn cho mỗi lịch khởi hành (nếu khách chọn ở 1 người/1 phòng)
+            $table->decimal('single_room_surcharge', 12, 2)->default(0);
+     
             $table->enum('status', ['draft', 'open', 'closed', 'sold_out', 'cancelled','confirmed','completed'])
                   ->default('draft')->index();
 

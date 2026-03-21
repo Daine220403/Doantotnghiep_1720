@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -160,6 +159,9 @@ class DemoTravelSeeder extends Seeder
                 'capacity_booked' => 2,
                 'price_adult' => 3500000,
                 'price_child' => 2500000,
+                'price_infant' => 1500000,
+                'price_youth' => 500000,
+                'single_room_surcharge' => 1000000,
                 'status' => 'open',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -242,6 +244,9 @@ class DemoTravelSeeder extends Seeder
                     'departure_id' => $departureId,
                     'adult_count' => 2,
                     'child_count' => 0,
+                    'infant_count' => 0,
+                    'youth_count' => 0,
+                    'single_room' => false,
                 ]),
                 'created_at' => now(),
             ]);
@@ -280,7 +285,7 @@ class DemoTravelSeeder extends Seeder
                 'order_id' => $orderId,
                 'payment_code' => 'PAY000001',
                 'method' => 'vnpay',
-                'amount' => 6500000,
+                'amount' => 7000000,
                 'status' => 'success',
                 'paid_at' => now(),
                 'transaction_ref' => 'VNPAY_123456789',
