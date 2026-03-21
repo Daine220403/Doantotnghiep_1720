@@ -36,6 +36,12 @@ Route::get('/dashboard', [dashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::post('/dashboard/bookings/{booking}/pay', [paymentController::class, 'payBooking']) // Thanh toán cho booking cụ thể
+        ->name('dashboard.bookings.pay');
+
+    Route::post('/dashboard/bookings/{booking}/cancel', [dashboardController::class, 'cancelBooking']) // Hủy booking cụ thể    
+        ->name('dashboard.bookings.cancel');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

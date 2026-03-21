@@ -48,25 +48,43 @@
         @php
             $departures = $tour->departures ?? collect();
             $totalDepartures = $departures->count();
-            $totalCapacity = $departures->sum('capacity_total');
-            $totalBookedSeats = $departures->sum('capacity_booked');
+            // $totalCapacity = $departures->sum('capacity_total');
+            // $totalBookedSeats = $departures->sum('capacity_booked');
             $totalBookings = $departures->sum(function ($d) {
                 return $d->bookings ? $d->bookings->count() : 0;
             });
             $totalPassengers = $departures->sum(function ($d) {
-                return $d->bookings ? $d->bookings->sum(function ($b) {
+                if (!$d->bookings) {
+                    return 0;
+                }
+
+                $activeBookings = $d->bookings->where('status', '!=', 'cancelled');
+
+                return $activeBookings->sum(function ($b) {
                     return $b->passengers ? $b->passengers->count() : 0;
-                }) : 0;
+                });
             });
             $totalAdults = $departures->sum(function ($d) {
-                return $d->bookings ? $d->bookings->sum(function ($b) {
+                if (!$d->bookings) {
+                    return 0;
+                }
+
+                $activeBookings = $d->bookings->where('status', '!=', 'cancelled');
+
+                return $activeBookings->sum(function ($b) {
                     return $b->passengers ? $b->passengers->where('passenger_type', 'adult')->count() : 0;
-                }) : 0;
+                });
             });
             $totalChildren = $departures->sum(function ($d) {
-                return $d->bookings ? $d->bookings->sum(function ($b) {
+                if (!$d->bookings) {
+                    return 0;
+                }
+
+                $activeBookings = $d->bookings->where('status', '!=', 'cancelled');
+
+                return $activeBookings->sum(function ($b) {
                     return $b->passengers ? $b->passengers->where('passenger_type', 'child')->count() : 0;
-                }) : 0;
+                });
             });
             $totalRevenue = $departures->sum(function ($d) {
                 return $d->bookings ? $d->bookings->sum(function ($b) {
@@ -96,9 +114,9 @@
                         <p class="mb-0 text-xs text-muted">Người lớn: {{ $totalAdults }} | Trẻ em: {{ $totalChildren }}</p>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <p class="mb-1 text-muted">Số chỗ đã đặt / Tổng chỗ</p>
-                        <p class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalBookedSeats }} / {{ $totalCapacity }}</p>
-                        <p class="mb-0 text-xs text-muted">Tổng doanh thu: {{ number_format($totalRevenue, 0, ',', '.') }} đ</p>
+                        <p class="mb-1 text-muted">Tổng doanh thu tour</p>
+                        {{-- <p class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalBookedSeats }} / {{ $totalCapacity }}</p> --}}
+                        <p class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalRevenue, 0, ',', '.') }} đ</p>
                     </div>
                 </div>
             </div>
@@ -108,6 +126,15 @@
         @forelse($tour->departures as $departure)
             @php
                 $bookings = $departure->bookings ?? collect();
+                $currentRevenue = 0;
+
+                foreach ($bookings as $booking) {
+                    $order = $booking->order;
+
+                    if ($order && $order->status === 'paid') {
+                        $currentRevenue += $order->total_amount;
+                    }
+                }
             @endphp
             <div class="card shadow mb-4">
                 <div class="card-header py-2 d-flex justify-content-between align-items-center">
@@ -118,6 +145,7 @@
                     </h6>
                     <div class="small text-muted">
                         Số chỗ: {{ $departure->capacity_booked }} / {{ $departure->capacity_total }}
+                        | Doanh thu: {{ number_format($currentRevenue, 0, ',', '.') }} đ
                     </div>
                 </div>
                 <div class="card-body">

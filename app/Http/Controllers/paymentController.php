@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Auth;
 
 class paymentController extends Controller
 {
+    protected string $vnp_TmnCode = "KF3WIF8C";
+    protected string $vnp_HashSecret = "KCA2KNYAWFXVEUQ4DNH4PQC801ABVGTB";
+
     public function vnpay_payment(Request $request)
     {
         // Logic checkout: kiểm tra đăng nhập, validate và tạo đơn
@@ -172,8 +175,8 @@ class paymentController extends Controller
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         // URL callback từ VNPay về Laravel (không dùng file .php riêng)
         $vnp_Returnurl = route('vnpay.return');
-        $vnp_TmnCode = "KF3WIF8C"; //Mã website tại VNPAY 
-        $vnp_HashSecret = "KCA2KNYAWFXVEUQ4DNH4PQC801ABVGTB"; //Chuỗi bí mật
+        $vnp_TmnCode = $this->vnp_TmnCode; //Mã website tại VNPAY 
+        $vnp_HashSecret = $this->vnp_HashSecret; //Chuỗi bí mật
 
         // Sử dụng mã đơn và tổng tiền thực tế
         $vnp_TxnRef = $order->order_code;
@@ -270,7 +273,7 @@ class paymentController extends Controller
 
     public function vnpayReturn(Request $request)
     {
-        $vnp_HashSecret = "KCA2KNYAWFXVEUQ4DNH4PQC801ABVGTB"; // Chuỗi bí mật phải trùng với bên gửi đi
+        $vnp_HashSecret = $this->vnp_HashSecret; // Chuỗi bí mật phải trùng với bên gửi đi
 
         $inputData = $request->all();
 
@@ -363,5 +366,98 @@ class paymentController extends Controller
         }
 
         return redirect()->route('home')->with('error', 'Không xác thực được giao dịch VNPay.');
+    }
+    public function payBooking(Request $request, $bookingId)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('signin')->with('error', 'Vui lòng đăng nhập để tiếp tục');
+        }
+
+        $user = Auth::user();
+
+        $booking = bookings::with(['order', 'departure.tour'])
+            ->where('id', $bookingId)
+            ->firstOrFail();
+
+        $order = $booking->order;
+
+        if (!$order || $order->user_id !== $user->id) {
+            return redirect()->route('dashboard')->with('error', 'Bạn không có quyền với đơn này');
+        }
+
+        if (!in_array($order->status, ['pending', 'failed']) || $booking->status !== 'pending') {
+            return redirect()->route('dashboard')
+                ->with('error', 'Đơn không hợp lệ để thanh toán');
+        }
+
+        $tour = optional(optional($booking->departure)->tour);
+        if (!$tour) {
+            return redirect()->route('dashboard')->with('error', 'Không tìm thấy thông tin tour cho đơn này');
+        }
+
+        $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+        $vnp_Returnurl = route('vnpay.return');
+        $vnp_TmnCode = $this->vnp_TmnCode;
+        $vnp_HashSecret = $this->vnp_HashSecret;
+
+        $vnp_TxnRef = $order->order_code;
+        $vnp_OrderInfo = "Thanh toán lại tour " . $tour->title;
+        $vnp_OrderType = "Tour";
+        $vnp_Amount = (int) ($order->total_amount * 100);
+        $vnp_Locale = "vn";
+        $vnp_BankCode = "NCB";
+        $vnp_IpAddr = $request->ip();
+
+        $inputData = array(
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_OrderType" => $vnp_OrderType,
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_TxnRef" => $vnp_TxnRef,
+        );
+
+        if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+            $inputData['vnp_BankCode'] = $vnp_BankCode;
+        }
+
+        ksort($inputData);
+        $query = "";
+        $i = 0;
+        $hashdata = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashdata .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+            $query .= urlencode($key) . "=" . urlencode($value) . '&';
+        }
+
+        $vnp_Url = $vnp_Url . "?" . $query;
+        if (isset($vnp_HashSecret)) {
+            $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+            $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+        }
+
+        // Ghi log thanh toán pending (mỗi lần thanh toán lại tạo 1 bản ghi mới)
+        payments::create([
+            'order_id' => $order->id,
+            'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+            'method' => 'vnpay',
+            'amount' => $order->total_amount,
+            'status' => 'pending',
+            'transaction_ref' => null,
+            'raw_response' => null,
+        ]);
+
+        return redirect()->away($vnp_Url);
     }
 }
