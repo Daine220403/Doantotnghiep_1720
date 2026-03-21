@@ -22,6 +22,16 @@
     ];
 
     $currentStatus = $booking->status;
+
+    $paidAmount = $paidAmount ?? 0;
+    $remainingAmount = $remainingAmount ?? (($order->total_amount ?? 0) - $paidAmount);
+    $isFullyPaid = $isFullyPaid ?? false;
+    $isDeposit = $isDeposit ?? false;
+    $lastPaymentType = $lastPaymentType ?? null;
+
+    if ($currentStatus === 'confirmed' && $isDeposit) {
+        $statusLabel['confirmed'] = 'Đã đặt cọc';
+    }
 @endphp
 
 @extends('layouts.app-guest')
@@ -136,12 +146,43 @@
                                 <dt>Trạng thái thanh toán</dt>
                                 <dd class="font-medium text-gray-900">{{ $statusLabel[$currentStatus] ?? ucfirst($currentStatus) }}</dd>
                             </div>
+                            @if ($lastPaymentType)
+                                <div class="flex justify-between">
+                                    <dt>Hình thức thanh toán</dt>
+                                    <dd class="font-medium text-gray-900">
+                                        @if ($lastPaymentType === 'deposit')
+                                            Đặt cọc (thanh toán một phần)
+                                        @else
+                                            Thanh toán đủ
+                                        @endif
+                                    </dd>
+                                </div>
+                            @endif
                             <div class="flex justify-between">
                                 <dt>Tổng tiền</dt>
                                 <dd class="font-semibold text-emerald-600">
                                     {{ number_format($order->total_amount, 0, ',', '.') }} đ
                                 </dd>
                             </div>
+                            @if ($paidAmount > 0)
+                                <div class="flex justify-between">
+                                    <dt>Đã thanh toán</dt>
+                                    <dd class="font-medium text-gray-900">
+                                        {{ number_format($paidAmount, 0, ',', '.') }} đ
+                                        @if ($order->total_amount > 0 && !$isFullyPaid)
+                                            ({{ round($paidAmount / $order->total_amount * 100) }}%)
+                                        @endif
+                                    </dd>
+                                </div>
+                                @if ($remainingAmount > 0)
+                                    <div class="flex justify-between">
+                                        <dt>Còn lại</dt>
+                                        <dd class="font-medium text-amber-700">
+                                            {{ number_format($remainingAmount, 0, ',', '.') }} đ
+                                        </dd>
+                                    </div>
+                                @endif
+                            @endif
                             <div class="flex justify-between">
                                 <dt>Ngày cập nhật</dt>
                                 <dd class="font-medium text-gray-900">

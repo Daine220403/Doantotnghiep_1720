@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->decimal('total_amount', 12, 2)->default(0);
 
             $table->enum('status', [
-                'draft', 'pending', 'confirmed', 'paid', 'cancelled', 'refunded', 'failed'
+                'pending', 'partial_paid', 'paid', 'cancelled', 'refunded', 'failed'
             ])->default('pending')->index();
 
             $table->timestamps();

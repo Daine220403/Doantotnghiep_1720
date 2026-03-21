@@ -323,4 +323,49 @@ class indexController extends Controller
         ));
     }
 
+
+    /**
+     * Trang đặt tour: chọn số lượng khách, nhập thông tin hành khách
+     * Sau khi submit sẽ gửi sang paymentController@vnpay_payment
+     */
+    public function booking(Request $request, $slug)
+    {
+        // Bắt buộc đăng nhập trước khi đặt tour
+        if (!Auth::check()) {
+            return redirect()->route('signin')->with('error', 'Vui lòng đăng nhập để đặt tour');
+        }
+
+        $tour = Tours::with(['images', 'departures'])
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->firstOrFail();
+
+        // Danh sách lịch khởi hành hợp lệ
+        $availableDepartures = $tour->departures
+            ->where('start_date', '>=', now()->toDateString())
+            ->whereIn('status', ['open', 'sold_out', 'confirmed'])
+            ->sortBy('start_date');
+
+        $scheduleId = (int) $request->query('schedule_id');
+
+        if ($scheduleId) {
+            $departure = $availableDepartures->firstWhere('id', $scheduleId);
+        } else {
+            $departure = $availableDepartures->first();
+        }
+
+        if (!$departure) {
+            return redirect()->route('tours.show', $slug)
+                ->with('error', 'Lịch khởi hành không khả dụng, vui lòng chọn ngày khác.');
+        }
+
+        $seatLeft = max($departure->capacity_total - $departure->capacity_booked, 0);
+
+        return view('tours.booking', [
+            'tour' => $tour,
+            'departure' => $departure,
+            'seatLeft' => $seatLeft,
+        ]);
+    }
+
 }

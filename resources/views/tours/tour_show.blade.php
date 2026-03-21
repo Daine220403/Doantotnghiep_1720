@@ -113,6 +113,60 @@
                     </div>
                 </div>
 
+                <!-- DEPARTURE CALENDAR -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-5">
+                    <label class="text-sm font-semibold text-gray-700">Chọn ngày khởi hành</label>
+
+                    <div class="mt-2 grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <!-- LEFT: MONTH LIST -->
+                        <div class="md:col-span-3">
+                            <div class="h-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col">
+                                <div class="text-sm font-semibold text-gray-700 mb-3">Chọn tháng</div>
+                                <div id="monthList"
+                                    class="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pr-2 md:pr-0">
+                                    {{-- JS sẽ render danh sách tháng --}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: CALENDAR -->
+                        <div class="md:col-span-9">
+                            <div
+                                class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-3">
+                                <div class="flex items-center justify-between">
+                                    <button type="button" id="calPrev"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        <span class="sr-only">Tháng trước</span>
+                                        <span class="text-lg">&#8592;</span>
+                                    </button>
+                                    <div id="calMonthLabel" class="text-base font-bold text-sky-600 uppercase">
+                                        {{-- JS sẽ cập nhật --}}
+                                    </div>
+                                    <button type="button" id="calNext"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100">
+                                        <span class="sr-only">Tháng sau</span>
+                                        <span class="text-lg">&#8594;</span>
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-500 mt-1">
+                                    <div>T2</div>
+                                    <div>T3</div>
+                                    <div>T4</div>
+                                    <div>T5</div>
+                                    <div>T6</div>
+                                    <div class="text-red-500">T7</div>
+                                    <div class="text-red-500">CN</div>
+                                </div>
+
+                                <div id="calendarGrid" class="grid grid-cols-7 gap-2 mt-1 text-sm"></div>
+
+                                <p class="mt-1 text-xs text-red-500">Quý khách vui lòng chọn ngày phù hợp</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- ===== FLOWBITE TABS (Chuẩn Active/Inactive) ===== --}}
 
                 <div class="mb-4 border-b border-gray-200">
@@ -446,398 +500,296 @@
                 </div>
             </div>
 
-            <!-- RIGHT / BOOKING SIDEBAR -->
+            <!-- RIGHT / DEPARTURE SIDEBAR (CHỌN NGÀY) -->
             <aside class="lg:col-span-4">
-                {{-- sticky : dùng để neo --}}
-                <div class="top-24 space-y-4">
+                <div class="sticky top-24 space-y-4">
                     <div class="bg-white rounded-2xl border border-gray-200 p-5">
+                        @php
+                            $minPriceAdult = $schedules->min('price_adult') ?? $tour->base_price_from;
+                        @endphp
 
-                        <form action="{{ url('/vnpay_payment') }}" method="POST" class="mt-6 space-y-4">
-                            @csrf
-
-                            <input type="hidden" name="tour_id" value="{{ $tour->id }}">
-                            <!-- CHỌN NGÀY -->
-                            <div>
-                                <label class="text-sm font-semibold text-gray-700">Chọn ngày khởi hành</label>
-                                <select id="scheduleSelect" name="schedule_id"
-                                    class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                    @forelse ($schedules as $s)
-                                        <option value="{{ $s['id'] }}" data-adult="{{ $s['price_adult'] }}"
-                                            data-child="{{ $s['price_child'] }}"
-                                            data-infant="{{ $s['price_infant'] }}"
-                                            data-youth="{{ $s['price_youth'] }}"
-                                            data-single="{{ $s['single_room_surcharge'] }}"
-                                            data-meeting="{{ $s['meeting_point'] }}">
-                                            {{ \Carbon\Carbon::parse($s['date'])->format('d/m/Y') }}
-                                            — Còn {{ $s['seat_left'] }} chỗ
-                                        </option>
-                                        {{-- <input type="hidden" name="schedule_{{ $s['id'] }}" value="{{ $s['id'] }}"> --}}
-                                    @empty
-                                        <option value="" disabled>Hiện chưa có lịch khởi hành phù hợp</option>
-                                    @endforelse
-                                </select>
+                        <div class="mb-4">
+                            <div class="text-sm text-gray-500">Giá từ</div>
+                            <div class="text-2xl font-bold text-red-600">
+                                {{ number_format($minPriceAdult, 0, ',', '.') }} đ
+                                <span class="text-sm font-normal text-gray-500">/ khách</span>
                             </div>
-                            <!-- GIÁ THEO NGƯỜI -->
-                            <div class="space-y-4">
-                                <div>
-                                    <div class="text-sm text-gray-500">Người lớn (từ 12 tuổi trở lên)</div>
-                                    <div id="adultPrice" class="text-xl font-bold text-gray-900">0 VND</div>
-                                </div>
+                        </div>
 
-                                <div>
-                                    <div class="text-sm text-gray-500">Trẻ em (5–11 tuổi)</div>
-                                    <div id="childPrice" class="text-xl font-bold text-gray-900">0 VND</div>
-                                </div>
+                        <form id="chooseScheduleForm" action="{{ route('tours.booking', $tour->slug) }}" method="GET"
+                            class="space-y-4">
+                            <input type="hidden" id="scheduleInput" name="schedule_id"
+                                value="{{ optional($schedules->first())['id'] }}">
 
-                                <div>
-                                    <div class="text-sm text-gray-500">Trẻ nhỏ (2–4 tuổi)</div>
-                                    <div id="infantPrice" class="text-xl font-bold text-gray-900">0 VND</div>
-                                </div>
-
-                                <div>
-                                    <div class="text-sm text-gray-500">Em bé (dưới 2 tuổi)</div>
-                                    <div id="youthPrice" class="text-xl font-bold text-gray-900">0 VND</div>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-gray-500">Phụ thu phòng đơn</div>
-                                    <div id="singleRoomPrice" class="text-xl font-bold text-gray-900">0 VND</div>
-                                </div>
-                            </div>
-
-                            {{-- Điểm tập trung --}}
                             @php
                                 $firstSchedule = $schedules->first();
-                                $initialMeetingPoint =
-                                    $firstSchedule['meeting_point'] ?? ($tour->departure_location ?? 'Đang cập nhật');
+                                $initialDate = $firstSchedule ? \Carbon\Carbon::parse($firstSchedule['date'])->format('d/m/Y') : null;
+                                $initialSeat = $firstSchedule['seat_left'] ?? null;
+                                $initialMeetingPoint = $firstSchedule['meeting_point'] ?? ($tour->departure_location ?? 'Đang cập nhật');
+                                $initialAdultPrice = $firstSchedule['price_adult'] ?? $tour->base_price_from;
                             @endphp
-                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm">
+
+                            <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Ngày khởi hành</span>
+                                    <span id="selectedDate" class="font-semibold text-gray-900">
+                                        {{ $initialDate ?? 'Đang cập nhật' }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Giá người lớn</span>
+                                    <span id="selectedAdultPrice" class="font-semibold text-red-600">
+                                        {{ number_format($initialAdultPrice, 0, ',', '.') }} đ
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Số chỗ còn lại</span>
+                                    <span id="selectedSeat" class="font-semibold text-red-600">
+                                        {{ $initialSeat ?? '-' }}
+                                    </span>
+                                </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-600">Điểm tập trung</span>
-                                    <b id="meetingPointValue" class="text-gray-900">{{ $initialMeetingPoint }}</b>
-                                </div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    * Thông tin có thể thay đổi, vui lòng kiểm tra lại khi đặt tour
-                                </div>
-                            </div>
-
-                            <!-- SỐ LƯỢNG -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="text-sm font-semibold text-gray-700">Người lớn</label>
-                                    <input id="adultQty" type="number" name="adults" min="1" value="1"
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-semibold text-gray-700">Trẻ em (5–11 tuổi)</label>
-                                    <input id="childQty" type="number" name="children" min="0" value="0"
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-semibold text-gray-700">Trẻ nhỏ (2–4 tuổi)</label>
-                                    <input id="infantQty" type="number" name="infants" min="0" value="0"
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-semibold text-gray-700">Em bé (dưới 2 tuổi)</label>
-                                    <input id="youthQty" type="number" name="youths" min="0" value="0"
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                                    <span id="selectedMeeting" class="font-semibold text-gray-900 text-right">
+                                        {{ $initialMeetingPoint }}
+                                    </span>
                                 </div>
                             </div>
 
-                            <!-- THÔNG TIN HÀNH KHÁCH -->
-                            <div class="mt-2 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-semibold text-gray-700">Thông tin hành khách</span>
-                                    <span class="text-xs text-gray-500">Tự động sinh theo số lượng người lớn/trẻ em</span>
-                                </div>
-                                <div id="passengerContainer" class="space-y-3"></div>
+                            <div class="pt-2">
+                                @if (Auth::check() && Auth::user()->role === 'customer')
+                                    <button type="submit"
+                                        class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+                                        Đặt ngay
+                                    </button>
+                                @else
+                                    <a href="{{ route('signin') }}"
+                                        class="w-full inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+                                        Đăng nhập để đặt tour
+                                    </a>
+                                @endif
                             </div>
-
-                            {{-- note --}}
-                            <div class="text-xs text-gray-500 mt-1">
-                                <textarea name="note"
-                                    class="w-full border border-gray-300 rounded-lg p-3 focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none"
-                                    rows="4" placeholder="Ghi chú thêm cho booking (nếu có)"></textarea>
-                            </div>
-
-                            {{-- Phụ thu phòng đơn --}}
-                            <div class="mt-2 flex items-center justify-between text-sm">
-                                <label class="flex items-center gap-2 text-gray-700">
-                                    <input type="checkbox" id="singleRoomCheckbox" name="single_room" value="1"
-                                        class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
-                                    <span>Tôi muốn ở phòng đơn (áp dụng phụ thu)</span>
-                                </label>
-                            </div>
-
-                            <!-- TẠM TÍNH -->
-                            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Tạm tính</span>
-                                    <b id="totalPrice" class="text-lg text-gray-900">0 VND</b>
-                                </div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    * Giá thay đổi theo ngày & số lượng
-                                </div>
-                            </div>
-
-                            <!-- ACTION -->
-                            {{-- kiểm tra đăng nhập trước khi submit --}}
-                            @if (Auth::check() && Auth::user()->role === 'customer')
-                            
-                                <button type="submit" name="redirect"
-                                    class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
-                                    Đặt tour ngay
-                                </button>
-
-                                
-                            @else
-                                <button type="button"
-                                    class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200"
-                                    onclick="alert('Vui lòng đăng nhập trước khi đặt tour!')">
-                                    Đặt tour ngay
-                                </button>
-                            @endif
                         </form>
                     </div>
                 </div>
             </aside>
-
-            <!-- SCRIPT TÍNH GIÁ -->
+            {{-- @dd($schedules) --}}
             <script>
-                const scheduleSelect = document.getElementById('scheduleSelect');
-                const adultQty = document.getElementById('adultQty');
-                const childQty = document.getElementById('childQty');
-                const infantQty = document.getElementById('infantQty');
-                const youthQty = document.getElementById('youthQty');
+                const schedules = @json($schedules);
+                const scheduleInput = document.getElementById('scheduleInput');
+                const calendarGrid = document.getElementById('calendarGrid');
+                const calMonthLabel = document.getElementById('calMonthLabel');
+                const calPrev = document.getElementById('calPrev');
+                const calNext = document.getElementById('calNext');
+                const monthListEl = document.getElementById('monthList');
 
-                const adultPriceEl = document.getElementById('adultPrice');
-                const childPriceEl = document.getElementById('childPrice');
-                const infantPriceEl = document.getElementById('infantPrice');
-                const youthPriceEl = document.getElementById('youthPrice');
-                const singleRoomPriceEl = document.getElementById('singleRoomPrice');
-                const totalPriceEl = document.getElementById('totalPrice');
-                const meetingPointEl = document.getElementById('meetingPointValue');
-                const passengerContainer = document.getElementById('passengerContainer');
-                const singleRoomCheckbox = document.getElementById('singleRoomCheckbox');
+                const selectedDateEl = document.getElementById('selectedDate');
+                const selectedAdultPriceEl = document.getElementById('selectedAdultPrice');
+                const selectedSeatEl = document.getElementById('selectedSeat');
+                const selectedMeetingEl = document.getElementById('selectedMeeting');
 
-                const defaultMeetingPoint = @json($tour->departure_location ?? 'Đang cập nhật');
+                const scheduleMap = {};
+                schedules.forEach((s) => {
+                    scheduleMap[s.date] = s;
+                });
+
+                // Danh sách các tháng có lịch (unique, sort tăng dần)
+                const scheduleMonths = [];
+                const monthSeen = new Set();
+                schedules.forEach((s) => {
+                    const d = new Date(s.date);
+                    if (isNaN(d)) return;
+                    const year = d.getFullYear();
+                    const month = d.getMonth(); // 0-11
+                    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+                    if (!monthSeen.has(key)) {
+                        monthSeen.add(key);
+                        scheduleMonths.push({ year, month, key });
+                    }
+                });
+
+                scheduleMonths.sort((a, b) => {
+                    if (a.year !== b.year) return a.year - b.year;
+                    return a.month - b.month;
+                });
 
                 function formatVND(number) {
-                    return new Intl.NumberFormat('vi-VN').format(number) + ' VND';
+                    return new Intl.NumberFormat('vi-VN').format(number) + ' đ';
                 }
 
-                function renderPassengers() {
-                    if (!passengerContainer) return;
-
-                    const adults = parseInt(adultQty.value) || 0;
-                    const children = parseInt(childQty.value) || 0;
-                    const infants = parseInt(infantQty.value) || 0;
-                    const youths = parseInt(youthQty.value) || 0;
-
-                    passengerContainer.innerHTML = '';
-
-                    let index = 0;
-                    let displayIndex = 1;
-
-                    for (let i = 0; i < adults; i++) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
-                        wrapper.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Người lớn</div>
-                            </div>
-                            <div class="grid grid-cols-1 gap-3">
-                                <div>
-                                    <label class="text-xs text-gray-600">Họ tên</label>
-                                    <input type="text" name="passengers[${index}][full_name]" required
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <span class="text-xs text-gray-600">Giới tính</span>
-                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
-                                            <span>Nam</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
-                                            <span>Nữ</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="passengers[${index}][passenger_type]" value="adult">
-                            </div>
-                        `;
-                        passengerContainer.appendChild(wrapper);
-                        index++;
-                        displayIndex++;
-                    }
-
-                    for (let i = 0; i < children; i++) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
-                        wrapper.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Trẻ em</div>
-                            </div>
-                            <div class="grid grid-cols-1 gap-3">
-                                <div>
-                                    <label class="text-xs text-gray-600">Họ tên</label>
-                                    <input type="text" name="passengers[${index}][full_name]" required
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <span class="text-xs text-gray-600">Giới tính</span>
-                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
-                                            <span>Nam</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
-                                            <span>Nữ</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="passengers[${index}][passenger_type]" value="child">
-                            </div>
-                        `;
-                        passengerContainer.appendChild(wrapper);
-                        index++;
-                        displayIndex++;
-                    }
-
-                    for (let i = 0; i < infants; i++) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
-                        wrapper.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Trẻ nhỏ</div>
-                            </div>
-                            <div class="grid grid-cols-1 gap-3">
-                                <div>
-                                    <label class="text-xs text-gray-600">Họ tên</label>
-                                    <input type="text" name="passengers[${index}][full_name]" required
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <span class="text-xs text-gray-600">Giới tính</span>
-                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
-                                            <span>Nam</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
-                                            <span>Nữ</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="passengers[${index}][passenger_type]" value="infant">
-                            </div>
-                        `;
-                        passengerContainer.appendChild(wrapper);
-                        index++;
-                        displayIndex++;
-                    }
-
-                    for (let i = 0; i < youths; i++) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'rounded-xl border border-gray-200 p-3 space-y-2';
-                        wrapper.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-800">Hành khách ${displayIndex} - Em bé</div>
-                            </div>
-                            <div class="grid grid-cols-1 gap-3">
-                                <div>
-                                    <label class="text-xs text-gray-600">Họ tên</label>
-                                    <input type="text" name="passengers[${index}][full_name]" required
-                                        class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                </div>
-                                <div>
-                                    <span class="text-xs text-gray-600">Giới tính</span>
-                                    <div class="mt-1 flex items-center gap-4 text-xs text-gray-700">
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="male" class="text-sky-600">
-                                            <span>Nam</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1">
-                                            <input type="radio" name="passengers[${index}][gender]" value="female" class="text-sky-600">
-                                            <span>Nữ</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="passengers[${index}][passenger_type]" value="youth">
-                            </div>
-                        `;
-                        passengerContainer.appendChild(wrapper);
-                        index++;
-                        displayIndex++;
-                    }
+                let currentMonthDate;
+                if (schedules.length > 0) {
+                    currentMonthDate = new Date(schedules[0].date);
+                } else {
+                    currentMonthDate = new Date();
                 }
 
-                function updatePrice() {
-                    if (!scheduleSelect || scheduleSelect.selectedIndex === -1) {
-                        adultPriceEl.innerText = formatVND(0);
-                        childPriceEl.innerText = formatVND(0);
-                        infantPriceEl.innerText = formatVND(0);
-                        youthPriceEl.innerText = formatVND(0);
-                        singleRoomPriceEl.innerText = formatVND(0);
-                        totalPriceEl.innerText = formatVND(0);
-                        if (meetingPointEl) {
-                            meetingPointEl.innerText = defaultMeetingPoint;
-                        }
+                let selectedSchedule = schedules.length > 0 ? schedules[0] : null;
+
+                function updateSummary() {
+                    if (!selectedSchedule) return;
+
+                    const dateStr = new Date(selectedSchedule.date).toLocaleDateString('vi-VN');
+                    const adultPrice = selectedSchedule.price_adult || 0;
+                    const seat = selectedSchedule.seat_left ?? '-';
+                    const meeting = selectedSchedule.meeting_point || '';
+
+                    if (selectedDateEl) selectedDateEl.textContent = dateStr;
+                    if (selectedAdultPriceEl) selectedAdultPriceEl.textContent = formatVND(adultPrice);
+                    if (selectedSeatEl) selectedSeatEl.textContent = seat;
+                    if (selectedMeetingEl) selectedMeetingEl.textContent = meeting;
+                }
+
+                function setSelectedSchedule(s) {
+                    selectedSchedule = s;
+                    if (scheduleInput) scheduleInput.value = s.id; // Cập nhật schedule_id trong form
+                    updateSummary();
+                    renderCalendar();
+                }
+
+                function buildDateKey(year, month, day) {
+                    const m = String(month + 1).padStart(2, '0');
+                    const d = String(day).padStart(2, '0');
+                    return `${year}-${m}-${d}`;
+                }
+
+                function renderMonthList() {
+                    if (!monthListEl) return;
+
+                    monthListEl.innerHTML = '';
+
+                    if (!scheduleMonths.length) {
+                        const span = document.createElement('div');
+                        span.className = 'text-xs text-gray-400';
+                        span.textContent = 'Chưa có lịch khởi hành';
+                        monthListEl.appendChild(span);
                         return;
                     }
 
-                    const selected = scheduleSelect.options[scheduleSelect.selectedIndex];
+                    const currentYear = currentMonthDate.getFullYear();
+                    const currentMonth = currentMonthDate.getMonth();
 
-                    const priceAdult = parseInt(selected.dataset.adult);
-                    const priceChild = parseInt(selected.dataset.child);
-                    const priceInfant = parseInt(selected.dataset.infant);
-                    const priceYouth = parseInt(selected.dataset.youth);
-                    const singleSurcharge = parseInt(selected.dataset.single);
+                    scheduleMonths.forEach((mObj) => {
+                        const isActive = mObj.year === currentYear && mObj.month === currentMonth;
 
-                    const adults = parseInt(adultQty.value) || 0;
-                    const children = parseInt(childQty.value) || 0;
-                    const infants = parseInt(infantQty.value) || 0;
-                    const youths = parseInt(youthQty.value) || 0;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className =
+                            'min-w-[96px] md:min-w-0 px-4 py-2 rounded-xl text-sm font-semibold border text-left transition';
 
-                    adultPriceEl.innerText = formatVND(priceAdult);
-                    childPriceEl.innerText = formatVND(priceChild);
-                    infantPriceEl.innerText = formatVND(priceInfant);
-                    youthPriceEl.innerText = formatVND(priceYouth);
-                    singleRoomPriceEl.innerText = formatVND(singleSurcharge);
+                        if (isActive) {
+                            btn.className += ' bg-sky-600 text-white border-sky-600 shadow';
+                        } else {
+                            btn.className +=
+                                ' bg-white text-sky-700 border-gray-200 hover:bg-sky-50 hover:border-sky-400';
+                        }
 
-                    let total = (priceAdult * adults)
-                        + (priceChild * children)
-                        + (priceInfant * infants)
-                        + (priceYouth * youths);
+                        const label = `
+THÁNG ${mObj.month + 1}/${mObj.year}`;
+                        btn.textContent = label.trim();
 
-                    if (singleRoomCheckbox && singleRoomCheckbox.checked && singleSurcharge > 0) {
-                        total += singleSurcharge;
-                    }
+                        btn.addEventListener('click', () => {
+                            currentMonthDate = new Date(mObj.year, mObj.month, 1);
+                            renderCalendar();
+                            renderMonthList();
+                        });
 
-                    totalPriceEl.innerText = formatVND(total);
-
-                    if (meetingPointEl) {
-                        const meeting = selected.dataset.meeting || defaultMeetingPoint;
-                        meetingPointEl.innerText = meeting;
-                    }
-
-                    renderPassengers();
+                        monthListEl.appendChild(btn);
+                    });
                 }
 
-                scheduleSelect.addEventListener('change', updatePrice);
-                adultQty.addEventListener('input', updatePrice);
-                childQty.addEventListener('input', updatePrice);
-                infantQty.addEventListener('input', updatePrice);
-                youthQty.addEventListener('input', updatePrice);
-                if (singleRoomCheckbox) {
-                    singleRoomCheckbox.addEventListener('change', updatePrice);
+                function renderCalendar() {
+                    if (!calendarGrid) return;
+
+                    const year = currentMonthDate.getFullYear();
+                    const month = currentMonthDate.getMonth(); // 0-11
+
+                    const firstOfMonth = new Date(year, month, 1);
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                    const jsDay = firstOfMonth.getDay(); // 0=CN..6=T7
+                    const startOffset = (jsDay + 6) % 7; // chuyển về Monday-first
+
+                    const monthText = `THÁNG ${month + 1}/${year}`;
+                    if (calMonthLabel) calMonthLabel.textContent = monthText;
+
+                    calendarGrid.innerHTML = '';
+
+                    for (let i = 0; i < startOffset; i++) {
+                        const empty = document.createElement('div');
+                        calendarGrid.appendChild(empty);
+                    }
+
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = buildDateKey(year, month, day);
+                        const schedule = scheduleMap[dateKey];
+                        const isSelectable = !!schedule;
+                        const isSelected = selectedSchedule && schedule && selectedSchedule.id === schedule.id;
+
+                        const cell = document.createElement('button');
+                        cell.type = 'button';
+                        cell.className =
+                            'h-12 md:h-14 flex flex-col items-center justify-center rounded-xl text-xs md:text-sm border transition';
+
+                        if (isSelectable) {
+                            cell.className +=
+                                ' cursor-pointer bg-sky-50 border-sky-200 text-gray-900 hover:bg-sky-100 hover:border-sky-400';
+                        } else {
+                            cell.className += ' cursor-default bg-gray-50 border-transparent text-gray-300';
+                        }
+
+                        if (isSelected) {
+                            cell.className +=
+                                ' !bg-red-50 !border-red-500 text-red-600 font-semibold shadow-sm';
+                        }
+
+                        const daySpan = document.createElement('div');
+                        daySpan.textContent = day;
+                        cell.appendChild(daySpan);
+
+                        if (schedule) {
+                            const priceSpan = document.createElement('div');
+                            priceSpan.className = 'mt-0.5 text-[10px] md:text-xs text-red-500 font-semibold';
+                            priceSpan.textContent =
+                                new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(
+                                    schedule.price_adult || 0,
+                                ) + 'đ';
+                            cell.appendChild(priceSpan);
+                        }
+
+                        if (isSelectable) {
+                            cell.addEventListener('click', () => {
+                                setSelectedSchedule(schedule);
+                            });
+                        }
+
+                        calendarGrid.appendChild(cell);
+                    }
                 }
 
-                updatePrice(); // init
+                if (calPrev) {
+                    calPrev.addEventListener('click', () => {
+                        currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+                        renderCalendar();
+                        renderMonthList();
+                    });
+                }
+
+                if (calNext) {
+                    calNext.addEventListener('click', () => {
+                        currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+                        renderCalendar();
+                        renderMonthList();
+                    });
+                }
+
+                if (selectedSchedule && scheduleInput && !scheduleInput.value) {
+                    scheduleInput.value = selectedSchedule.id;
+                }
+
+                renderCalendar();
+                renderMonthList();
+                updateSummary();
             </script>
 
         </div>

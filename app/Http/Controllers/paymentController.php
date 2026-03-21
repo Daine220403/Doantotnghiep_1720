@@ -19,6 +19,7 @@ class paymentController extends Controller
 
     public function vnpay_payment(Request $request)
     {
+        // dd($request->all());
         // Logic checkout: kiểm tra đăng nhập, validate và tạo đơn
         if (!Auth::check()) {
             return redirect()->route('signin')->with('error', 'Vui lòng đăng nhập để đặt tour');
@@ -32,6 +33,7 @@ class paymentController extends Controller
             'infants' => ['nullable', 'integer', 'min:0'],
             'youths' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string'],
+            'payment_mode' => ['required', 'in:full,deposit'],
             'passengers' => ['required', 'array'],
             'passengers.*.full_name' => ['required', 'string', 'max:150'],
             'passengers.*.passenger_type' => ['required', 'in:adult,child,infant,youth'],
@@ -39,6 +41,7 @@ class paymentController extends Controller
             'passengers.*.dob' => ['nullable', 'date'],
             'passengers.*.id_no' => ['nullable', 'string', 'max:50'],
             'passengers.*.special_request' => ['nullable', 'string'],
+            'passengers.*.single_room' => ['nullable', 'boolean'],
         ], [], [
             'tour_id' => 'tour',
             'schedule_id' => 'lịch khởi hành',
@@ -47,6 +50,7 @@ class paymentController extends Controller
             'infants' => 'số lượng trẻ nhỏ',
             'youths' => 'số lượng em bé',
             'note' => 'ghi chú',
+            'payment_mode' => 'hình thức thanh toán',
             'passengers' => 'danh sách hành khách',
             'passengers.*.full_name' => 'tên hành khách',
         ]);
@@ -95,7 +99,15 @@ class paymentController extends Controller
         $priceChild = (float) $departure->price_child;
         $priceInfant = (float) $departure->price_infant;
         $priceYouth = (float) $departure->price_youth;
-        $singleSurcharge = $request->boolean('single_room') ? (float) $departure->single_room_surcharge : 0;
+
+        // Phụ thu phòng đơn theo từng người lớn chọn
+        $singleRoomCount = 0;
+        foreach ($passengersInput as $p) {
+            if (($p['passenger_type'] ?? null) === 'adult' && !empty($p['single_room'])) {
+                $singleRoomCount++;
+            }
+        }
+        $singleSurcharge = $singleRoomCount * (float) $departure->single_room_surcharge;
 
         $subtotal = $adults * $priceAdult
             + $children * $priceChild
@@ -104,6 +116,11 @@ class paymentController extends Controller
             + $singleSurcharge;
         $discountTotal = 0;
         $totalAmount = $subtotal - $discountTotal;
+
+        $paymentMode = $data['payment_mode'] ?? 'full';
+        $payNowAmount = $paymentMode === 'deposit'
+            ? round($totalAmount * 0.3, 2)
+            : $totalAmount;
 
         // Mã đơn ngắn gọn hơn: OD + yymmddHis (không thêm random)
         $order = orders::create([
@@ -211,25 +228,27 @@ class paymentController extends Controller
                 'item_type' => 'surcharge',
                 'item_id' => $tour->id,
                 'item_name' => $tour->title . ' - Phụ thu phòng đơn',
-                'qty' => 1,
-                'unit_price' => $singleSurcharge,
+                'qty' => $singleRoomCount,
+                'unit_price' => (float) $departure->single_room_surcharge,
                 'line_total' => $singleSurcharge,
                 'meta' => json_encode([
                     'schedule_id' => $departure->id,
                     'schedule_date' => $departure->start_date,
                     'type' => 'single_room_surcharge',
+                    'single_room_count' => $singleRoomCount,
                 ]),
             ]);
         }
 
         $departure->increment('capacity_booked', $totalGuests);
 
-        // Tạo bản ghi thanh toán pending
+        // Tạo bản ghi thanh toán pending (sử dụng payment_code làm mã giao dịch gửi sang VNPay)
         $payment = payments::create([
             'order_id' => $order->id,
             'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+            'payment_type' => $paymentMode === 'deposit' ? 'deposit' : 'full',
             'method' => 'vnpay',
-            'amount' => $order->total_amount,
+            'amount' => $payNowAmount,
             'status' => 'pending',
             'transaction_ref' => null,
             'raw_response' => null,
@@ -242,11 +261,11 @@ class paymentController extends Controller
         $vnp_TmnCode = $this->vnp_TmnCode; //Mã website tại VNPAY 
         $vnp_HashSecret = $this->vnp_HashSecret; //Chuỗi bí mật
 
-        // Sử dụng mã đơn và tổng tiền thực tế
-        $vnp_TxnRef = $order->order_code;
+        // Sử dụng mã thanh toán riêng (payment_code) và tổng tiền thực tế
+        $vnp_TxnRef = $payment->payment_code;
         $vnp_OrderInfo = "Thanh toán tour " . $tour->title;
         $vnp_OrderType = "Tour";
-        $vnp_Amount = (int) ($order->total_amount * 100);
+        $vnp_Amount = (int) ($payNowAmount * 100);
         $vnp_Locale = "vn";
         $vnp_BankCode = "NCB";
         $vnp_IpAddr = $request->ip();
@@ -363,35 +382,68 @@ class paymentController extends Controller
 
         $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
 
-        $orderCode = $vnpData['vnp_TxnRef'] ?? null;
+        $txnRef = $vnpData['vnp_TxnRef'] ?? null;
         $responseCode = $vnpData['vnp_ResponseCode'] ?? null;
         $vnpAmount = isset($vnpData['vnp_Amount']) ? ((int) $vnpData['vnp_Amount']) / 100 : null;
         $vnpTransactionNo = $vnpData['vnp_TransactionNo'] ?? ($vnpData['vnp_BankTranNo'] ?? null);
 
-        if ($secureHash === $vnp_SecureHash && $orderCode) {
-            $order = orders::where('order_code', $orderCode)->first();
+        if ($secureHash === $vnp_SecureHash && $txnRef) {
+            // Ưu tiên tìm theo payment_code (mỗi giao dịch VNPay dùng một payment_code riêng)
+            $payment = payments::where('payment_code', $txnRef)
+                ->where('method', 'vnpay')
+                ->latest()
+                ->first();
+
+            if ($payment) {
+                $order = orders::find($payment->order_id);
+            } else {
+                // Fallback: trường hợp cũ dùng order_code làm vnp_TxnRef
+                $order = orders::where('order_code', $txnRef)->first();
+
+                if ($order) {
+                    $payment = payments::where('order_id', $order->id)
+                        ->where('method', 'vnpay')
+                        ->latest()
+                        ->first();
+                }
+            }
 
             if ($order) {
                 $booking = bookings::where('order_id', $order->id)->first();
-                $payment = payments::where('order_id', $order->id)
-                    ->where('method', 'vnpay')
-                    ->latest()
-                    ->first();
 
                 if ($responseCode === '00') {
-                    if ($order->status !== 'paid') {
-                        $order->status = 'paid';
-                        $order->save();
-                    }
+                    $paidAmount = $vnpAmount ?? ($payment->amount ?? $order->total_amount);
+                    $isFullPayment = $paidAmount >= ($order->total_amount - 1); // cho phép lệch nhỏ do làm tròn
 
-                    if ($booking && $booking->status !== 'paid') {
-                        $booking->status = 'paid';
-                        $booking->save();
+                    if ($isFullPayment) {
+                        if ($order->status !== 'paid') {
+                            $order->status = 'paid';
+                            $order->save();
+                        }
+
+                        if ($booking && $booking->status !== 'paid') {
+                            $booking->status = 'paid';
+                            $booking->save();
+                        }
+                    } else {
+                        // Thanh toán một phần (đặt cọc)
+                        if ($order->status !== 'partial_paid') {
+                            $order->status = 'partial_paid';
+                            $order->save();
+                        }
+
+                        if ($booking && $booking->status !== 'confirmed') {
+                            $booking->status = 'confirmed';
+                            $booking->save();
+                        }
                     }
 
                     if ($payment) {
                         $payment->status = 'success';
                         $payment->amount = $vnpAmount ?? $payment->amount;
+                        if (!$payment->payment_type) {
+                            $payment->payment_type = $isFullPayment ? 'full' : 'deposit';
+                        }
                         $payment->paid_at = now();
                         $payment->transaction_ref = $vnpTransactionNo;
                         $payment->raw_response = $vnpData;
@@ -400,6 +452,7 @@ class paymentController extends Controller
                         payments::create([
                             'order_id' => $order->id,
                             'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+                            'payment_type' => $isFullPayment ? 'full' : 'deposit',
                             'method' => 'vnpay',
                             'amount' => $vnpAmount ?? $order->total_amount,
                             'status' => 'success',
@@ -411,11 +464,6 @@ class paymentController extends Controller
 
                     return redirect()->route('home')->with('success', 'Thanh toán VNPay thành công. Cảm ơn bạn đã đặt tour!');
                 } else {
-                    if ($order->status !== 'failed') {
-                        $order->status = 'failed';
-                        $order->save();
-                    }
-
                     if ($payment) {
                         $payment->status = 'failed';
                         $payment->amount = $vnpAmount ?? $payment->amount;
@@ -423,6 +471,35 @@ class paymentController extends Controller
                         $payment->raw_response = $vnpData;
                         $payment->save();
                     }
+
+                    $totalPaid = payments::where('order_id', $order->id)
+                        ->where('status', 'success')
+                        ->sum('amount');
+
+                    if ($totalPaid >= ($order->total_amount - 1)) {
+                        $order->status = 'paid';
+
+                        if ($booking) {
+                            $booking->status = 'paid';
+                            $booking->save();
+                        }
+                    } elseif ($totalPaid > 0) {
+                        $order->status = 'partial_paid';
+
+                        if ($booking) {
+                            $booking->status = 'confirmed';
+                            $booking->save();
+                        }
+                    } else {
+                        $order->status = 'pending';
+
+                        if ($booking) {
+                            $booking->status = 'pending';
+                            $booking->save();
+                        }
+                    }
+
+                    $order->save();
 
                     return redirect()->route('home')->with('error', 'Thanh toán VNPay không thành công. Vui lòng thử lại hoặc chọn hình thức khác.');
                 }
@@ -448,10 +525,23 @@ class paymentController extends Controller
         if (!$order || $order->user_id !== $user->id) {
             return redirect()->route('dashboard')->with('error', 'Bạn không có quyền với đơn này');
         }
-
-        if (!in_array($order->status, ['pending', 'failed']) || $booking->status !== 'pending') {
+        // Không cho thanh toán lại nếu đơn đã bị hủy
+        if ($booking->status === 'cancelled' || $order->status === 'cancelled') {
             return redirect()->route('dashboard')
                 ->with('error', 'Đơn không hợp lệ để thanh toán');
+        }
+
+        // Tính số tiền còn lại phải thanh toán
+        $paidAmount = payments::where('order_id', $order->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $totalAmount = $order->total_amount ?? 0;
+        $remainingAmount = max($totalAmount - $paidAmount, 0);
+
+        if ($remainingAmount <= 0) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Đơn này đã được thanh toán đủ');
         }
 
         $tour = optional(optional($booking->departure)->tour);
@@ -464,10 +554,22 @@ class paymentController extends Controller
         $vnp_TmnCode = $this->vnp_TmnCode;
         $vnp_HashSecret = $this->vnp_HashSecret;
 
-        $vnp_TxnRef = $order->order_code;
+        // Ghi log thanh toán pending (mỗi lần thanh toán lại tạo 1 bản ghi mới) và dùng payment_code làm vnp_TxnRef
+        $payment = payments::create([
+            'order_id' => $order->id,
+            'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+            'payment_type' => 'full',
+            'method' => 'vnpay',
+            'amount' => $remainingAmount,
+            'status' => 'pending',
+            'transaction_ref' => null,
+            'raw_response' => null,
+        ]);
+
+        $vnp_TxnRef = $payment->payment_code;
         $vnp_OrderInfo = "Thanh toán lại tour " . $tour->title;
         $vnp_OrderType = "Tour";
-        $vnp_Amount = (int) ($order->total_amount * 100);
+        $vnp_Amount = (int) ($remainingAmount * 100);
         $vnp_Locale = "vn";
         $vnp_BankCode = "NCB";
         $vnp_IpAddr = $request->ip();
@@ -510,17 +612,6 @@ class paymentController extends Controller
             $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
             $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
         }
-
-        // Ghi log thanh toán pending (mỗi lần thanh toán lại tạo 1 bản ghi mới)
-        payments::create([
-            'order_id' => $order->id,
-            'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
-            'method' => 'vnpay',
-            'amount' => $order->total_amount,
-            'status' => 'pending',
-            'transaction_ref' => null,
-            'raw_response' => null,
-        ]);
 
         return redirect()->away($vnp_Url);
     }

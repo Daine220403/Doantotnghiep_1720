@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('order_id')->index();
 
-            $table->enum('item_type', ['tour', 'service', 'addon'])->index();
+            $table->enum('item_type', ['tour', 'service', 'addon','surcharge'])->index();
             $table->unsignedBigInteger('item_id')->index();
 
             $table->string('item_name', 255);

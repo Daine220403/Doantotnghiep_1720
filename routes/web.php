@@ -20,6 +20,9 @@ Route::prefix('/')->group(function () {
 
     route::prefix('/tours')->group(function () {
         Route::get('/', [indexController::class, 'tours'])->name('tours'); 
+        // Trang chọn ngày + chi tiết lịch khởi hành
+        Route::get('/{slug}/booking', [indexController::class, 'booking'])->name('tours.booking');
+        // Trang chi tiết tour
         Route::get('/{slug}', [indexController::class, 'show'])->name('tours.show');
         // Checkout + thanh toán VNPay
         Route::post('/checkout', [paymentController::class, 'vnpay_payment'])->name('tours.checkout');

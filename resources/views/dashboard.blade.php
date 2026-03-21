@@ -117,7 +117,10 @@
                                         <th class="py-2 pr-4">Tour</th>
                                         <th class="py-2 pr-4">Ngày khởi hành</th>
                                         <th class="py-2 pr-4">Mã đơn</th>
-                                        <th class="py-2 pr-4">Trạng thái</th>
+                                        <th class="py-2 pr-4">Tổng tiền</th>
+                                        <th class="py-2 pr-4">Đã trả</th>
+                                        <th class="py-2 pr-4">Còn lại</th>
+                                        <th class="py-2 pr-4">Đã cọc/Đủ</th>
                                         <th class="py-2 pr-4 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -126,6 +129,11 @@
                                         @php
                                             $tour = optional($booking->departure)->tour;
                                             $order = $booking->order;
+                                            $orderId = $order->id ?? null;
+                                            $totalAmount = $order->total_amount ?? 0;
+                                            $paidAmount = $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
+                                            $remainingAmount = max($totalAmount - $paidAmount, 0);
+                                            $isFullyPaid = $totalAmount > 0 && $paidAmount >= ($totalAmount - 1);
                                         @endphp
                                         <tr>
                                             <td class="py-2 pr-4">
@@ -140,29 +148,33 @@
                                             <td class="py-2 pr-4 text-xs text-gray-700">
                                                 {{ $order->order_code ?? '-' }}
                                             </td>
-                                            <td class="py-2 pr-4 text-xs">
-                                                <span
-                                                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold
-										{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : 'bg-amber-50 text-amber-700') }}">
-                                                    {{ ucfirst($booking->status) }}
-                                                </span>
+                                            <td class="py-2 pr-4 text-xs text-gray-700">
+                                                {{ $totalAmount > 0 ? number_format($totalAmount, 0, ',', '.') . ' đ' : '-' }}
                                             </td>
+                                            <td class="py-2 pr-4 text-xs text-gray-700">
+                                                {{ $paidAmount > 0 ? number_format($paidAmount, 0, ',', '.') . ' đ' : '0 đ' }}
+                                            </td>
+                                            <td class="py-2 pr-4 text-xs text-gray-700">
+                                                {{ $remainingAmount > 0 ? number_format($remainingAmount, 0, ',', '.') . ' đ' : '0 đ' }}
+                                            </td>
+                                            <td class="py-2 pr-4 text-xs text-gray-700">
+                                                @if ($paidAmount <= 0)
+                                                    <span class="text-red-600 font-semibold">Chưa thanh toán</span>
+                                                @elseif ($isFullyPaid)
+                                                    <span class="text-emerald-600 font-semibold">Đã thanh toán đủ</span>
+                                                @else
+                                                    <span class="text-yellow-600 font-semibold">Đã đặt cọc</span>
+                                                @endif
+                                            </td>
+                                            
                                             <td class="py-2 pl-4 pr-0 text-xs text-right">
                                                 <div class="flex justify-end gap-2">
-                                                    @if ($booking->status === 'pending' && isset($order) && in_array($order->status, ['pending', 'failed']))
+                                                    @if ($order && $remainingAmount > 0 && $booking->status !== 'cancelled')
                                                         <form action="{{ route('dashboard.bookings.pay', $booking->id) }}" method="POST">
                                                             @csrf
                                                             <button type="submit"
                                                                 class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
-                                                                Thanh toán
-                                                            </button>
-                                                        </form>
-                                                        <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
-                                                            onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
-                                                            @csrf
-                                                            <button type="submit"
-                                                                class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-50">
-                                                                Hủy
+                                                                {{ $paidAmount > 0 ? 'Thanh toán tiếp' : 'Thanh toán' }}
                                                             </button>
                                                         </form>
                                                     @endif
@@ -250,7 +262,9 @@
                                     <th class="py-2 pr-4">Ngày khởi hành</th>
                                     <th class="py-2 pr-4">Mã đơn</th>
                                     <th class="py-2 pr-4">Tổng tiền</th>
-                                    <th class="py-2 pr-4">Trạng thái</th>
+                                    <th class="py-2 pr-4">Đã trả</th>
+                                    <th class="py-2 pr-4">Còn lại</th>
+                                    <th class="py-2 pr-4">Đã cọc/Đủ</th>
                                     <th class="py-2 pr-4">Ngày đặt</th>
                                     <th class="py-2 pr-4 text-right">Thao tác</th>
                                 </tr>
@@ -260,6 +274,11 @@
                                     @php
                                         $tour = optional($booking->departure)->tour;
                                         $order = $booking->order;
+                                        $orderId = $order->id ?? null;
+                                        $totalAmount = $order->total_amount ?? 0;
+                                        $paidAmount = $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
+                                        $remainingAmount = max($totalAmount - $paidAmount, 0);
+                                        $isFullyPaid = $totalAmount > 0 && $paidAmount >= ($totalAmount - 1);
                                     @endphp
                                     <tr>
                                         <td class="py-2 pr-4">
@@ -274,34 +293,34 @@
                                             {{ $order->order_code ?? '-' }}
                                         </td>
                                         <td class="py-2 pr-4 text-xs text-gray-700">
-                                            {{ isset($order->total_amount) ? number_format($order->total_amount, 0, ',', '.') . ' đ' : '-' }}
+                                            {{ $totalAmount > 0 ? number_format($totalAmount, 0, ',', '.') . ' đ' : '-' }}
                                         </td>
-                                        <td class="py-2 pr-4 text-xs">
-                                            <span
-                                                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold
-													{{ $booking->status === 'paid' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'confirmed' ? 'bg-sky-50 text-sky-700' : ($booking->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ($booking->status === 'cancelled' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'))) }}">
-                                                {{ ucfirst($booking->status) }}
-                                            </span>
+                                        <td class="py-2 pr-4 text-xs text-gray-700">
+                                            {{ $paidAmount > 0 ? number_format($paidAmount, 0, ',', '.') . ' đ' : '0 đ' }}
+                                        </td>
+                                        <td class="py-2 pr-4 text-xs text-gray-700">
+                                            {{ $remainingAmount > 0 ? number_format($remainingAmount, 0, ',', '.') . ' đ' : '0 đ' }}
+                                        </td>
+                                        <td class="py-2 pr-4 text-xs text-gray-700">
+                                            @if ($paidAmount <= 0)
+                                                <span class="text-red-600 font-semibold">Chưa thanh toán</span>
+                                            @elseif ($isFullyPaid)
+                                                <span class="text-emerald-600 font-semibold">Đã thanh toán đủ</span>
+                                            @else
+                                                <span class="text-yellow-600 font-semibold">Đã đặt cọc</span>
+                                            @endif
                                         </td>
                                         <td class="py-2 pr-4 text-xs text-gray-700">
                                             {{ optional($booking->created_at)->format('d/m/Y H:i') ?? '-' }}
                                         </td>
                                         <td class="py-2 pl-4 pr-0 text-xs text-right">
                                             <div class="flex justify-end gap-2">
-                                                @if ($booking->status === 'pending' && isset($order) && in_array($order->status, ['pending', 'failed']))
+                                                @if ($order && $remainingAmount > 0 && $booking->status !== 'cancelled')
                                                     <form action="{{ route('dashboard.bookings.pay', $booking->id) }}" method="POST">
                                                         @csrf
                                                         <button type="submit"
                                                             class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
-                                                            Thanh toán
-                                                        </button>
-                                                    </form>
-                                                    <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
-                                                        onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
-                                                        @csrf
-                                                        <button type="submit"
-                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-50">
-                                                            Hủy
+                                                            {{ $paidAmount > 0 ? 'Thanh toán tiếp' : 'Thanh toán' }}
                                                         </button>
                                                     </form>
                                                 @endif
