@@ -75,18 +75,22 @@
         </div>
     </li>
 
-    <!-- Nav Item - News Menu -->
+    <!-- Heading -->
+    <div class="sidebar-heading">
+        Nhân viên
+    </div>
+    <!-- Nav Item - Customer Support Menu -->
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFour"
             aria-expanded="true" aria-controls="collapseFour">
-            <i class="fas fa-newspaper"></i>
-            <span>Dịch vụ</span>
+            <i class="fas fa-user-cog"></i>
+            <span>Hỗ trợ đặt tour</span>
         </a>
         <div id="collapseFour" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng dịch vụ:</h6>
-                <a class="collapse-item" href="#">Danh sách dịch vụ</a>
-                <a class="collapse-item" href="#">Thêm dịch vụ</a>
+                <h6 class="collapse-header">Chức năng nhân viên:</h6>
+                <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Danh sách tour khách đặt</a>
+                <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Đặt/Hủy tour cho khách</a>
             </div>
         </div>
     </li>

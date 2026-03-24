@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\admin\toursController;
 use App\Http\Controllers\admin\bookingController;
+use App\Http\Controllers\admin\StaffBookingController;
 use App\Http\Controllers\admin\TourAssignmentController;
 use App\Http\Controllers\admin\guideController;
 
@@ -32,6 +33,24 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [bookingController::class, 'index'])->name('admin.mana-booking.index'); // danh sách booking
         Route::get('/{id}', [bookingController::class, 'show'])->name('admin.mana-booking.show'); // xem chi tiết booking
         Route::put('/{id}/status', [bookingController::class, 'updateStatus'])->name('admin.mana-booking.update-status'); // cập nhật trạng thái booking
+    });
+
+    // Chức năng dành cho nhân viên: xem tour khách đã đặt, đặt/hủy tour giúp khách
+    Route::prefix('/staff-booking')->group(function () {
+        // Danh sách tour có booking của khách
+        Route::get('/tours', [StaffBookingController::class, 'index'])->name('admin.staff-booking.tours');
+
+        // Chi tiết 1 tour: lịch khởi hành + danh sách booking/khách
+        Route::get('/tours/{id}', [StaffBookingController::class, 'showTour'])->name('admin.staff-booking.tours.show');
+
+        // Form đặt tour cho khách theo 1 lịch khởi hành
+        Route::get('/departures/{departure}/create', [StaffBookingController::class, 'create'])->name('admin.staff-booking.create');
+
+        // Lưu booking do nhân viên tạo hộ khách
+        Route::post('/bookings', [StaffBookingController::class, 'store'])->name('admin.staff-booking.store');
+
+        // Hủy booking cho khách
+        Route::post('/bookings/{id}/cancel', [StaffBookingController::class, 'cancel'])->name('admin.staff-booking.cancel');
     });
 
     // Danh sách khách hàng theo tour
