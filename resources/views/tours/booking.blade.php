@@ -234,9 +234,74 @@
             const priceInfant = {{ (int) $departure->price_infant }};
             const priceYouth = {{ (int) $departure->price_youth }};
             const singleSurcharge = {{ (int) $departure->single_room_surcharge }};
+            const departureDate = new Date('{{ \Carbon\Carbon::parse($departure->start_date)->format('Y-m-d') }}');
 
             function formatVND(number) {
                 return new Intl.NumberFormat('vi-VN').format(number) + ' đ';
+            }
+
+            function calculateAgeYears(dobStr, refDate) {
+                const dob = new Date(dobStr);
+                if (Number.isNaN(dob.getTime())) return null;
+                let age = refDate.getFullYear() - dob.getFullYear();
+                const m = refDate.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && refDate.getDate() < dob.getDate())) {
+                    age--;
+                }
+                return age;
+            }
+
+            function validateAgeForRow(row) {
+                const dobInput = row.querySelector('input[name*="[dob]"]');
+                const typeInput = row.querySelector('input[name*="[passenger_type]"]');
+                if (!dobInput || !typeInput) return true;
+
+                const dob = dobInput.value;
+                const type = typeInput.value;
+
+                dobInput.setCustomValidity('');
+
+                if (!dob) {
+                    dobInput.setCustomValidity('Vui lòng nhập ngày sinh.');
+                    return false;
+                }
+
+                const age = calculateAgeYears(dob, departureDate);
+                if (age === null) {
+                    dobInput.setCustomValidity('Ngày sinh không hợp lệ.');
+                    return false;
+                }
+
+                switch (type) {
+                    case 'adult':
+                        if (age < 12) {
+                            dobInput.setCustomValidity('Người lớn phải từ 12 tuổi trở lên tính đến ngày khởi hành.');
+                            return false;
+                        }
+                        break;
+                    case 'child':
+                        if (age < 5 || age > 11) {
+                            dobInput.setCustomValidity('Trẻ em phải từ 5 đến 11 tuổi tính đến ngày khởi hành.');
+                            return false;
+                        }
+                        break;
+                    case 'infant':
+                        if (age < 2 || age > 4) {
+                            dobInput.setCustomValidity('Trẻ nhỏ phải từ 2 đến 4 tuổi tính đến ngày khởi hành.');
+                            return false;
+                        }
+                        break;
+                    case 'youth':
+                        if (age >= 2) {
+                            dobInput.setCustomValidity('Em bé phải dưới 2 tuổi tính đến ngày khởi hành.');
+                            return false;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                return true;
             }
 
             function renderPassengers() {
@@ -271,6 +336,7 @@
                     for (let i = 0; i < count; i++) {
                         const row = document.createElement('div');
                         row.className = 'grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm items-end';
+                        row.setAttribute('data-passenger-row', '1');
                         row.innerHTML = `
                             <div>
                                 <label class="text-xs text-gray-600">Họ tên *</label>
@@ -288,7 +354,7 @@
                             </div>
                             <div>
                                 <label class="text-xs text-gray-600">Ngày sinh *</label>
-                                <input type="date" name="passengers[${index}][dob]"
+                                <input type="date" name="passengers[${index}][dob]" required
                                     class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
                             </div>
                             ${type === 'adult'
@@ -400,8 +466,34 @@
             if (passengerContainer) {
                 passengerContainer.addEventListener('change', (e) => {
                     const target = e.target;
+                    const row = target.closest('[data-passenger-row]');
+                    if (row) {
+                        validateAgeForRow(row);
+                    }
                     if (target && target.matches('input[data-single-room="1"]')) {
                         updateTotal();
+                    }
+                });
+            }
+
+            const bookingForm = document.getElementById('bookingForm');
+            if (bookingForm && passengerContainer) {
+                bookingForm.addEventListener('submit', (e) => {
+                    const rows = passengerContainer.querySelectorAll('[data-passenger-row]');
+                    let allValid = true;
+                    rows.forEach((row) => {
+                        const ok = validateAgeForRow(row);
+                        if (!ok && allValid) {
+                            const dobInput = row.querySelector('input[name*="[dob]"]');
+                            if (dobInput) {
+                                dobInput.reportValidity();
+                            }
+                        }
+                        allValid = allValid && ok;
+                    });
+
+                    if (!allValid) {
+                        e.preventDefault();
                     }
                 });
             }

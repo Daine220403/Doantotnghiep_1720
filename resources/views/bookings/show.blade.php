@@ -213,6 +213,7 @@
                                     <th class="py-2 pr-4">Loại khách</th>
                                     <th class="py-2 pr-4">Ngày sinh</th>
                                     <th class="py-2 pr-4">Giới tính</th>
+                                    <th class="py-2 pr-4">Phụ thu</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -247,6 +248,13 @@
                                                 Nữ
                                             @else
                                                 Khác
+                                            @endif
+                                        </td>
+                                        <td class="py-2 pr-4 text-gray-700">
+                                            @if ($p->single_room && ($p->single_room_surcharge ?? 0) > 0)
+                                                {{ number_format($p->single_room_surcharge, 0, ',', '.') }} đ
+                                            @else
+                                                Không
                                             @endif
                                         </td>
                                     </tr>

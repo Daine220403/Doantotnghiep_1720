@@ -336,7 +336,6 @@ class DemoTravelSeeder extends Seeder
                     'dob' => '2000-05-10',
                     'id_no' => '079200000001',
                     'passenger_type' => 'adult',
-                    'special_request' => null,
                 ],
                 [
                     'booking_id' => $bookingId,
@@ -345,7 +344,6 @@ class DemoTravelSeeder extends Seeder
                     'dob' => '2001-09-20',
                     'id_no' => '079200000002',
                     'passenger_type' => 'adult',
-                    'special_request' => 'Ăn chay',
                 ],
             ]);
 

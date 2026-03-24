@@ -19,10 +19,11 @@ return new class extends Migration {
 
             $table->enum('passenger_type', ['adult', 'child', 'infant', 'youth'])->index();
 
-            $table->text('special_request')->nullable();
+            $table->boolean('single_room')->default(false);
+            $table->decimal('single_room_surcharge', 12, 2)->default(0); // Lưu phụ thu phòng đơn tại thời điểm đặt
             $table->timestamps();
             $table->foreign('booking_id')->references('id')->on('bookings')
-                  ->cascadeOnDelete()->cascadeOnUpdate();
+                ->cascadeOnDelete()->cascadeOnUpdate();
         });
     }
 

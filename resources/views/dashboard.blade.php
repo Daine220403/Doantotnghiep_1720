@@ -134,6 +134,13 @@
                                             $paidAmount = $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
                                             $remainingAmount = max($totalAmount - $paidAmount, 0);
                                             $isFullyPaid = $totalAmount > 0 && $paidAmount >= ($totalAmount - 1);
+                                            $departureDate = optional($booking->departure)->start_date;
+                                            $daysBeforeDeparture = $departureDate
+                                                ? now()->diffInDays(\Carbon\Carbon::parse($departureDate), false)
+                                                : null;
+                                            $canModifyByDate = !is_null($daysBeforeDeparture) && $daysBeforeDeparture >= 7;
+                                            $canCancel = $canModifyByDate && $booking->status !== 'cancelled';
+                                            $canEdit = $canCancel && !$isFullyPaid;
                                         @endphp
                                         <tr>
                                             <td class="py-2 pr-4">
@@ -175,6 +182,24 @@
                                                             <button type="submit"
                                                                 class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
                                                                 {{ $paidAmount > 0 ? 'Thanh toán tiếp' : 'Thanh toán' }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
+
+                                                    @if ($canEdit)
+                                                        <a href="{{ route('dashboard.bookings.edit', $booking->id) }}"
+                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-amber-300 bg-amber-50 text-[11px] font-semibold text-amber-700 hover:bg-amber-100">
+                                                            Sửa thông tin
+                                                        </a>
+                                                    @endif
+
+                                                    @if ($canCancel)
+                                                        <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
+                                                            onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
+                                                            @csrf
+                                                            <button type="submit"
+                                                                class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-rose-200 bg-rose-50 text-[11px] font-semibold text-rose-700 hover:bg-rose-100">
+                                                                Hủy
                                                             </button>
                                                         </form>
                                                     @endif
@@ -279,6 +304,13 @@
                                         $paidAmount = $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
                                         $remainingAmount = max($totalAmount - $paidAmount, 0);
                                         $isFullyPaid = $totalAmount > 0 && $paidAmount >= ($totalAmount - 1);
+                                        $departureDate = optional($booking->departure)->start_date;
+                                        $daysBeforeDeparture = $departureDate
+                                            ? now()->diffInDays(\Carbon\Carbon::parse($departureDate), false)
+                                            : null;
+                                        $canModifyByDate = !is_null($daysBeforeDeparture) && $daysBeforeDeparture >= 7;
+                                        $canCancel = $canModifyByDate && $booking->status !== 'cancelled';
+                                        $canEdit = $canCancel && !$isFullyPaid;
                                     @endphp
                                     <tr>
                                         <td class="py-2 pr-4">
@@ -321,6 +353,24 @@
                                                         <button type="submit"
                                                             class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
                                                             {{ $paidAmount > 0 ? 'Thanh toán tiếp' : 'Thanh toán' }}
+                                                        </button>
+                                                    </form>
+                                                @endif
+
+                                                @if ($canEdit)
+                                                    <a href="{{ route('dashboard.bookings.edit', $booking->id) }}"
+                                                        class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-amber-300 bg-amber-50 text-[11px] font-semibold text-amber-700 hover:bg-amber-100">
+                                                        Sửa thông tin
+                                                    </a>
+                                                @endif
+
+                                                @if ($canCancel)
+                                                    <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
+                                                        onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
+                                                        @csrf
+                                                        <button type="submit"
+                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-rose-200 bg-rose-50 text-[11px] font-semibold text-rose-700 hover:bg-rose-100">
+                                                            Hủy
                                                         </button>
                                                     </form>
                                                 @endif

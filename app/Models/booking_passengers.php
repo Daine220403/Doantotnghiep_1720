@@ -15,6 +15,7 @@ class booking_passengers extends Model
         'dob',
         'id_no',
         'passenger_type',
-        'special_request',
+        'single_room',
+        'single_room_surcharge',
     ];
 }

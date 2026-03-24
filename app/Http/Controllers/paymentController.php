@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use App\Models\Tours;
 use App\Models\bookings;
 use App\Models\booking_passengers;
@@ -40,7 +41,6 @@ class paymentController extends Controller
             'passengers.*.gender' => ['nullable', 'in:male,female,other'],
             'passengers.*.dob' => ['nullable', 'date'],
             'passengers.*.id_no' => ['nullable', 'string', 'max:50'],
-            'passengers.*.special_request' => ['nullable', 'string'],
             'passengers.*.single_room' => ['nullable', 'boolean'],
         ], [], [
             'tour_id' => 'tour',
@@ -81,11 +81,65 @@ class paymentController extends Controller
         $youths = (int) ($data['youths'] ?? 0);
         $totalGuests = $adults + $children + $infants + $youths;
 
-        $passengersInput = $request->input('passengers', []);
+        // Dùng luôn danh sách hành khách đã được validate
+        $passengersInput = $data['passengers'];
         if (count($passengersInput) !== $totalGuests) {
             return back()->withErrors([
                 'passengers' => 'Số lượng hành khách không khớp với tổng số khách (người lớn, trẻ em, trẻ nhỏ, em bé)',
             ])->withInput();
+        }
+
+        // Ràng buộc ngày sinh theo loại khách (tính theo ngày khởi hành)
+        $ageErrors = [];
+        $departureDate = Carbon::parse($departure->start_date);
+
+        foreach ($passengersInput as $idx => $p) {
+            $type = $p['passenger_type'] ?? null;
+            $dob = $p['dob'] ?? null;
+
+            if (empty($dob)) {
+                $ageErrors["passengers.$idx.dob"] = 'Vui lòng nhập ngày sinh.';
+                continue;
+            }
+
+            try {
+                $dobDate = Carbon::parse($dob);
+            } catch (\Exception $e) {
+                $ageErrors["passengers.$idx.dob"] = 'Ngày sinh không hợp lệ.';
+                continue;
+            }
+
+            $ageYears = $dobDate->diffInYears($departureDate);
+
+            switch ($type) {
+                case 'adult':
+                    if ($ageYears < 12) {
+                        $ageErrors["passengers.$idx.dob"] = 'Người lớn phải từ 12 tuổi trở lên tính đến ngày khởi hành.';
+                    }
+                    break;
+                case 'child':
+                    if ($ageYears < 5 || $ageYears > 11) {
+                        $ageErrors["passengers.$idx.dob"] = 'Trẻ em phải từ 5 đến 11 tuổi tính đến ngày khởi hành.';
+                    }
+                    break;
+                case 'infant':
+                    if ($ageYears < 2 || $ageYears > 4) {
+                        $ageErrors["passengers.$idx.dob"] = 'Trẻ nhỏ phải từ 2 đến 4 tuổi tính đến ngày khởi hành.';
+                    }
+                    break;
+                case 'youth':
+                    if ($ageYears >= 2) {
+                        $ageErrors["passengers.$idx.dob"] = 'Em bé phải dưới 2 tuổi tính đến ngày khởi hành.';
+                    }
+                    break;
+                default:
+                    // không xác định loại khách thì bỏ qua
+                    break;
+            }
+        }
+
+        if (!empty($ageErrors)) {
+            return back()->withErrors($ageErrors)->withInput();
         }
 
         $remaining = $departure->capacity_total - $departure->capacity_booked;
@@ -107,7 +161,10 @@ class paymentController extends Controller
                 $singleRoomCount++;
             }
         }
-        $singleSurcharge = $singleRoomCount * (float) $departure->single_room_surcharge;
+
+        // Đơn giá phụ thu phòng đơn tại thời điểm đặt (lưu trên booking để không bị đổi khi giá tour thay đổi)
+        $singleRoomPrice = (float) $departure->single_room_surcharge;
+        $singleSurcharge = $singleRoomCount * $singleRoomPrice;
 
         $subtotal = $adults * $priceAdult
             + $children * $priceChild
@@ -143,6 +200,8 @@ class paymentController extends Controller
         ]);
 
         foreach ($passengersInput as $p) {
+            $isSingle = !empty($p['single_room']) && ($p['passenger_type'] ?? 'adult') === 'adult';
+
             booking_passengers::create([
                 'booking_id' => $booking->id,
                 'full_name' => $p['full_name'],
@@ -150,7 +209,8 @@ class paymentController extends Controller
                 'dob' => $p['dob'] ?? null,
                 'id_no' => $p['id_no'] ?? null,
                 'passenger_type' => $p['passenger_type'] ?? 'adult',
-                'special_request' => $p['special_request'] ?? null,
+                'single_room' => $isSingle,
+                'single_room_surcharge' => $isSingle ? $singleRoomPrice : 0,
             ]);
         }
 
@@ -229,7 +289,8 @@ class paymentController extends Controller
                 'item_id' => $tour->id,
                 'item_name' => $tour->title . ' - Phụ thu phòng đơn',
                 'qty' => $singleRoomCount,
-                'unit_price' => (float) $departure->single_room_surcharge,
+                // dùng đơn giá phụ thu đã dùng để tạo booking
+                'unit_price' => $singleRoomPrice,
                 'line_total' => $singleSurcharge,
                 'meta' => json_encode([
                     'schedule_id' => $departure->id,
