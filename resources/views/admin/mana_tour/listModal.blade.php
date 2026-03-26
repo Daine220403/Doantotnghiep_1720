@@ -2,6 +2,7 @@
     .cke_notification {
         display: none !important;
     }
+
 </style>
 @foreach ($tours as $tour)
     @php
@@ -119,7 +120,7 @@
                     <div class="border rounded p-3 mb-3">
                         <h6 class="font-weight-bold mb-2">Mô tả chi tiết</h6>
                         <div class="text-muted" style="white-space: pre-line;">
-                            {!! $tour->description !!}
+                            {!! $tour->description !!} 
                         </div>
                     </div>
 
@@ -239,9 +240,11 @@
                                                         $assignment = $departure->assignment;
                                                     @endphp
                                                     @if ($assignment && $assignment->guide)
-                                                        <span class="font-weight-bold">{{ $assignment->guide->name }}</span>
+                                                        <span
+                                                            class="font-weight-bold">{{ $assignment->guide->name }}</span>
                                                         @if ($assignment->guide->phone)
-                                                            <small class="text-muted d-block">{{ $assignment->guide->phone }}</small>
+                                                            <small
+                                                                class="text-muted d-block">{{ $assignment->guide->phone }}</small>
                                                         @endif
                                                     @else
                                                         <span class="text-muted">Chưa phân công</span>
@@ -587,19 +590,34 @@
                                             <label>Phụ thu phòng đơn</label>
                                             <input type="number" min="0"
                                                 name="departures[{{ $index }}][single_room_surcharge]"
-                                                class="form-control" value="{{ $departure->single_room_surcharge }}">
+                                                class="form-control"
+                                                value="{{ $departure->single_room_surcharge }}">
                                         </div>
 
                                         <div class="col-md-12 mb-3">
                                             <label>Trạng thái</label>
-                                            <select name="departures[{{ $index }}][status]" class="form-control">
-                                                <option value="draft" {{ $departure->status == 'draft' ? 'selected' : '' }}>draft</option>
-                                                <option value="open" {{ $departure->status == 'open' ? 'selected' : '' }}>open</option>
-                                                <option value="closed" {{ $departure->status == 'closed' ? 'selected' : '' }}>closed</option>
-                                                <option value="sold_out" {{ $departure->status == 'sold_out' ? 'selected' : '' }}>sold_out</option>
-                                                <option value="cancelled" {{ $departure->status == 'cancelled' ? 'selected' : '' }}>cancelled</option>
-                                                <option value="confirmed" {{ $departure->status == 'confirmed' ? 'selected' : '' }}>confirmed</option>
-                                                <option value="completed" {{ $departure->status == 'completed' ? 'selected' : '' }}>completed</option>
+                                            <select name="departures[{{ $index }}][status]"
+                                                class="form-control">
+                                                <option value="draft"
+                                                    {{ $departure->status == 'draft' ? 'selected' : '' }}>draft
+                                                </option>
+                                                <option value="open"
+                                                    {{ $departure->status == 'open' ? 'selected' : '' }}>open</option>
+                                                <option value="closed"
+                                                    {{ $departure->status == 'closed' ? 'selected' : '' }}>closed
+                                                </option>
+                                                <option value="sold_out"
+                                                    {{ $departure->status == 'sold_out' ? 'selected' : '' }}>sold_out
+                                                </option>
+                                                <option value="cancelled"
+                                                    {{ $departure->status == 'cancelled' ? 'selected' : '' }}>
+                                                    cancelled</option>
+                                                <option value="confirmed"
+                                                    {{ $departure->status == 'confirmed' ? 'selected' : '' }}>
+                                                    confirmed</option>
+                                                <option value="completed"
+                                                    {{ $departure->status == 'completed' ? 'selected' : '' }}>
+                                                    completed</option>
                                             </select>
                                         </div>
                                     </div>
@@ -620,6 +638,17 @@
                 </form>
 
             </div>
+            {{-- hiện lỗi modal sửa ra đây --}}
+            @if ($errors->any())
+                <div class="alert alert-danger mt-3">
+                    <strong>Dữ liệu không hợp lệ:</strong>
+                    <ul class="mb-0 mt-2">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </div>
     </div>
 @endforeach
@@ -713,6 +742,21 @@
                         <div class="col-md-3 mb-3">
                             <label>Giá trẻ em</label>
                             <input type="number" min="0" name="departures[${index}][price_child]" class="form-control" value="0">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label>Giá trẻ nhỏ</label>
+                            <input type="number" min="0" name="departures[${index}][price_infant]" class="form-control" value="0">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label>Giá em bé</label>
+                            <input type="number" min="0" name="departures[${index}][price_youth]" class="form-control" value="0">
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label>Phụ thu phòng đơn</label>
+                            <input type="number" min="0" name="departures[${index}][single_room_surcharge]" class="form-control" value="0">
                         </div>
 
                         <div class="col-md-12 mb-3">

@@ -415,6 +415,223 @@ class paymentController extends Controller
         return redirect()->away($vnp_Url);
     }
 
+    // Nhân viên thu cọc 30% qua VNPay cho một booking (khách quét trực tiếp)
+    public function staffDepositBooking(Request $request, $bookingId)
+    {
+        $booking = bookings::with(['order', 'departure.tour'])
+            ->where('id', $bookingId)
+            ->firstOrFail();
+
+        $order = $booking->order;
+
+        if (!$order) {
+            return redirect()->back()->with('error', 'Không tìm thấy đơn hàng liên quan đến booking này');
+        }
+
+        if ($booking->status === 'cancelled' || $order->status === 'cancelled') {
+            return redirect()->back()->with('error', 'Đơn này đã bị hủy, không thể thanh toán');
+        }
+
+        $totalAmount = $order->total_amount ?? 0;
+        if ($totalAmount <= 0) {
+            return redirect()->back()->with('error', 'Tổng tiền đơn hàng không hợp lệ');
+        }
+
+        $paidAmount = payments::where('order_id', $order->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $remainingAmount = max($totalAmount - $paidAmount, 0);
+        if ($remainingAmount <= 0) {
+            return redirect()->back()->with('info', 'Đơn này đã được thanh toán đủ');
+        }
+
+        // Mục tiêu cọc = 30% tổng tiền
+        $depositTarget = round($totalAmount * 0.3, 2);
+
+        if ($paidAmount >= ($depositTarget - 1)) {
+            return redirect()->back()->with('info', 'Đơn đã được đặt cọc hoặc đã thanh toán quá 30%');
+        }
+
+        // Số tiền cần thanh toán thêm để đủ 30%
+        $amountToPay = min($depositTarget - $paidAmount, $remainingAmount);
+
+        $tour = optional(optional($booking->departure)->tour);
+        if (!$tour) {
+            return redirect()->back()->with('error', 'Không tìm thấy thông tin tour cho đơn này');
+        }
+
+        $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+        $vnp_Returnurl = route('vnpay.return');
+        $vnp_TmnCode = $this->vnp_TmnCode;
+        $vnp_HashSecret = $this->vnp_HashSecret;
+
+        // Ghi log thanh toán pending và dùng payment_code làm vnp_TxnRef
+        $payment = payments::create([
+            'order_id' => $order->id,
+            'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+            'payment_type' => 'deposit',
+            'method' => 'vnpay',
+            'amount' => $amountToPay,
+            'status' => 'pending',
+            'transaction_ref' => null,
+            'raw_response' => null,
+        ]);
+
+        $vnp_TxnRef = $payment->payment_code;
+        $vnp_OrderInfo = "Thanh toán cọc tour " . $tour->title;
+        $vnp_OrderType = "Tour";
+        $vnp_Amount = (int) ($amountToPay * 100);
+        $vnp_Locale = "vn";
+        $vnp_BankCode = "NCB";
+        $vnp_IpAddr = $request->ip();
+
+        $inputData = array(
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_OrderType" => $vnp_OrderType,
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_TxnRef" => $vnp_TxnRef,
+        );
+
+        if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+            $inputData['vnp_BankCode'] = $vnp_BankCode;
+        }
+
+        ksort($inputData);
+        $query = "";
+        $i = 0;
+        $hashdata = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashdata .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+            $query .= urlencode($key) . "=" . urlencode($value) . '&';
+        }
+
+        $vnp_Url = $vnp_Url . "?" . $query;
+        if (isset($vnp_HashSecret)) {
+            $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+            $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+        }
+
+        return redirect()->away($vnp_Url);
+    }
+
+    // Nhân viên cho khách thanh toán đủ qua VNPay cho một booking (khách quét trực tiếp)
+    public function staffPayFullBooking(Request $request, $bookingId)
+    {
+        $booking = bookings::with(['order', 'departure.tour'])
+            ->where('id', $bookingId)
+            ->firstOrFail();
+
+        $order = $booking->order;
+
+        if (!$order) {
+            return redirect()->back()->with('error', 'Không tìm thấy đơn hàng liên quan đến booking này');
+        }
+
+        if ($booking->status === 'cancelled' || $order->status === 'cancelled') {
+            return redirect()->back()->with('error', 'Đơn này đã bị hủy, không thể thanh toán');
+        }
+
+        $totalAmount = $order->total_amount ?? 0;
+        if ($totalAmount <= 0) {
+            return redirect()->back()->with('error', 'Tổng tiền đơn hàng không hợp lệ');
+        }
+
+        $paidAmount = payments::where('order_id', $order->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $remainingAmount = max($totalAmount - $paidAmount, 0);
+
+        if ($remainingAmount <= 0) {
+            return redirect()->back()->with('info', 'Đơn này đã được thanh toán đủ');
+        }
+
+        $tour = optional(optional($booking->departure)->tour);
+        if (!$tour) {
+            return redirect()->back()->with('error', 'Không tìm thấy thông tin tour cho đơn này');
+        }
+
+        $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+        $vnp_Returnurl = route('vnpay.return');
+        $vnp_TmnCode = $this->vnp_TmnCode;
+        $vnp_HashSecret = $this->vnp_HashSecret;
+
+        // Ghi log thanh toán pending (thanh toán phần còn lại)
+        $payment = payments::create([
+            'order_id' => $order->id,
+            'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+            'payment_type' => 'full',
+            'method' => 'vnpay',
+            'amount' => $remainingAmount,
+            'status' => 'pending',
+            'transaction_ref' => null,
+            'raw_response' => null,
+        ]);
+
+        $vnp_TxnRef = $payment->payment_code;
+        $vnp_OrderInfo = "Thanh toán lại tour " . $tour->title;
+        $vnp_OrderType = "Tour";
+        $vnp_Amount = (int) ($remainingAmount * 100);
+        $vnp_Locale = "vn";
+        $vnp_BankCode = "NCB";
+        $vnp_IpAddr = $request->ip();
+
+        $inputData = array(
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode" => "VND",
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_OrderType" => $vnp_OrderType,
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_TxnRef" => $vnp_TxnRef,
+        );
+
+        if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+            $inputData['vnp_BankCode'] = $vnp_BankCode;
+        }
+
+        ksort($inputData);
+        $query = "";
+        $i = 0;
+        $hashdata = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashdata .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+            $query .= urlencode($key) . "=" . urlencode($value) . '&';
+        }
+
+        $vnp_Url = $vnp_Url . "?" . $query;
+        if (isset($vnp_HashSecret)) {
+            $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+            $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+        }
+
+        return redirect()->away($vnp_Url);
+    }
+
     public function vnpayReturn(Request $request)
     {
         $vnp_HashSecret = $this->vnp_HashSecret; // Chuỗi bí mật phải trùng với bên gửi đi
@@ -472,9 +689,111 @@ class paymentController extends Controller
             if ($order) {
                 $booking = bookings::where('order_id', $order->id)->first();
 
+                // if ($responseCode === '00') {
+                //     $paidAmount = $vnpAmount ?? ($payment->amount ?? $order->total_amount);
+                //     $isFullPayment = $paidAmount >= ($order->total_amount - 1); // cho phép lệch nhỏ do làm tròn
+
+                //     if ($isFullPayment) {
+                //         if ($order->status !== 'paid') {
+                //             $order->status = 'paid';
+                //             $order->save();
+                //         }
+
+                //         if ($booking && $booking->status !== 'paid') {
+                //             $booking->status = 'paid';
+                //             $booking->save();
+                //         }
+                //     } else {
+                //         // Thanh toán một phần (đặt cọc)
+                //         if ($order->status !== 'partial_paid') {
+                //             $order->status = 'partial_paid';
+                //             $order->save();
+                //         }
+
+                //         if ($booking && $booking->status !== 'confirmed') {
+                //             $booking->status = 'confirmed';
+                //             $booking->save();
+                //         }
+                //     }
+
+                //     if ($payment) {
+                //         $payment->status = 'success';
+                //         $payment->amount = $vnpAmount ?? $payment->amount;
+                //         if (!$payment->payment_type) {
+                //             $payment->payment_type = $isFullPayment ? 'full' : 'deposit';
+                //         }
+                //         $payment->paid_at = now();
+                //         $payment->transaction_ref = $vnpTransactionNo;
+                //         $payment->raw_response = $vnpData;
+                //         $payment->save();
+                //     } else {
+                //         payments::create([
+                //             'order_id' => $order->id,
+                //             'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
+                //             'payment_type' => $isFullPayment ? 'full' : 'deposit',
+                //             'method' => 'vnpay',
+                //             'amount' => $vnpAmount ?? $order->total_amount,
+                //             'status' => 'success',
+                //             'paid_at' => now(),
+                //             'transaction_ref' => $vnpTransactionNo,
+                //             'raw_response' => $vnpData,
+                //         ]);
+                //     }
+
+                //     // return redirect()->route('home')->with('success', 'Thanh toán VNPay thành công. Cảm ơn bạn đã đặt tour!');
+                //     return redirect()->route($this->getRedirectRouteByRole())->with('success', 'Thanh toán VNPay thành công. Cảm ơn bạn đã đặt tour!');
+                // } else {
+                //     if ($payment) {
+                //         $payment->status = 'failed';
+                //         $payment->amount = $vnpAmount ?? $payment->amount;
+                //         $payment->transaction_ref = $vnpTransactionNo;
+                //         $payment->raw_response = $vnpData;
+                //         $payment->save();
+                //     }
+
+                //     $totalPaid = payments::where('order_id', $order->id)
+                //         ->where('status', 'success')
+                //         ->sum('amount');
+
+                //     if ($totalPaid >= ($order->total_amount - 1)) {
+                //         $order->status = 'paid';
+
+                //         if ($booking) {
+                //             $booking->status = 'paid';
+                //             $booking->save();
+                //         }
+                //     } elseif ($totalPaid > 0) {
+                //         $order->status = 'partial_paid';
+
+                //         if ($booking) {
+                //             $booking->status = 'confirmed';
+                //             $booking->save();
+                //         }
+                //     } else {
+                //         $order->status = 'pending';
+
+                //         if ($booking) {
+                //             $booking->status = 'pending';
+                //             $booking->save();
+                //         }
+                //     }
+
+                //     $order->save();
+
+                //     return redirect()->route($this->getRedirectRouteByRole())->with('error', 'Thanh toán VNPay không thành công. Vui lòng thử lại hoặc chọn hình thức khác.');
+                // }
                 if ($responseCode === '00') {
-                    $paidAmount = $vnpAmount ?? ($payment->amount ?? $order->total_amount);
-                    $isFullPayment = $paidAmount >= ($order->total_amount - 1); // cho phép lệch nhỏ do làm tròn
+                    $currentPaidAmount = $vnpAmount ?? ($payment->amount ?? 0);
+
+                    // Tổng tiền đã thanh toán thành công TRƯỚC giao dịch hiện tại
+                    $previousPaid = payments::where('order_id', $order->id)
+                        ->where('status', 'success')
+                        ->sum('amount');
+
+                    // Tổng sau khi cộng giao dịch hiện tại
+                    $totalPaidAfterThisPayment = $previousPaid + $currentPaidAmount;
+
+                    $isFullPayment = $totalPaidAfterThisPayment >= ($order->total_amount - 1);
 
                     if ($isFullPayment) {
                         if ($order->status !== 'paid') {
@@ -487,7 +806,6 @@ class paymentController extends Controller
                             $booking->save();
                         }
                     } else {
-                        // Thanh toán một phần (đặt cọc)
                         if ($order->status !== 'partial_paid') {
                             $order->status = 'partial_paid';
                             $order->save();
@@ -501,7 +819,7 @@ class paymentController extends Controller
 
                     if ($payment) {
                         $payment->status = 'success';
-                        $payment->amount = $vnpAmount ?? $payment->amount;
+                        $payment->amount = $currentPaidAmount;
                         if (!$payment->payment_type) {
                             $payment->payment_type = $isFullPayment ? 'full' : 'deposit';
                         }
@@ -515,7 +833,7 @@ class paymentController extends Controller
                             'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
                             'payment_type' => $isFullPayment ? 'full' : 'deposit',
                             'method' => 'vnpay',
-                            'amount' => $vnpAmount ?? $order->total_amount,
+                            'amount' => $currentPaidAmount,
                             'status' => 'success',
                             'paid_at' => now(),
                             'transaction_ref' => $vnpTransactionNo,
@@ -523,52 +841,32 @@ class paymentController extends Controller
                         ]);
                     }
 
-                    return redirect()->route('home')->with('success', 'Thanh toán VNPay thành công. Cảm ơn bạn đã đặt tour!');
-                } else {
-                    if ($payment) {
-                        $payment->status = 'failed';
-                        $payment->amount = $vnpAmount ?? $payment->amount;
-                        $payment->transaction_ref = $vnpTransactionNo;
-                        $payment->raw_response = $vnpData;
-                        $payment->save();
-                    }
-
-                    $totalPaid = payments::where('order_id', $order->id)
-                        ->where('status', 'success')
-                        ->sum('amount');
-
-                    if ($totalPaid >= ($order->total_amount - 1)) {
-                        $order->status = 'paid';
-
-                        if ($booking) {
-                            $booking->status = 'paid';
-                            $booking->save();
-                        }
-                    } elseif ($totalPaid > 0) {
-                        $order->status = 'partial_paid';
-
-                        if ($booking) {
-                            $booking->status = 'confirmed';
-                            $booking->save();
-                        }
-                    } else {
-                        $order->status = 'pending';
-
-                        if ($booking) {
-                            $booking->status = 'pending';
-                            $booking->save();
-                        }
-                    }
-
-                    $order->save();
-
-                    return redirect()->route('home')->with('error', 'Thanh toán VNPay không thành công. Vui lòng thử lại hoặc chọn hình thức khác.');
+                    return redirect()->route($this->getRedirectRouteByRole())
+                        ->with('success', 'Thanh toán VNPay thành công. Cảm ơn bạn đã đặt tour!');
                 }
             }
         }
 
-        return redirect()->route('home')->with('error', 'Không xác thực được giao dịch VNPay.');
+        return redirect()->route($this->getRedirectRouteByRole())->with('error', 'Không xác thực được giao dịch VNPay.');
     }
+
+    // Hàm hỗ trợ lấy route chuyển hướng sau khi đăng nhập dựa trên role
+    private function getRedirectRouteByRole()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return 'home';
+        }
+
+        return match ($user->role) {
+            // đa role staff|admin đều chuyển về dashboard, phần quản lý tour sẽ có menu riêng cho từng role
+            'staff', 'admin', 'tour_manager' => 'admin.staff-booking.tours',
+            'customer' => 'dashboard',
+            default => 'home',
+        };
+    }
+
     public function payBooking(Request $request, $bookingId)
     {
         if (!Auth::check()) {

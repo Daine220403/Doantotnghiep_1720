@@ -118,7 +118,10 @@
                                     <th>Khách hàng</th>
                                     <th>Số khách</th>
                                     <th>Ghi chú</th>
-                                    <th>Trạng thái</th>
+                                    <th>Trạng thái thanh toán</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Đã trả</th>
+                                    <th>Còn lại</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
@@ -143,36 +146,98 @@
                                         <td class="small">{{ $booking->note ?: '-' }}</td>
                                         <td class="text-center">
                                             @php
-                                                $status = $booking->status;
-                                                $badgeClass = [
+                                                $order = $booking->order;
+                                                $orderStatus = $order->status ?? 'pending';
+                                                $statusBadgeClass = [
                                                     'pending' => 'badge-warning',
-                                                    'confirmed' => 'badge-info',
+                                                    'partial_paid' => 'badge-info',
                                                     'paid' => 'badge-success',
                                                     'cancelled' => 'badge-danger',
-                                                    'completed' => 'badge-primary',
-                                                ][$status] ?? 'badge-secondary';
+                                                ][$orderStatus] ?? 'badge-secondary';
                                                 $statusLabel = [
-                                                    'pending' => 'Chờ xử lý',
-                                                    'confirmed' => 'Đã xác nhận',
-                                                    'paid' => 'Đã thanh toán',
+                                                    'pending' => 'Chưa thanh toán',
+                                                    'partial_paid' => 'Đã đặt cọc',
+                                                    'paid' => 'Đã thanh toán đủ',
                                                     'cancelled' => 'Đã huỷ',
-                                                    'completed' => 'Hoàn tất',
-                                                ][$status] ?? $status;
+                                                ][$orderStatus] ?? $orderStatus;
                                             @endphp
-                                            <span class="badge {{ $badgeClass }}">{{ $statusLabel }}</span>
+                                            @if ($order)
+                                                <span class="badge {{ $statusBadgeClass }}">{{ $statusLabel }}</span>
+                                            @else
+                                                <span class="badge badge-secondary">Không có đơn</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-right small">
+                                            @if ($order && isset($booking->total_amount))
+                                                {{ number_format($booking->total_amount, 0, ',', '.') }} đ
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="text-right small">
+                                            @if ($order && isset($booking->paid_amount))
+                                                {{ number_format($booking->paid_amount, 0, ',', '.') }} đ
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="text-right small">
+                                            @if ($order && isset($booking->remaining_amount))
+                                                {{ number_format($booking->remaining_amount, 0, ',', '.') }} đ
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                         <td class="text-center">
-                                            @if ($booking->status !== 'cancelled')
-                                                <form action="{{ route('admin.staff-booking.cancel', $booking->id) }}" method="POST"
-                                                    onsubmit="return confirm('Bạn chắc chắn muốn huỷ booking này cho khách?');">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        Huỷ booking
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <span class="text-muted small">Đã huỷ</span>
-                                            @endif
+                                            @php
+                                                $orderStatus = $order->status ?? null;
+                                                $isPaidOrder = $orderStatus === 'paid';
+                                                $isDepositOrder = $orderStatus === 'partial_paid';
+                                            @endphp
+
+                                            <div class="d-flex flex-column align-items-center">
+                                                @if (!$isPaidOrder && $booking->status !== 'cancelled')
+                                                    <a href="{{ route('admin.staff-booking.edit', $booking->id) }}"
+                                                        class="btn btn-sm btn-outline-primary mb-1">
+                                                        Xem / Sửa
+                                                    </a>
+                                                @endif
+
+                                                @if ($booking->status === 'cancelled')
+                                                    <span class="text-muted small">Đã huỷ</span>
+                                                @elseif($isPaidOrder)
+                                                    <span class="text-muted small">Đã thanh toán đủ</span>
+                                                @else
+                                                    @if ($order)
+                                                        <div class="d-flex flex-column align-items-stretch mb-1" style="gap: 4px;">
+                                                            @if (!$isDepositOrder)
+                                                                <form action="{{ route('admin.staff-booking.deposit-vnpay', $booking->id) }}" method="POST"
+                                                                    onsubmit="return confirm('Xác nhận đã thu cọc 30% cho booking này?');">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-sm btn-warning btn-block">
+                                                                        Cọc 30%
+                                                                    </button>
+                                                                </form>
+                                                            @endif
+                                                            <form action="{{ route('admin.staff-booking.pay-full-vnpay', $booking->id) }}" method="POST"
+                                                                onsubmit="return confirm('Xác nhận đã thu đủ tiền cho booking này?');">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm btn-success btn-block">
+                                                                    Thanh toán đủ
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @endif
+
+                                                    <form action="{{ route('admin.staff-booking.cancel', $booking->id) }}" method="POST"
+                                                        onsubmit="return confirm('Bạn chắc chắn muốn huỷ booking này cho khách?');">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-block">
+                                                            Huỷ booking
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty

@@ -7,6 +7,7 @@ use App\Http\Controllers\admin\bookingController;
 use App\Http\Controllers\admin\StaffBookingController;
 use App\Http\Controllers\admin\TourAssignmentController;
 use App\Http\Controllers\admin\guideController;
+use App\Http\Controllers\paymentController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', function () {
@@ -48,6 +49,20 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
 
         // Lưu booking do nhân viên tạo hộ khách
         Route::post('/bookings', [StaffBookingController::class, 'store'])->name('admin.staff-booking.store');
+
+        // Xem / cập nhật lại thông tin booking & hành khách
+        Route::get('/bookings/{booking}/edit', [StaffBookingController::class, 'edit'])->name('admin.staff-booking.edit');
+        Route::put('/bookings/{booking}', [StaffBookingController::class, 'update'])->name('admin.staff-booking.update');
+
+        // Ghi nhận thanh toán offline: cọc 30% và thanh toán đủ
+        Route::post('/bookings/{booking}/deposit', [StaffBookingController::class, 'deposit'])->name('admin.staff-booking.deposit');
+        Route::post('/bookings/{booking}/pay-full', [StaffBookingController::class, 'payFull'])->name('admin.staff-booking.pay-full');
+
+        // Thanh toán VNPay cho booking do nhân viên thao tác (khách quét trực tiếp)
+        Route::post('/bookings/{booking}/deposit-vnpay', [paymentController::class, 'staffDepositBooking'])
+            ->name('admin.staff-booking.deposit-vnpay');
+        Route::post('/bookings/{booking}/pay-full-vnpay', [paymentController::class, 'staffPayFullBooking'])
+            ->name('admin.staff-booking.pay-full-vnpay');
 
         // Hủy booking cho khách
         Route::post('/bookings/{id}/cancel', [StaffBookingController::class, 'cancel'])->name('admin.staff-booking.cancel');

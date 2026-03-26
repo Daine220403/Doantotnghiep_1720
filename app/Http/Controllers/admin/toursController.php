@@ -228,13 +228,21 @@ class toursController extends Controller
                 ]);
             }
         }
+        else {
+            // nếu không upload ảnh thì tạo bản ghi ảnh với url mặc định (nếu có)
+            tour_images::create([
+                'tour_id' => $tour->id,
+                'url' => null, // hoặc url mặc định nếu bạn có
+                'sort_order' => 1,
+            ]);
+        }
         return redirect()->route('admin.mana-tour.index')->with('success', 'Thêm tour thành công!');
     }
 
     public function update(Request $request, $id)
     {
         $tour = Tours::findOrFail($id);
-
+        
         $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:tours,slug,' . $tour->id,
@@ -274,8 +282,7 @@ class toursController extends Controller
             'departures.*.price_infant' => 'nullable|numeric|min:0',
             'departures.*.price_youth' => 'nullable|numeric|min:0',
             'departures.*.single_room_surcharge' => 'nullable|numeric|min:0',
-            'departures.*.status' => 'required|in:open,closed,full,cancelled',
-
+            'departures.*.status' => 'required|in:draft,open,closed,sold,full,cancelled,sold_out,confirmed,completed',
             // images
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -333,7 +340,7 @@ class toursController extends Controller
             'images.*.mimes' => 'Ảnh phải có định dạng jpg, jpeg, png hoặc webp.',
             'images.*.max' => 'Mỗi ảnh không được vượt quá 2MB.',
         ]);
-        // dd($request->all());
+
         // 1. Cập nhật tour
         $tour->update([
             'title' => $request->title,
@@ -391,7 +398,7 @@ class toursController extends Controller
                 'content' => $itinerary['content'],
             ]);
         }
-
+        
         // 4. Departures: cập nhật từng lịch, không xoá những lịch đã có booking
         $existingDepartures = tour_departures::where('tour_id', $tour->id)->get()->keyBy('id'); // lấy danh sách lịch khởi hành hiện có của tour, keyBy id để dễ truy cập
 
@@ -447,7 +454,7 @@ class toursController extends Controller
                 $existing->delete();
             }
         }
-
+        
         // 5. Images: nếu upload ảnh mới thì xoá ảnh cũ và lưu lại
         if ($request->hasFile('images')) {
             $oldImages = tour_images::where('tour_id', $tour->id)->get();

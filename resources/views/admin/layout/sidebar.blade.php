@@ -90,7 +90,6 @@
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Chức năng nhân viên:</h6>
                 <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Danh sách tour khách đặt</a>
-                <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Đặt/Hủy tour cho khách</a>
             </div>
         </div>
     </li>

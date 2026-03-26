@@ -177,8 +177,8 @@
 
                         <div class="col-md-3">
                             <label>Số đêm (tự tính)</label>
-                            <input type="number" id="duration_nights" name="duration_nights" class="form-control" readonly
-                                value="0">
+                            <input type="number" id="duration_nights" name="duration_nights" class="form-control"
+                                readonly value="0">
                             <small class="text-muted">Tự động = số ngày - 1</small>
                         </div>
                     </div>
@@ -219,7 +219,7 @@
             </button>
         </form>
     </div>
-
+    
     <script>
         CKEDITOR.replace('description_editor');
 
