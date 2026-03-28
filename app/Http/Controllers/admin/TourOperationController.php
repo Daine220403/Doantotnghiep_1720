@@ -32,7 +32,7 @@ class TourOperationController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.mana_tour.departure_services', compact('departure', 'services'));
+        return view('admin.mana_partner.departure_services', compact('departure', 'services'));
     }
 
     public function servicesStore(Request $request, $departureId)
