@@ -49,11 +49,12 @@ class TourOperationController extends Controller
             'service_date' => 'nullable|date',
             'qty' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:0',
-            'status' => 'required|in:pending,confirmed,completed,cancelled',
             'note' => 'nullable|string',
         ]);
 
         $data['departure_id'] = $departure->id;
+        // Luôn đặt trạng thái là pending khi tạo mới dịch vụ cho lịch khởi hành
+        $data['status'] = 'pending';
         $data['total_price'] = $data['qty'] * $data['unit_price'];
 
         departure_services::create($data);

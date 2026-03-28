@@ -41,13 +41,12 @@
                         @if ($departure->status === 'confirmed')
                             <form action="{{ route('admin.departures.services.store', $departure->id) }}" method="POST">
                                 @csrf
-
                             <div class="form-group">
                                 <label>Chọn dịch vụ</label>
-                                <select name="partner_service_id" class="form-control">
+                                <select name="partner_service_id" class="form-control" id="partner_service_select">
                                     <option value="">-- Chọn dịch vụ --</option>
                                     @foreach ($services as $service)
-                                        <option value="{{ $service->id }}">
+                                        <option value="{{ $service->id }}" data-unit-price="{{ $service->unit_price ?? 0 }}">
                                             [{{ $service->partner->name }}] {{ $service->name }} ({{ $service->service_type }})
                                         </option>
                                     @endforeach
@@ -75,25 +74,14 @@
 
                             <div class="form-group">
                                 <label>Đơn giá</label>
-                                <input type="number" step="0.01" name="unit_price" class="form-control" value="{{ old('unit_price', 0) }}" min="0">
+                                <input type="number" step="0.01" name="unit_price" id="unit_price_input" class="form-control" value="{{ old('unit_price', 0) }}" min="0" readonly>
                                 @error('unit_price')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 
-                            <div class="form-group">
-                                <label>Trạng thái</label>
-                                @php $status = old('status', 'pending'); @endphp
-                                <select name="status" class="form-control">
-                                    <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Chờ xác nhận</option>
-                                    <option value="confirmed" {{ $status === 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
-                                    <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Hoàn tất</option>
-                                    <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Hủy</option>
-                                </select>
-                                @error('status')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            {{-- Trạng thái ẩn, luôn đặt là pending --}}
+                            <input type="hidden" name="status" value="pending">
 
                             <div class="form-group">
                                 <label>Ghi chú</label>
@@ -105,6 +93,29 @@
 
                                 <button type="submit" class="btn btn-primary btn-sm">Thêm dịch vụ</button>
                             </form>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    var select = document.getElementById('partner_service_select');
+                                    var unitInput = document.getElementById('unit_price_input');
+
+                                    if (!select || !unitInput) return;
+
+                                    function updateUnitPrice() {
+                                        var option = select.options[select.selectedIndex];
+                                        if (!option) return;
+
+                                        var price = option.getAttribute('data-unit-price');
+                                        if (price !== null && price !== '') {
+                                            unitInput.value = price;
+                                        }
+                                    }
+
+                                    select.addEventListener('change', updateUnitPrice);
+
+                                    // Khởi tạo giá khi load trang (nếu đã chọn sẵn dịch vụ)
+                                    updateUnitPrice();
+                                });
+                            </script>
                         @else
                             <p class="text-muted mb-0">
                                 Chỉ có thể thêm/chỉnh sửa dịch vụ khi lịch khởi hành đã được <strong>chốt đoàn</strong>.

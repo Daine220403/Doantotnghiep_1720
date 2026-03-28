@@ -48,6 +48,14 @@
                             </div>
 
                             <div class="form-group">
+                                <label>Đơn giá mặc định (VNĐ)</label>
+                                <input type="number" step="0.01" name="unit_price" class="form-control" value="{{ old('unit_price') }}" min="0">
+                                @error('unit_price')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="form-group">
                                 <label>Mô tả</label>
                                 <textarea name="description" rows="3" class="form-control">{{ old('description') }}</textarea>
                                 @error('description')
@@ -84,6 +92,7 @@
                                         <th>#</th>
                                         <th>Tên dịch vụ</th>
                                         <th>Loại</th>
+                                        <th>Đơn giá (VNĐ)</th>
                                         <th>Trạng thái</th>
                                         <th style="width: 80px;">Hành động</th>
                                     </tr>
@@ -95,6 +104,7 @@
                                             <td>{{ $index++ }}</td>
                                             <td class="text-left font-weight-bold">{{ $service->name }}</td>
                                             <td>{{ $service->service_type }}</td>
+                                            <td class="text-right">{{ number_format($service->unit_price ?? 0, 0, ',', '.') }}</td>
                                             <td>
                                                 @if ($service->status === 'active')
                                                     <span class="badge badge-success">Hoạt động</span>

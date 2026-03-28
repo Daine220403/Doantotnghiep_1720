@@ -83,6 +83,7 @@ class partnerController extends Controller
             'name' => 'required|string|max:255',
             'service_type' => 'required|string|max:50',
             'description' => 'nullable|string',
+            'unit_price' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 

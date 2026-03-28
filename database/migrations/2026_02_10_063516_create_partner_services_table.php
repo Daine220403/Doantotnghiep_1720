@@ -15,6 +15,8 @@ return new class extends Migration {
             $table->string('service_type', 50)->index();
             $table->text('description')->nullable();
 
+            $table->decimal('unit_price', 12, 2)->default(0);
+
             $table->enum('status', ['active', 'inactive'])
                   ->default('active')->index();
 

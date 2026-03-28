@@ -16,6 +16,7 @@ class partner_services extends Model
         'name',
         'service_type',
         'description',
+        'unit_price',
         'status',
     ];
 
