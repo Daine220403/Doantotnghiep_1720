@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\bookings;
 use App\Models\tour_assignments;
+use App\Models\departure_services;
 
 class tour_departures extends Model
 {
@@ -38,5 +39,10 @@ class tour_departures extends Model
     public function assignment()
     {
         return $this->hasOne(tour_assignments::class, 'departure_id');
+    }
+
+    public function services()
+    {
+        return $this->hasMany(departure_services::class, 'departure_id');
     }
 }

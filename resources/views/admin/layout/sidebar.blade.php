@@ -75,6 +75,56 @@
         </div>
     </li>
 
+    <!-- Nav Item - Partner Menu -->
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePartner"
+            aria-expanded="true" aria-controls="collapsePartner">
+            <i class="fas fa-handshake"></i>
+            <span>Đối tác dịch vụ</span>
+        </a>
+        <div id="collapsePartner" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Quản lý đối tác dịch vụ:</h6>
+                <a class="collapse-item" href="{{ route('admin.mana-partner.index') }}">Danh sách đối tác</a>
+                <a class="collapse-item" href="{{ route('admin.mana-partner.create') }}">Thêm đối tác</a>
+                {{-- Điều phối dịch vụ cho lịch khởi hành đã chốt đoàn --}}
+                <a class="collapse-item" href="{{ route('admin.coordinated-tours.index') }}">Điều phối dịch vụ</a>
+            </div>
+        </div>
+    </li>
+
+    <!-- Nav Item - Theo dõi tour đang chạy Menu -->
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRunningTours"
+            aria-expanded="true" aria-controls="collapseRunningTours">
+            <i class="fas fa-running"></i>
+            <span>Theo dõi tour đang chạy</span>
+        </a>
+        <div id="collapseRunningTours" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Quản lý tour đang chạy:</h6>
+                <a class="collapse-item" href="#">....</a>
+            </div>
+        </div>
+    </li>
+
+    <!-- Nav Item - xử lý phát sinh tour đang chạy Menu -->
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseHandling"
+            aria-expanded="true" aria-controls="collapseHandling">
+            <i class="fas fa-tools"></i>
+            <span>Xử lý phát sinh</span>
+        </a>
+        <div id="collapseHandling" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Quản lý phát sinh:</h6>
+                <a class="collapse-item" href="#">....</a>
+                <a class="collapse-item" href="#">....</a>
+                ......
+            </div>
+        </div>
+    </li>
+
     <!-- Heading -->
     <div class="sidebar-heading">
         Nhân viên

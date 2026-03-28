@@ -7,6 +7,8 @@ use App\Http\Controllers\admin\bookingController;
 use App\Http\Controllers\admin\StaffBookingController;
 use App\Http\Controllers\admin\TourAssignmentController;
 use App\Http\Controllers\admin\guideController;
+use App\Http\Controllers\admin\partnerController;
+use App\Http\Controllers\admin\TourOperationController;
 use App\Http\Controllers\paymentController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
@@ -77,4 +79,31 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     // Chốt đoàn cho 1 lịch khởi hành
     Route::post('/departures/{departure}/confirm', [toursController::class, 'confirmDeparture'])
         ->name('admin.departures.confirm');
+
+    // Danh sách tour điều phối (tour đang chạy + đã chốt đoàn)
+    Route::get('/coordinated-tours', [TourOperationController::class, 'coordinatedToursIndex'])
+        ->name('admin.coordinated-tours.index');
+
+    // Dịch vụ đối tác theo lịch khởi hành (điều phối dịch vụ)
+    Route::get('/departures/{departure}/services', [TourOperationController::class, 'servicesIndex'])
+        ->name('admin.departures.services.index');
+    Route::post('/departures/{departure}/services', [TourOperationController::class, 'servicesStore'])
+        ->name('admin.departures.services.store');
+    Route::delete('/departures/{departure}/services/{id}', [TourOperationController::class, 'servicesDestroy'])
+        ->name('admin.departures.services.destroy');
+
+    // Quản lý đối tác dịch vụ
+    Route::prefix('/partners')->group(function () {
+        Route::get('/', [partnerController::class, 'index'])->name('admin.mana-partner.index');
+        Route::get('/create', [partnerController::class, 'create'])->name('admin.mana-partner.create');
+        Route::post('/store', [partnerController::class, 'store'])->name('admin.mana-partner.store');
+        Route::get('/{partner}/edit', [partnerController::class, 'edit'])->name('admin.mana-partner.edit');
+        Route::put('/{partner}', [partnerController::class, 'update'])->name('admin.mana-partner.update');
+        Route::delete('/{partner}', [partnerController::class, 'destroy'])->name('admin.mana-partner.destroy');
+
+        // Dịch vụ của đối tác
+        Route::get('/{partner}/services', [partnerController::class, 'services'])->name('admin.mana-partner.services');
+        Route::post('/{partner}/services', [partnerController::class, 'storeService'])->name('admin.mana-partner.services.store');
+        Route::delete('/services/{service}', [partnerController::class, 'destroyService'])->name('admin.mana-partner.services.destroy');
+    });
 });
