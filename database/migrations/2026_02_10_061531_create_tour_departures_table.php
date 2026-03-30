@@ -27,7 +27,7 @@ return new class extends Migration {
             // Phụ thu phòng đơn cho mỗi lịch khởi hành (nếu khách chọn ở 1 người/1 phòng)
             $table->decimal('single_room_surcharge', 12, 2)->default(0);
      
-            $table->enum('status', ['draft', 'open', 'closed', 'sold_out', 'cancelled','confirmed','completed'])
+            $table->enum('status', ['draft', 'open', 'closed', 'sold_out', 'cancelled','confirmed', 'running','completed'])
                   ->default('draft')->index();
 
             $table->timestamps();

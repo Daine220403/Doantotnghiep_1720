@@ -76,6 +76,12 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/{id}', [bookingController::class, 'tourCustomerShow'])->name('admin.customer-tour.show'); // chi tiết khách theo tour
     });
 
+    // Theo dõi tour đang chạy (theo từng lịch khởi hành)
+    Route::get('/running-tours', [TourOperationController::class, 'runningToursIndex'])
+        ->name('admin.running-tours.index');
+    Route::get('/running-tours/{departure}', [TourOperationController::class, 'showRunningTour'])
+        ->name('admin.running-tours.show');
+
     // Chốt đoàn cho 1 lịch khởi hành
     Route::post('/departures/{departure}/confirm', [toursController::class, 'confirmDeparture'])
         ->name('admin.departures.confirm');

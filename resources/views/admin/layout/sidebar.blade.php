@@ -70,7 +70,7 @@
         <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
-                <a class="collapse-item" href="{{ route('admin.mana-guide.index') }}">Danh sách HDV</a>
+                <a class="collapse-item" href="{{ route('admin.mana-guide.index') }}">Phân công HDV</a>
             </div>
         </div>
     </li>
@@ -103,24 +103,7 @@
         <div id="collapseRunningTours" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Quản lý tour đang chạy:</h6>
-                <a class="collapse-item" href="#">....</a>
-            </div>
-        </div>
-    </li>
-
-    <!-- Nav Item - xử lý phát sinh tour đang chạy Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseHandling"
-            aria-expanded="true" aria-controls="collapseHandling">
-            <i class="fas fa-tools"></i>
-            <span>Xử lý phát sinh</span>
-        </a>
-        <div id="collapseHandling" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Quản lý phát sinh:</h6>
-                <a class="collapse-item" href="#">....</a>
-                <a class="collapse-item" href="#">....</a>
-                ......
+                <a class="collapse-item" href="{{ route('admin.running-tours.index') }}">Danh sách tour đang chạy</a>
             </div>
         </div>
     </li>

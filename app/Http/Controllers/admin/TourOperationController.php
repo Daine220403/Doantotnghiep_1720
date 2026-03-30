@@ -10,6 +10,35 @@ use Illuminate\Http\Request;
 
 class TourOperationController extends Controller
 {
+    // Danh sách tour đang chạy (các lịch khởi hành đã chốt / đang chạy / hoàn thành)
+    public function runningToursIndex()
+    {
+        // Tự động cập nhật các lịch khởi hành đã đến ngày bắt đầu từ "confirmed" sang "running"
+        tour_departures::where('status', 'confirmed')
+            ->whereDate('start_date', '<=', now()->toDateString())
+            ->update(['status' => 'running']);
+
+        $departures = tour_departures::with(['tour', 'assignment.guide'])
+            ->whereIn('status', ['confirmed', 'running', 'completed'])
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        return view('admin.mana_running.index', compact('departures'));
+    }
+
+    // Chi tiết 1 tour đang chạy theo lịch khởi hành
+    public function showRunningTour($departureId)
+    {
+        $departure = tour_departures::with([
+            'tour',
+            'assignment.guide',
+            'bookings.order',
+            'bookings.passengers',
+        ])->findOrFail($departureId);
+
+        return view('admin.mana_running.show', compact('departure'));
+    }
+
     // Danh sách tour điều phối (các lịch khởi hành đã chốt / hoàn thành)
     public function coordinatedToursIndex()
     {
