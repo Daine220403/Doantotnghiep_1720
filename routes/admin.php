@@ -16,6 +16,9 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         return view('admin.index');
     })->name('admin.index');
 
+    // Hồ sơ cá nhân cho admin
+    Route::get('/profile', [ProfileController::class, 'editAdmin'])->name('admin.profile.edit');
+
     // Quản lý Hướng dẫn viên
     Route::get('/guides', [guideController::class, 'index'])->name('admin.mana-guide.index');
     Route::get('/guides/{guide}/assign-tours', [guideController::class, 'showTours'])->name('admin.mana-guide.tours');
