@@ -10,6 +10,7 @@ use App\Http\Controllers\admin\guideController;
 use App\Http\Controllers\admin\partnerController;
 use App\Http\Controllers\admin\TourOperationController;
 use App\Http\Controllers\paymentController;
+use App\Http\Controllers\guide\TourGuideController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', function () {
@@ -114,5 +115,12 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/{partner}/services', [partnerController::class, 'services'])->name('admin.mana-partner.services');
         Route::post('/{partner}/services', [partnerController::class, 'storeService'])->name('admin.mana-partner.services.store');
         Route::delete('/services/{service}', [partnerController::class, 'destroyService'])->name('admin.mana-partner.services.destroy');
+    });
+
+    // Khu vực dành cho Hướng dẫn viên: xem tour được phân công, chi tiết khách, báo cáo
+    Route::prefix('/guide')->middleware(['guide'])->group(function () {
+        Route::get('/tours', [TourGuideController::class, 'index'])->name('guide.tours.index');
+        Route::get('/departures/{departure}', [TourGuideController::class, 'showDeparture'])->name('guide.departures.show');
+        Route::get('/departures/{departure}/report', [TourGuideController::class, 'report'])->name('guide.departures.report');
     });
 });

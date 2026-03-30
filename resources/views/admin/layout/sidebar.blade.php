@@ -100,7 +100,8 @@
             <i class="fas fa-running"></i>
             <span>Theo dõi tour đang chạy</span>
         </a>
-        <div id="collapseRunningTours" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+        <div id="collapseRunningTours" class="collapse" aria-labelledby="headingUtilities"
+            data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Quản lý tour đang chạy:</h6>
                 <a class="collapse-item" href="{{ route('admin.running-tours.index') }}">Danh sách tour đang chạy</a>
@@ -126,23 +127,31 @@
             </div>
         </div>
     </li>
-
-    <!-- Nav Item - Hiring Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFive"
-            aria-expanded="true" aria-controls="collapseFive">
-            <i class="fas fa-user-friends"></i>
-            <span>Tuyển dụng</span>
-        </a>
-        <div id="collapseFive" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng tuyển dụng:</h6>
-                <a class="collapse-item" href="#">Danh sách tuyển dụng</a>
-                <a class="collapse-item" href="#">Thêm tuyển dụng</a>
-                <a class="collapse-item" href="#">Danh sách ứng viên</a>
-            </div>
+    
+    {{-- đúng role thì hiển thị, không dúng thì ẩn đi --}}
+    @if (in_array(Auth::user()->role, ['tour_guide', 'admin']))
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Hướng dẫn viên
         </div>
-    </li>
+        <!-- Nav Item - Hiring Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFive"
+                aria-expanded="true" aria-controls="collapseFive">
+                <i class="fas fa-user-friends"></i>
+                <span>Hướng dẫn viên</span>
+            </a>
+            <div id="collapseFive" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
+                    <a class="collapse-item" href="{{ route('guide.tours.index') }}">Danh sách tour được phân
+                        công</a>
+                </div>
+            </div>
+        </li>
+    @endif
+
 
     <!-- Nav Item - Contact Menu -->
     <li class="nav-item">
