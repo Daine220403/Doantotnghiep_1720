@@ -130,6 +130,7 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::prefix('/hr')->group(function () {
         // Lịch làm việc nhân viên
         Route::get('/schedules', [StaffManagementController::class, 'schedulesIndex'])->name('admin.hr.schedules.index');
+        Route::post('/schedules', [StaffManagementController::class, 'schedulesStore'])->name('admin.hr.schedules.store');
 
         // Đơn nghỉ phép
         Route::get('/leaves', [StaffManagementController::class, 'leavesIndex'])->name('admin.hr.leaves.index');

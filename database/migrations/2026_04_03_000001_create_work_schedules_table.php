@@ -16,7 +16,7 @@ return new class extends Migration
             $table->enum('shift_type', ['morning', 'afternoon', 'full_day', 'night']);
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
-            $table->enum('status', ['planned', 'confirmed', 'completed', 'cancelled'])->default('planned')->index();
+            $table->enum('status', ['assigned', 'cancelled'])->default('assigned')->index();
             $table->text('note')->nullable();
             $table->timestamps();
 
