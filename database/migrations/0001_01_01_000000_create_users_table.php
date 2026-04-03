@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('phone', 20)->nullable()->index();
             $table->string('password', 255);
             $table->timestamp('email_verified_at')->nullable();
-            $table->enum('role', ['customer', 'staff', 'tour_manager', 'tour_guide', 'admin', 'partner'])
-                  ->default('customer')
-                  ->index();
+            $table->enum('role', ['customer', 'staff', 'staff_manager', 'tour_manager', 'tour_guide', 'admin', 'partner'])
+                ->default('customer')
+                ->index();
 
             $table->enum('status', ['active', 'locked'])->default('active')->index();
             $table->foreignId('partner_id')->nullable()->constrained('users')->nullOnDelete()->cascadeOnUpdate();

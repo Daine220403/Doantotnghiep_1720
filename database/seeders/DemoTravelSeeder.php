@@ -85,6 +85,42 @@ class DemoTravelSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
+            $staffManagerId = DB::table('users')->insertGetId([
+                'name' => 'Nguyễn Văn Quản Lý',
+                'email' => 'staff_manager@vietravel.local',
+                'phone' => '0906666666',
+                'password' => Hash::make('12345678'),
+                'role' => 'staff_manager',
+                'status' => 'active',
+                'partner_id' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $staff1Id = DB::table('users')->insertGetId([
+                'name' => 'Nhân viên CSKH 1',
+                'email' => 'staff1@vietravel.local',
+                'phone' => '0907777777',
+                'password' => Hash::make('12345678'),
+                'role' => 'staff',
+                'status' => 'active',
+                'partner_id' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $staff2Id = DB::table('users')->insertGetId([
+                'name' => 'Nhân viên CSKH 2',
+                'email' => 'staff2@vietravel.local',
+                'phone' => '0908888888',
+                'password' => Hash::make('12345678'),
+                'role' => 'staff',
+                'status' => 'active',
+                'partner_id' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             $partnerUserId = DB::table('users')->insertGetId([
                 'name' => 'Quản lý khách sạn Đà Lạt Xanh',
                 'email' => 'partner_hotel@vietravel.local',
@@ -395,6 +431,185 @@ class DemoTravelSeeder extends Seeder
             ]);
 
 
+            // ===== HR Demo Data (Staff, Work Schedule, Leave, Attendance, Payroll, Reports) =====
+            $today = Carbon::today();
+
+            // Lịch làm việc cho nhân viên
+            $scheduleTodayId = DB::table('work_schedules')->insertGetId([
+                'staff_id' => $staff1Id,
+                'manager_id' => $staffManagerId,
+                'work_date' => $today->toDateString(),
+                'shift_type' => 'full_day',
+                'start_time' => '08:00:00',
+                'end_time' => '17:00:00',
+                'status' => 'confirmed',
+                'note' => 'Trực tổng đài và hỗ trợ khách đặt tour.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $scheduleTomorrowId = DB::table('work_schedules')->insertGetId([
+                'staff_id' => $staff1Id,
+                'manager_id' => $staffManagerId,
+                'work_date' => $today->copy()->addDay()->toDateString(),
+                'shift_type' => 'morning',
+                'start_time' => '08:00:00',
+                'end_time' => '12:00:00',
+                'status' => 'planned',
+                'note' => 'Ca sáng xử lý đơn hàng online.',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('work_schedules')->insert([
+                [
+                    'staff_id' => $staff2Id,
+                    'manager_id' => $staffManagerId,
+                    'work_date' => $today->toDateString(),
+                    'shift_type' => 'afternoon',
+                    'start_time' => '13:30:00',
+                    'end_time' => '17:30:00',
+                    'status' => 'confirmed',
+                    'note' => 'Hỗ trợ khách tại quầy giao dịch.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            // Đơn nghỉ phép demo
+            DB::table('leave_requests')->insert([
+                [
+                    'staff_id' => $staff1Id,
+                    'manager_id' => $staffManagerId,
+                    'start_date' => $today->copy()->addDays(3)->toDateString(),
+                    'end_date' => $today->copy()->addDays(3)->toDateString(),
+                    'leave_type' => 'annual',
+                    'reason' => 'Nghỉ phép năm để giải quyết việc gia đình.',
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                    'approved_note' => 'Đã sắp xếp nhân sự trực thay.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'staff_id' => $staff2Id,
+                    'manager_id' => $staffManagerId,
+                    'start_date' => $today->copy()->addDays(5)->toDateString(),
+                    'end_date' => $today->copy()->addDays(6)->toDateString(),
+                    'leave_type' => 'sick',
+                    'reason' => 'Xin nghỉ ốm.',
+                    'status' => 'pending',
+                    'approved_at' => null,
+                    'approved_note' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            // Chấm công demo
+            DB::table('attendances')->insert([
+                [
+                    'staff_id' => $staff1Id,
+                    'work_schedule_id' => $scheduleTodayId,
+                    'work_date' => $today->toDateString(),
+                    'check_in_time' => $today->copy()->setTime(8, 5, 0),
+                    'check_out_time' => $today->copy()->setTime(17, 0, 0),
+                    'status' => 'present',
+                    'source' => 'system',
+                    'note' => 'Đi làm đúng giờ, về đúng giờ.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'staff_id' => $staff1Id,
+                    'work_schedule_id' => $scheduleTomorrowId,
+                    'work_date' => $today->copy()->addDay()->toDateString(),
+                    'check_in_time' => $today->copy()->addDay()->setTime(8, 20, 0),
+                    'check_out_time' => $today->copy()->addDay()->setTime(12, 0, 0),
+                    'status' => 'late',
+                    'source' => 'manual',
+                    'note' => 'Đi trễ do kẹt xe, quản lý đã xác nhận.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            // Kỳ lương demo
+            $payrollPeriodId = DB::table('payroll_periods')->insertGetId([
+                'start_date' => Carbon::now()->startOfMonth()->toDateString(),
+                'end_date' => Carbon::now()->endOfMonth()->toDateString(),
+                'status' => 'closed',
+                'created_by' => $staffManagerId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('payroll_items')->insert([
+                [
+                    'payroll_period_id' => $payrollPeriodId,
+                    'staff_id' => $staff1Id,
+                    'base_salary' => 12000000,
+                    'total_working_days' => 26,
+                    'total_overtime_hours' => 5,
+                    'allowances' => 1500000,
+                    'deductions' => 500000,
+                    'bonus' => 1000000,
+                    'net_salary' => 13000000,
+                    'generated_at' => now(),
+                    'approved_by' => $staffManagerId,
+                    'status' => 'paid',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'payroll_period_id' => $payrollPeriodId,
+                    'staff_id' => $staff2Id,
+                    'base_salary' => 10000000,
+                    'total_working_days' => 24,
+                    'total_overtime_hours' => 2,
+                    'allowances' => 1000000,
+                    'deductions' => 300000,
+                    'bonus' => 500000,
+                    'net_salary' => 11200000,
+                    'generated_at' => now(),
+                    'approved_by' => $staffManagerId,
+                    'status' => 'confirmed',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            // Báo cáo công việc demo
+            DB::table('work_reports')->insert([
+                [
+                    'staff_id' => $staff1Id,
+                    'manager_id' => $staffManagerId,
+                    'report_date' => $today->toDateString(),
+                    'title' => 'Báo cáo công việc CSKH ngày ' . $today->format('d/m/Y'),
+                    'content' => 'Tiếp nhận và xử lý 25 cuộc gọi, hỗ trợ 5 booking hoàn tất thanh toán.',
+                    'total_tasks' => 30,
+                    'total_hours' => 8,
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'staff_id' => $staff2Id,
+                    'manager_id' => $staffManagerId,
+                    'report_date' => $today->copy()->subDay()->toDateString(),
+                    'title' => 'Báo cáo công việc quầy giao dịch',
+                    'content' => 'Tư vấn trực tiếp cho 12 khách, tạo 4 booking, thu thập 3 phản hồi dịch vụ.',
+                    'total_tasks' => 19,
+                    'total_hours' => 4,
+                    'status' => 'submitted',
+                    'approved_at' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+
             // ===== Additional Demo Tours =====
             $additionalTours = [
                 [
@@ -555,9 +770,8 @@ class DemoTravelSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                DB::table('tour_image')->insert([
+                DB::table('tour_images')->insert([
                     'tour_id' => $tourId,
-                    'url' => null,
                     'sort_order' => 1,
                 ]);
             }

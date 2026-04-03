@@ -109,24 +109,68 @@
         </div>
     </li>
 
-    <!-- Heading -->
-    <div class="sidebar-heading">
-        Nhân viên
-    </div>
-    <!-- Nav Item - Customer Support Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFour"
-            aria-expanded="true" aria-controls="collapseFour">
-            <i class="fas fa-user-cog"></i>
-            <span>Hỗ trợ đặt tour</span>
-        </a>
-        <div id="collapseFour" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng nhân viên:</h6>
-                <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Danh sách tour khách đặt</a>
-            </div>
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+
+    {{-- Khu vực Quản lý nhân viên & Nhân viên chỉ hiển thị cho admin hoặc staff_manager/staff --}}
+    @if (in_array(Auth::user()->role, ['admin', 'staff_manager', 'staff']))
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Quản lý nhân viên
         </div>
-    </li>
+        {{-- Chức năng dành cho Quản lý nhân viên: phân công lịch, duyệt nghỉ, chấm công, lương, báo cáo --}}
+        @if (in_array(Auth::user()->role, ['admin', 'staff_manager']))
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseManaStaff"
+                    aria-expanded="true" aria-controls="collapseManaStaff">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Quản lý nhân viên</span>
+                </a>
+                <div id="collapseManaStaff" class="collapse" aria-labelledby="headingUtilities"
+                    data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Chức năng QL Nhân viên:</h6>
+                        <a class="collapse-item" href="#">Phân công lịch làm việc</a>
+                        <a class="collapse-item" href="#">Duyệt nghỉ phép</a>
+                        <a class="collapse-item" href="#">Chấm công nhân viên</a>
+                        <a class="collapse-item" href="#">Tính lương</a>
+                        <a class="collapse-item" href="#">Báo cáo thống kê</a>
+                    </div>
+                </div>
+            </li>
+        @endif
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Nhân viên
+        </div>
+        <!-- Nav Item - Customer Support Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFour"
+                aria-expanded="true" aria-controls="collapseFour">
+                <i class="fas fa-user-cog"></i>
+                <span>Hỗ trợ đặt tour</span>
+            </a>
+            <div id="collapseFour" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng nhân viên:</h6>
+                    <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Danh sách tour khách
+                        đặt</a>
+                    {{-- Các chức năng nhân sự của nhân viên (xem lịch, xin nghỉ, chấm công, báo cáo) sẽ trỏ route sau --}}
+                    <a class="collapse-item" href="#">Lịch làm việc của tôi</a>
+                    <a class="collapse-item" href="#">Xin nghỉ phép</a>
+                    <a class="collapse-item" href="#">Bảng chấm công</a>
+                    <a class="collapse-item" href="#">Báo cáo công việc</a>
+                </div>
+            </div>
+        </li>
+    @endif
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
     
     {{-- đúng role thì hiển thị, không dúng thì ẩn đi --}}
     @if (in_array(Auth::user()->role, ['tour_guide', 'admin']))
@@ -152,21 +196,6 @@
         </li>
     @endif
 
-
-    <!-- Nav Item - Contact Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSix"
-            aria-expanded="true" aria-controls="collapseSix">
-            <i class="fas fa-id-card"></i>
-            <span>Liên lạc</span>
-        </a>
-        <div id="collapseSix" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng liên lạc:</h6>
-                <a class="collapse-item" href="#">Danh sách liên lạc</a>
-            </div>
-        </div>
-    </li>
 
     {{-- <!-- Divider -->
     <hr class="sidebar-divider">
