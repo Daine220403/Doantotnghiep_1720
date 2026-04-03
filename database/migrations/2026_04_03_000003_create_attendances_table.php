@@ -17,7 +17,6 @@ return new class extends Migration
             $table->dateTime('check_out_time')->nullable();
             $table->enum('status', ['present', 'late', 'absent', 'on_leave', 'remote'])->default('present')->index();
             $table->enum('source', ['system', 'manual'])->default('system');
-            $table->text('note')->nullable();
             $table->timestamps();
 
             $table->index(['staff_id', 'work_date']);

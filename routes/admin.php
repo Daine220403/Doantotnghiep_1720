@@ -138,6 +138,9 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
 
         // Chấm công
         Route::get('/attendances', [StaffManagementController::class, 'attendancesIndex'])->name('admin.hr.attendances.index');
+        // Chỉ dùng một endpoint check-in tạo/cập nhật theo staff + ngày
+        Route::post('/attendances/check-in', [StaffManagementController::class, 'attendanceCheckInForStaff'])->name('admin.hr.attendances.check-in');
+        Route::post('/attendances/{attendance}/check-out', [StaffManagementController::class, 'attendanceCheckOut'])->name('admin.hr.attendances.check-out');
 
         // Lương
         Route::get('/payrolls', [StaffManagementController::class, 'payrollsIndex'])->name('admin.hr.payrolls.index');
