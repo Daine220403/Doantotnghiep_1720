@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\bookings;
 use App\Models\tour_assignments;
 use App\Models\departure_services;
+use App\Models\DepartureReport;
 
 class tour_departures extends Model
 {
@@ -44,5 +45,10 @@ class tour_departures extends Model
     public function services()
     {
         return $this->hasMany(departure_services::class, 'departure_id');
+    }
+
+    public function report()
+    {
+        return $this->hasOne(DepartureReport::class, 'departure_id');
     }
 }

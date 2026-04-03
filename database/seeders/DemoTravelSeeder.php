@@ -554,6 +554,12 @@ class DemoTravelSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                DB::table('tour_image')->insert([
+                    'tour_id' => $tourId,
+                    'url' => null,
+                    'sort_order' => 1,
+                ]);
             }
         });
     }

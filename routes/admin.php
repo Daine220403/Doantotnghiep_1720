@@ -122,5 +122,6 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/tours', [TourGuideController::class, 'index'])->name('guide.tours.index');
         Route::get('/departures/{departure}', [TourGuideController::class, 'showDeparture'])->name('guide.departures.show');
         Route::get('/departures/{departure}/report', [TourGuideController::class, 'report'])->name('guide.departures.report');
+        Route::post('/departures/{departure}/report', [TourGuideController::class, 'storeReport'])->name('guide.departures.report.store');
     });
 });
