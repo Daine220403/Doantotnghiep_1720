@@ -9,6 +9,7 @@ use App\Http\Controllers\admin\TourAssignmentController;
 use App\Http\Controllers\admin\guideController;
 use App\Http\Controllers\admin\partnerController;
 use App\Http\Controllers\admin\TourOperationController;
+use App\Http\Controllers\admin\StaffManagementController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\guide\TourGuideController;
 
@@ -123,5 +124,38 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/departures/{departure}', [TourGuideController::class, 'showDeparture'])->name('guide.departures.show');
         Route::get('/departures/{departure}/report', [TourGuideController::class, 'report'])->name('guide.departures.report');
         Route::post('/departures/{departure}/report', [TourGuideController::class, 'storeReport'])->name('guide.departures.report.store');
+    });
+
+    // Quản lý nhân viên (dành cho admin & staff_manager)
+    Route::prefix('/hr')->group(function () {
+        // Lịch làm việc nhân viên
+        Route::get('/schedules', [StaffManagementController::class, 'schedulesIndex'])->name('admin.hr.schedules.index');
+
+        // Đơn nghỉ phép
+        Route::get('/leaves', [StaffManagementController::class, 'leavesIndex'])->name('admin.hr.leaves.index');
+        Route::post('/leaves/{leave}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.hr.leaves.approve');
+        Route::post('/leaves/{leave}/reject', [StaffManagementController::class, 'rejectLeave'])->name('admin.hr.leaves.reject');
+
+        // Chấm công
+        Route::get('/attendances', [StaffManagementController::class, 'attendancesIndex'])->name('admin.hr.attendances.index');
+
+        // Lương
+        Route::get('/payrolls', [StaffManagementController::class, 'payrollsIndex'])->name('admin.hr.payrolls.index');
+
+        // Báo cáo công việc
+        Route::get('/reports', [StaffManagementController::class, 'reportsIndex'])->name('admin.hr.reports.index');
+    });
+
+    // Khu vực nhân viên tự thao tác (xem lịch, xin nghỉ, chấm công, báo cáo của chính mình)
+    Route::prefix('/staff-hr')->group(function () {
+        Route::get('/schedules', [StaffManagementController::class, 'mySchedules'])->name('admin.staff-hr.schedules.index');
+
+        Route::get('/leaves', [StaffManagementController::class, 'myLeavesIndex'])->name('admin.staff-hr.leaves.index');
+        Route::post('/leaves', [StaffManagementController::class, 'myLeavesStore'])->name('admin.staff-hr.leaves.store');
+
+        Route::get('/attendances', [StaffManagementController::class, 'myAttendances'])->name('admin.staff-hr.attendances.index');
+
+        Route::get('/reports', [StaffManagementController::class, 'myReportsIndex'])->name('admin.staff-hr.reports.index');
+        Route::post('/reports', [StaffManagementController::class, 'myReportsStore'])->name('admin.staff-hr.reports.store');
     });
 });

@@ -109,17 +109,19 @@
         </div>
     </li>
 
-    <!-- Divider -->
-    <hr class="sidebar-divider">
+
 
     {{-- Khu vực Quản lý nhân viên & Nhân viên chỉ hiển thị cho admin hoặc staff_manager/staff --}}
     @if (in_array(Auth::user()->role, ['admin', 'staff_manager', 'staff']))
-        <!-- Heading -->
-        <div class="sidebar-heading">
-            Quản lý nhân viên
-        </div>
+
         {{-- Chức năng dành cho Quản lý nhân viên: phân công lịch, duyệt nghỉ, chấm công, lương, báo cáo --}}
         @if (in_array(Auth::user()->role, ['admin', 'staff_manager']))
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Quản lý nhân viên
+            </div>
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseManaStaff"
                     aria-expanded="true" aria-controls="collapseManaStaff">
@@ -130,11 +132,13 @@
                     data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Chức năng QL Nhân viên:</h6>
-                        <a class="collapse-item" href="#">Phân công lịch làm việc</a>
-                        <a class="collapse-item" href="#">Duyệt nghỉ phép</a>
-                        <a class="collapse-item" href="#">Chấm công nhân viên</a>
-                        <a class="collapse-item" href="#">Tính lương</a>
-                        <a class="collapse-item" href="#">Báo cáo thống kê</a>
+                        <a class="collapse-item" href="{{ route('admin.hr.schedules.index') }}">Phân công & lịch làm
+                            việc</a>
+                        <a class="collapse-item" href="{{ route('admin.hr.leaves.index') }}">Duyệt nghỉ phép</a>
+                        <a class="collapse-item" href="{{ route('admin.hr.attendances.index') }}">Chấm công nhân
+                            viên</a>
+                        <a class="collapse-item" href="{{ route('admin.hr.payrolls.index') }}">Tính lương</a>
+                        <a class="collapse-item" href="{{ route('admin.hr.reports.index') }}">Báo cáo công việc</a>
                     </div>
                 </div>
             </li>
@@ -159,21 +163,24 @@
                     <h6 class="collapse-header">Chức năng nhân viên:</h6>
                     <a class="collapse-item" href="{{ route('admin.staff-booking.tours') }}">Danh sách tour khách
                         đặt</a>
-                    {{-- Các chức năng nhân sự của nhân viên (xem lịch, xin nghỉ, chấm công, báo cáo) sẽ trỏ route sau --}}
-                    <a class="collapse-item" href="#">Lịch làm việc của tôi</a>
-                    <a class="collapse-item" href="#">Xin nghỉ phép</a>
-                    <a class="collapse-item" href="#">Bảng chấm công</a>
-                    <a class="collapse-item" href="#">Báo cáo công việc</a>
+                    {{-- Các chức năng nhân sự của nhân viên --}}
+                    <a class="collapse-item" href="{{ route('admin.staff-hr.schedules.index') }}">Lịch làm việc của
+                        tôi</a>
+                    <a class="collapse-item" href="{{ route('admin.staff-hr.leaves.index') }}">Xin nghỉ phép</a>
+                    <a class="collapse-item" href="{{ route('admin.staff-hr.attendances.index') }}">Bảng chấm
+                        công</a>
+                    <a class="collapse-item" href="{{ route('admin.staff-hr.reports.index') }}">Báo cáo công việc</a>
                 </div>
             </div>
         </li>
     @endif
 
-    <!-- Divider -->
-    <hr class="sidebar-divider">
-    
+
+
     {{-- đúng role thì hiển thị, không dúng thì ẩn đi --}}
     @if (in_array(Auth::user()->role, ['tour_guide', 'admin']))
+        <!-- Divider -->
+        <hr class="sidebar-divider">
         <!-- Heading -->
         <div class="sidebar-heading">
             Hướng dẫn viên

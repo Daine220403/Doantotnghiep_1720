@@ -1,0 +1,80 @@
+@extends('admin.layout.app')
+
+@section('content')
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Báo cáo công việc của tôi</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Danh sách báo cáo</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Tiêu đề</th>
+                                <th>Tổng việc</th>
+                                <th>Số giờ</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($reports as $report)
+                                <tr>
+                                    <td>{{ $report->report_date->format('d/m/Y') }}</td>
+                                    <td>{{ $report->title }}</td>
+                                    <td>{{ $report->total_tasks }}</td>
+                                    <td>{{ $report->total_hours }}</td>
+                                    <td>{{ $report->status }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center">Chưa có báo cáo nào.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    {{ $reports->links() }}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Gửi báo cáo mới</h6>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('admin.staff-hr.reports.store') }}" method="POST">
+                        @csrf
+                        <div class="form-group">
+                            <label for="report_date">Ngày báo cáo</label>
+                            <input type="date" class="form-control" id="report_date" name="report_date" value="{{ now()->toDateString() }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Tiêu đề</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="content">Nội dung công việc</label>
+                            <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="total_tasks">Tổng số công việc</label>
+                            <input type="number" min="0" class="form-control" id="total_tasks" name="total_tasks">
+                        </div>
+                        <div class="form-group">
+                            <label for="total_hours">Tổng số giờ</label>
+                            <input type="number" step="0.5" min="0" class="form-control" id="total_hours" name="total_hours">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Gửi báo cáo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
