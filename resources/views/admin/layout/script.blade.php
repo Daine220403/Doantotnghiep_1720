@@ -12,8 +12,8 @@
 <script src="{{ asset('admin-asset/vendor/chart.js/Chart.min.js') }}"></script>
 
 <!-- Page level custom scripts -->
-<script src="{{ asset('admin-asset/js/demo/chart-area-demo.js') }}"></script>
-<script src="{{ asset('admin-asset/js/demo/chart-pie-demo.js') }}"></script>
+{{-- <script src="{{ asset('admin-asset/js/demo/chart-area-demo.js') }}"></script>
+<script src="{{ asset('admin-asset/js/demo/chart-pie-demo.js') }}"></script> --}}
 
 <!-- Page level plugins -->
 <script src="{{ asset('admin-asset/vendor/datatables/jquery.dataTables.min.js') }}"></script>

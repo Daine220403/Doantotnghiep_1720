@@ -22,7 +22,7 @@ return new class extends Migration
                 ->default('customer')
                 ->index();
 
-            $table->enum('status', ['active', 'locked'])->default('active')->index();
+            $table->enum('status', ['active', 'inactive'])->default('active')->index();
             $table->foreignId('partner_id')->nullable()->constrained('users')->nullOnDelete()->cascadeOnUpdate();
             $table->rememberToken();
             $table->timestamps();

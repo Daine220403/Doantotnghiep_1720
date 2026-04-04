@@ -10,14 +10,23 @@ use App\Http\Controllers\admin\guideController;
 use App\Http\Controllers\admin\partnerController;
 use App\Http\Controllers\admin\TourOperationController;
 use App\Http\Controllers\admin\StaffManagementController;
+use App\Http\Controllers\admin\dashboardController;
+use App\Http\Controllers\admin\manaUserController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\guide\TourGuideController;
 use App\Http\Controllers\partner\rolePartnerController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
-    Route::get('/', function () {
-        return view('admin.index');
-    })->name('admin.index');
+    Route::get('/', [dashboardController::class, 'index'])->name('admin.index');
+
+    // Quản lý tài khoản nội bộ & đối tác
+    Route::prefix('/users')->group(function () {
+        Route::get('/', [manaUserController::class, 'index'])->name('admin.mana-user.index');
+        Route::get('/create', [manaUserController::class, 'create'])->name('admin.mana-user.create');
+        Route::post('/', [manaUserController::class, 'store'])->name('admin.mana-user.store');
+        Route::get('/{user}', [manaUserController::class, 'show'])->name('admin.mana-user.show');
+        Route::post('/{user}/toggle-status', [manaUserController::class, 'toggleStatus'])->name('admin.mana-user.toggle-status');
+    });
 
     // Hồ sơ cá nhân cho admin
     Route::get('/profile', [ProfileController::class, 'editAdmin'])->name('admin.profile.edit');

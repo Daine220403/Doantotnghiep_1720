@@ -1,96 +1,80 @@
 @extends('admin.layout.app')
-<!-- End of Topbar -->
 
 @section('content')
-    <!-- Begin Page Content -->
     <div class="container-fluid">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Bảng điều khiển tổng quan</h1>
+            <span class="d-none d-sm-inline-block text-muted">
+                {{ now()->format('d/m/Y') }}
+            </span>
+        </div>
 
-        <!-- Page Heading -->
-        {{-- <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-                        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
-                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
-                    </div> --}}
-
-        <!-- Content Row -->
         <div class="row">
-
-            <!-- Earnings (Monthly) Card Example -->
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Earnings (Monthly)</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">$40,000</div>
+                                    Tổng số tour</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalTours ?? 0 }}</div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                <i class="fas fa-route fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Earnings (Monthly) Card Example -->
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-success shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    Earnings (Annual)</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">$215,000</div>
+                                    Lịch khởi hành sắp tới (30 ngày)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ $upcomingDeparturesCount ?? 0 }}
+                                </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Earnings (Monthly) Card Example -->
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-info shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks
-                                </div>
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col-auto">
-                                        <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="progress progress-sm mr-2">
-                                            <div class="progress-bar bg-info" role="progressbar" style="width: 50%"
-                                                aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Booking mới hôm nay</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $todayBookings ?? 0 }}</div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                <i class="fas fa-ticket-alt fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Pending Requests Card Example -->
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-warning shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    Pending Requests</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                                    Doanh thu ({{ $revenueFilterLabel ?? 'tháng này' }})</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ isset($monthlyRevenue) ? number_format($monthlyRevenue, 0, ',', '.') . ' đ' : '0 đ' }}
+                                </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-comments fa-2x text-gray-300"></i>
+                                <i class="fas fa-donate fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -98,232 +82,296 @@
             </div>
         </div>
 
-        <!-- Content Row -->
-
         <div class="row">
-
-            <!-- Area Chart -->
-            <div class="col-xl-8 col-lg-7">
-                <div class="card shadow mb-4">
-                    <!-- Card Header - Dropdown -->
+            <div class="col-xl-8 col-lg-7 mb-4">
+                <div class="card shadow h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                aria-labelledby="dropdownMenuLink">
-                                <div class="dropdown-header">Dropdown Header:</div>
-                                <a class="dropdown-item" href="#">Action</a>
-                                <a class="dropdown-item" href="#">Another action</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#">Something else here</a>
-                            </div>
-                        </div>
+                        <h6 class="m-0 font-weight-bold text-primary">Doanh thu & đặt tour gần đây</h6>
                     </div>
-                    <!-- Card Body -->
                     <div class="card-body">
-                        <div class="chart-area">
-                            <canvas id="myAreaChart"></canvas>
+                        <form method="GET" action="{{ route('admin.index') }}" class="form-inline mb-3">
+                            <label class="mr-2 small text-muted">Bộ lọc doanh thu:</label>
+                            <select name="revenue_range" id="revenue-range" class="form-control form-control-sm mr-2">
+                                @php($currentRange = $revenueRange ?? 'this_month')
+                                <option value="today" {{ $currentRange === 'today' ? 'selected' : '' }}>Hôm nay</option>
+                                <option value="this_month" {{ $currentRange === 'this_month' ? 'selected' : '' }}>Tháng này</option>
+                                <option value="last_month" {{ $currentRange === 'last_month' ? 'selected' : '' }}>Tháng trước</option>
+                                <option value="last_7_days" {{ $currentRange === 'last_7_days' ? 'selected' : '' }}>7 ngày qua</option>
+                                <option value="last_30_days" {{ $currentRange === 'last_30_days' ? 'selected' : '' }}>30 ngày qua</option>
+                                <option value="custom" {{ $currentRange === 'custom' ? 'selected' : '' }}>Khoảng tuỳ chọn</option>
+                            </select>
+                            <div id="revenue-custom-range" class="form-inline mb-2 mb-sm-0 {{ $currentRange === 'custom' ? '' : 'd-none' }}">
+                                <input type="date" name="revenue_from" value="{{ isset($revenueFrom) ? $revenueFrom->format('Y-m-d') : '' }}" class="form-control form-control-sm mr-2">
+                                <span class="mr-2">-</span>
+                                <input type="date" name="revenue_to" value="{{ isset($revenueTo) ? $revenueTo->format('Y-m-d') : '' }}" class="form-control form-control-sm mr-2">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary">Lọc</button>
+                        </form>
+
+                        <div class="chart-area mb-3" style="height: 220px;">
+                            <canvas id="revenueLineChart"></canvas>
                         </div>
+
+                        @isset($bookingStats)
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2 d-flex justify-content-between">
+                                    <span>Booking 7 ngày qua</span>
+                                    <span class="font-weight-bold">{{ $bookingStats['last_7_days'] ?? 0 }}</span>
+                                </li>
+                                <li class="mb-2 d-flex justify-content-between">
+                                    <span>Booking 30 ngày qua</span>
+                                    <span class="font-weight-bold">{{ $bookingStats['last_30_days'] ?? 0 }}</span>
+                                </li>
+                                <li class="d-flex justify-content-between">
+                                    <span>Tỷ lệ huỷ</span>
+                                    <span class="font-weight-bold">{{ $bookingStats['cancel_rate'] ?? '0%' }}</span>
+                                </li>
+                            </ul>
+                        @else
+                            <p class="mb-0 text-muted">Chưa có dữ liệu thống kê. Bạn có thể thêm logic ở controller để
+                                truyền biến <code>$bookingStats</code> vào view.</p>
+                        @endisset
                     </div>
                 </div>
             </div>
 
-            <!-- Pie Chart -->
-            <div class="col-xl-4 col-lg-5">
-                <div class="card shadow mb-4">
-                    <!-- Card Header - Dropdown -->
+            <div class="col-xl-4 col-lg-5 mb-4">
+                <div class="card shadow h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                aria-labelledby="dropdownMenuLink">
-                                <div class="dropdown-header">Dropdown Header:</div>
-                                <a class="dropdown-item" href="#">Action</a>
-                                <a class="dropdown-item" href="#">Another action</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#">Something else here</a>
-                            </div>
-                        </div>
+                        <h6 class="m-0 font-weight-bold text-primary">Trạng thái vận hành</h6>
                     </div>
-                    <!-- Card Body -->
                     <div class="card-body">
-                        <div class="chart-pie pt-4 pb-2">
-                            <canvas id="myPieChart"></canvas>
-                        </div>
-                        <div class="mt-4 text-center small">
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-primary"></i> Direct
-                            </span>
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-success"></i> Social
-                            </span>
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-info"></i> Referral
-                            </span>
-                        </div>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2 d-flex justify-content-between align-items-center">
+                                <span>Tour đang chạy</span>
+                                <span class="font-weight-bold">{{ $runningToursCount ?? 0 }}</span>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between align-items-center">
+                                <span>Yêu cầu dịch vụ chờ đối tác</span>
+                                <span class="font-weight-bold">{{ $pendingPartnerRequests ?? 0 }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between align-items-center">
+                                <span>Lịch khởi hành cần chốt đoàn</span>
+                                <span class="font-weight-bold">{{ $needConfirmDepartures ?? 0 }}</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Content Row -->
         <div class="row">
-
-            <!-- Content Column -->
             <div class="col-lg-6 mb-4">
-
-                <!-- Project Card Example -->
-                <div class="card shadow mb-4">
+                <div class="card shadow h-100">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Lịch khởi hành trong 7 ngày tới</h6>
                     </div>
-                    <div class="card-body">
-                        <h4 class="small font-weight-bold">Server Migration <span class="float-right">20%</span></h4>
-                        <div class="progress mb-4">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: 20%" aria-valuenow="20"
-                                aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <h4 class="small font-weight-bold">Sales Tracking <span class="float-right">40%</span></h4>
-                        <div class="progress mb-4">
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: 40%"
-                                aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <h4 class="small font-weight-bold">Customer Database <span class="float-right">60%</span></h4>
-                        <div class="progress mb-4">
-                            <div class="progress-bar" role="progressbar" style="width: 60%" aria-valuenow="60"
-                                aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <h4 class="small font-weight-bold">Payout Details <span class="float-right">80%</span></h4>
-                        <div class="progress mb-4">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 80%" aria-valuenow="80"
-                                aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <h4 class="small font-weight-bold">Account Setup <span class="float-right">Complete!</span></h4>
-                        <div class="progress">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"
-                                aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
+                    <div class="card-body p-0">
+                        @isset($upcomingDepartures)
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Tour</th>
+                                            <th>Ngày đi</th>
+                                            <th>Đã đặt</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($upcomingDepartures as $departure)
+                                            <tr>
+                                                <td>{{ $departure->tour->title ?? $departure->tour->code ?? '#' }}</td>
+                                                <td>{{ optional($departure->start_date)->format('d/m/Y') ?? '-' }}</td>
+                                                <td>{{ $departure->capacity_booked ?? 0 }}/{{ $departure->capacity_total ?? '-' }}</td>
+                                                <td>
+                                                    <span class="badge badge-{{ $departure->status === 'closed' ? 'secondary' : 'success' }}">
+                                                        {{ $departure->status ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-3">Không có lịch khởi hành
+                                                    nào trong 7 ngày tới.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="p-3 mb-0 text-muted">Chưa truyền danh sách <code>$upcomingDepartures</code>.</p>
+                        @endisset
                     </div>
                 </div>
-
-                <!-- Color System -->
-                <div class="row">
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-primary text-white shadow">
-                            <div class="card-body">
-                                Primary
-                                <div class="text-white-50 small">#4e73df</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-success text-white shadow">
-                            <div class="card-body">
-                                Success
-                                <div class="text-white-50 small">#1cc88a</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-info text-white shadow">
-                            <div class="card-body">
-                                Info
-                                <div class="text-white-50 small">#36b9cc</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-warning text-white shadow">
-                            <div class="card-body">
-                                Warning
-                                <div class="text-white-50 small">#f6c23e</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-danger text-white shadow">
-                            <div class="card-body">
-                                Danger
-                                <div class="text-white-50 small">#e74a3b</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-secondary text-white shadow">
-                            <div class="card-body">
-                                Secondary
-                                <div class="text-white-50 small">#858796</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-light text-black shadow">
-                            <div class="card-body">
-                                Light
-                                <div class="text-black-50 small">#f8f9fc</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card bg-dark text-white shadow">
-                            <div class="card-body">
-                                Dark
-                                <div class="text-white-50 small">#5a5c69</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <div class="col-lg-6 mb-4">
-
-                <!-- Illustrations -->
-                <div class="card shadow mb-4">
+                <div class="card shadow h-100">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Illustrations</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Booking mới nhất</h6>
                     </div>
-                    <div class="card-body">
-                        <div class="text-center">
-                            <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;"
-                                src="img/undraw_posting_photo.svg" alt="...">
-                        </div>
-                        <p>Add some quality, svg illustrations to your project courtesy of <a target="_blank"
-                                rel="nofollow" href="https://undraw.co/">unDraw</a>, a
-                            constantly updated collection of beautiful svg images that you can use
-                            completely free and without attribution!</p>
-                        <a target="_blank" rel="nofollow" href="https://undraw.co/">Browse Illustrations
-                            on
-                            unDraw &rarr;</a>
+                    <div class="card-body p-0">
+                        @isset($latestBookings)
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Tour</th>
+                                            <th>Ngày đặt</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($latestBookings as $booking)
+                                            <tr>
+                                                <td>{{ $booking->order->order_code ?? '#' }}</td>
+                                                <td>{{ $booking->departure->tour->title ?? '-' }}</td>
+                                                <td>{{ optional($booking->created_at)->format('d/m/Y H:i') ?? '-' }}</td>
+                                                <td>
+                                                    <span class="badge badge-{{ $booking->status === 'cancelled' ? 'danger' : 'info' }}">
+                                                        {{ $booking->status ?? 'N/A' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-3">Chưa có booking nào.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="p-3 mb-0 text-muted">Chưa truyền danh sách <code>$latestBookings</code>.</p>
+                        @endisset
                     </div>
                 </div>
-
-                <!-- Approach -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>
-                    </div>
-                    <div class="card-body">
-                        <p>SB Admin 2 makes extensive use of Bootstrap 4 utility classes in order to reduce
-                            CSS bloat and poor page performance. Custom CSS classes are used to create
-                            custom components and custom utility classes.</p>
-                        <p class="mb-0">Before working with this theme, you should become familiar with
-                            the
-                            Bootstrap framework, especially the utility classes.</p>
-                    </div>
-                </div>
-
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Nhân sự & đối tác</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Nhân viên nội bộ</span>
+                                    <span class="font-weight-bold">{{ $staffCount ?? 0 }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Hướng dẫn viên</span>
+                                    <span class="font-weight-bold">{{ $guideCount ?? 0 }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Đối tác dịch vụ</span>
+                                    <span class="font-weight-bold">{{ $partnerCount ?? 0 }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Đơn nghỉ phép chờ duyệt</span>
+                                    <span class="font-weight-bold">{{ $pendingLeaves ?? 0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Ghi chú nhanh cho admin</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2 text-muted">Một số gợi ý thao tác nhanh:</p>
+                        <ul class="mb-0">
+                            <li>Kiểm tra các tour sắp khởi hành tại menu "Tour đang chạy".</li>
+                            <li>Điều phối dịch vụ đối tác cho từng lịch khởi hành trong mục "Điều phối tour".</li>
+                            <li>Theo dõi chấm công, lương và báo cáo công việc tại khu vực "Nhân sự".</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <!-- /.container-fluid -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var rangeSelect = document.getElementById('revenue-range');
+            var customRange = document.getElementById('revenue-custom-range');
+            if (rangeSelect && customRange) {
+                rangeSelect.addEventListener('change', function () {
+                    if (this.value === 'custom') {
+                        customRange.classList.remove('d-none');
+                    } else {
+                        customRange.classList.add('d-none');
+                    }
+                });
+            }
+
+            if (typeof Chart !== 'undefined') {
+                var ctx = document.getElementById('revenueLineChart');
+                if (ctx) {
+                    var labels = @json($revenueChart['labels'] ?? []);
+                    var data = @json($revenueChart['data'] ?? []);
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Doanh thu (đ)',
+                                lineTension: 0.3,
+                                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                                borderColor: 'rgba(78, 115, 223, 1)',
+                                pointRadius: 3,
+                                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                                pointHoverRadius: 3,
+                                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                                pointHitRadius: 10,
+                                pointBorderWidth: 2,
+                                data: data,
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            legend: { display: false },
+                            tooltips: {
+                                callbacks: {
+                                    label: function (tooltipItem) {
+                                        var value = tooltipItem.yLabel || 0;
+                                        return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+                                    }
+                                }
+                            },
+                            scales: {
+                                xAxes: [{
+                                    gridLines: { display: false },
+                                }],
+                                yAxes: [{
+                                    ticks: {
+                                        callback: function (value) {
+                                            return new Intl.NumberFormat('vi-VN').format(value / 1000000) + 'M';
+                                        }
+                                    }
+                                }]
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
 @endsection
