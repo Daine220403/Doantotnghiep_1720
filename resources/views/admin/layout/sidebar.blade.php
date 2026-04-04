@@ -19,131 +19,134 @@
             <span>Dashboard</span></a>
     </li>
 
-    <!-- Divider -->
-    <hr class="sidebar-divider">
 
-    <!-- Heading -->
-    <div class="sidebar-heading">
-        Quản lý tour
-    </div>
-
-    <!-- Nav Item - Pages partner Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-            aria-expanded="true" aria-controls="collapseTwo">
-            <i class="fas fa-plane"></i>
-            <span>Tours</span>
-        </a>
-        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng tour:</h6>
-                <a class="collapse-item" href="{{ route('admin.mana-tour.index') }}">Danh sách tours</a>
-                <a class="collapse-item" href="{{ route('admin.mana-tour.create') }}">Thêm tour</a>
-            </div>
+    @if (in_array(Auth::user()->role, ['admin', 'tour_manager']))
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Quản lý tour
         </div>
-    </li>
 
-    <!-- Nav Item - Service Menu -->
-    <!-- Nav Item - Booking Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-            aria-expanded="true" aria-controls="collapseUtilities">
-            <i class="fas fa-ticket-alt"></i>
-            <span>Đặt tour & khách</span>
-        </a>
-        <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Quản lý đặt tour:</h6>
-                <a class="collapse-item" href="{{ route('admin.mana-booking.index') }}">Đơn đặt tour</a>
-                <a class="collapse-item" href="{{ route('admin.customer-tour.index') }}">Khách theo tour</a>
+        <!-- Nav Item - Pages partner Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                aria-expanded="true" aria-controls="collapseTwo">
+                <i class="fas fa-plane"></i>
+                <span>Tours</span>
+            </a>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng tour:</h6>
+                    <a class="collapse-item" href="{{ route('admin.mana-tour.index') }}">Danh sách tours</a>
+                    <a class="collapse-item" href="{{ route('admin.mana-tour.create') }}">Thêm tour</a>
+                </div>
             </div>
-        </div>
-    </li>
+        </li>
 
-    <!-- Nav Item - Product Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree"
-            aria-expanded="true" aria-controls="collapseThree">
-            <i class="fab fa-product-hunt"></i>
-            <span>Hướng dẫn viên</span>
-        </a>
-        <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
-                <a class="collapse-item" href="{{ route('admin.mana-guide.index') }}">Phân công HDV</a>
+        <!-- Nav Item - Service Menu -->
+        <!-- Nav Item - Booking Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
+                aria-expanded="true" aria-controls="collapseUtilities">
+                <i class="fas fa-ticket-alt"></i>
+                <span>Đặt tour & khách</span>
+            </a>
+            <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Quản lý đặt tour:</h6>
+                    <a class="collapse-item" href="{{ route('admin.mana-booking.index') }}">Đơn đặt tour</a>
+                    <a class="collapse-item" href="{{ route('admin.customer-tour.index') }}">Khách theo tour</a>
+                </div>
             </div>
-        </div>
-    </li>
+        </li>
 
-    <!-- Nav Item - Partner Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePartner"
-            aria-expanded="true" aria-controls="collapsePartner">
-            <i class="fas fa-handshake"></i>
-            <span>Đối tác dịch vụ</span>
-        </a>
-        <div id="collapsePartner" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Quản lý đối tác dịch vụ:</h6>
-                <a class="collapse-item" href="{{ route('admin.mana-partner.index') }}">Danh sách đối tác</a>
-                <a class="collapse-item" href="{{ route('admin.mana-partner.create') }}">Thêm đối tác</a>
-                {{-- Điều phối dịch vụ cho lịch khởi hành đã chốt đoàn --}}
-                <a class="collapse-item" href="{{ route('admin.coordinated-tours.index') }}">Điều phối dịch vụ</a>
+        <!-- Nav Item - Product Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseThree"
+                aria-expanded="true" aria-controls="collapseThree">
+                <i class="fab fa-product-hunt"></i>
+                <span>Hướng dẫn viên</span>
+            </a>
+            <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
+                    <a class="collapse-item" href="{{ route('admin.mana-guide.index') }}">Phân công HDV</a>
+                </div>
             </div>
-        </div>
-    </li>
+        </li>
 
-    <!-- Nav Item - Theo dõi tour đang chạy Menu -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRunningTours"
-            aria-expanded="true" aria-controls="collapseRunningTours">
-            <i class="fas fa-running"></i>
-            <span>Theo dõi tour đang chạy</span>
-        </a>
-        <div id="collapseRunningTours" class="collapse" aria-labelledby="headingUtilities"
-            data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Quản lý tour đang chạy:</h6>
-                <a class="collapse-item" href="{{ route('admin.running-tours.index') }}">Danh sách tour đang chạy</a>
+        <!-- Nav Item - Partner Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePartner"
+                aria-expanded="true" aria-controls="collapsePartner">
+                <i class="fas fa-handshake"></i>
+                <span>Đối tác dịch vụ</span>
+            </a>
+            <div id="collapsePartner" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Quản lý đối tác dịch vụ:</h6>
+                    <a class="collapse-item" href="{{ route('admin.mana-partner.index') }}">Danh sách đối tác</a>
+                    <a class="collapse-item" href="{{ route('admin.mana-partner.create') }}">Thêm đối tác</a>
+                    {{-- Điều phối dịch vụ cho lịch khởi hành đã chốt đoàn --}}
+                    <a class="collapse-item" href="{{ route('admin.coordinated-tours.index') }}">Điều phối dịch vụ</a>
+                </div>
             </div>
-        </div>
-    </li>
+        </li>
 
+        <!-- Nav Item - Theo dõi tour đang chạy Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRunningTours"
+                aria-expanded="true" aria-controls="collapseRunningTours">
+                <i class="fas fa-running"></i>
+                <span>Theo dõi tour đang chạy</span>
+            </a>
+            <div id="collapseRunningTours" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Quản lý tour đang chạy:</h6>
+                    <a class="collapse-item" href="{{ route('admin.running-tours.index') }}">Danh sách tour đang
+                        chạy</a>
+                </div>
+            </div>
+        </li>
+    @endif
 
 
     {{-- Khu vực Quản lý nhân viên & Nhân viên chỉ hiển thị cho admin hoặc staff_manager/staff --}}
-    @if (in_array(Auth::user()->role, ['admin', 'staff_manager', 'staff']))
-
-        {{-- Chức năng dành cho Quản lý nhân viên: phân công lịch, duyệt nghỉ, chấm công, lương, báo cáo --}}
-        @if (in_array(Auth::user()->role, ['admin', 'staff_manager']))
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Quản lý nhân viên
-            </div>
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseManaStaff"
-                    aria-expanded="true" aria-controls="collapseManaStaff">
-                    <i class="fas fa-user-cog"></i>
-                    <span>Quản lý nhân viên</span>
-                </a>
-                <div id="collapseManaStaff" class="collapse" aria-labelledby="headingUtilities"
-                    data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Chức năng QL Nhân viên:</h6>
-                        <a class="collapse-item" href="{{ route('admin.hr.schedules.index') }}">Phân công & lịch làm
-                            việc</a>
-                        <a class="collapse-item" href="{{ route('admin.hr.leaves.index') }}">Duyệt nghỉ phép</a>
-                        <a class="collapse-item" href="{{ route('admin.hr.attendances.index') }}">Chấm công nhân
-                            viên</a>
-                        <a class="collapse-item" href="{{ route('admin.hr.payrolls.index') }}">Tính lương</a>
-                        <a class="collapse-item" href="{{ route('admin.hr.reports.index') }}">Báo cáo công việc</a>
-                    </div>
+    {{-- Chức năng dành cho Quản lý nhân viên: phân công lịch, duyệt nghỉ, chấm công, lương, báo cáo --}}
+    @if (in_array(Auth::user()->role, ['admin', 'staff_manager']))
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Quản lý nhân viên
+        </div>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseManaStaff"
+                aria-expanded="true" aria-controls="collapseManaStaff">
+                <i class="fas fa-user-cog"></i>
+                <span>Quản lý nhân viên</span>
+            </a>
+            <div id="collapseManaStaff" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng QL Nhân viên:</h6>
+                    <a class="collapse-item" href="{{ route('admin.hr.schedules.index') }}">Phân công & lịch làm
+                        việc</a>
+                    <a class="collapse-item" href="{{ route('admin.hr.leaves.index') }}">Duyệt nghỉ phép</a>
+                    <a class="collapse-item" href="{{ route('admin.hr.attendances.index') }}">Chấm công nhân
+                        viên</a>
+                    <a class="collapse-item" href="{{ route('admin.hr.payrolls.index') }}">Tính lương</a>
+                    <a class="collapse-item" href="{{ route('admin.hr.reports.index') }}">Báo cáo công việc</a>
                 </div>
-            </li>
-        @endif
+            </div>
+        </li>
+    @endif
 
+    @if (in_array(Auth::user()->role, ['admin', 'staff']))
         <!-- Divider -->
         <hr class="sidebar-divider">
         <!-- Heading -->
@@ -174,7 +177,6 @@
             </div>
         </li>
     @endif
-
 
 
     {{-- đúng role thì hiển thị, không dúng thì ẩn đi --}}
