@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('departure_id')->constrained('tour_departures')->cascadeOnDelete();
             $table->foreignId('partner_service_id')->constrained('partner_services')->cascadeOnDelete();
             $table->date('service_date')->nullable();
+            $table->date('service_start_date')->nullable();
+            $table->date('service_end_date')->nullable();
             $table->integer('qty')->default(1);
             $table->decimal('unit_price', 12, 2)->default(0);
             $table->decimal('total_price', 12, 2)->default(0);

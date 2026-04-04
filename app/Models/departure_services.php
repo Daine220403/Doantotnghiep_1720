@@ -15,6 +15,8 @@ class departure_services extends Model
         'departure_id',
         'partner_service_id',
         'service_date',
+        'service_start_date',
+        'service_end_date',
         'qty',
         'unit_price',
         'total_price',

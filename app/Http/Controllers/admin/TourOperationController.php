@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\tour_departures;
 use App\Models\departure_services;
 use App\Models\partner_services;
+use App\Models\partners;
 use Illuminate\Http\Request;
 
 class TourOperationController extends Controller
@@ -56,12 +57,16 @@ class TourOperationController extends Controller
         $departure = tour_departures::with(['tour', 'services.partnerService.partner'])
             ->findOrFail($departureId);
 
+        $partners = partners::where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
         $services = partner_services::with('partner')
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
-        return view('admin.mana_partner.departure_services', compact('departure', 'services'));
+        return view('admin.mana_partner.departure_services', compact('departure', 'services', 'partners'));
     }
 
     public function servicesStore(Request $request, $departureId)
@@ -76,6 +81,8 @@ class TourOperationController extends Controller
         $data = $request->validate([
             'partner_service_id' => 'required|exists:partner_services,id',
             'service_date' => 'nullable|date',
+            'service_start_date' => 'nullable|date',
+            'service_end_date' => 'nullable|date|after_or_equal:service_start_date',
             'qty' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:0',
             'note' => 'nullable|string',

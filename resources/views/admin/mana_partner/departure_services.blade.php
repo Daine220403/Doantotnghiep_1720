@@ -41,13 +41,25 @@
                         @if ($departure->status === 'confirmed')
                             <form action="{{ route('admin.departures.services.store', $departure->id) }}" method="POST">
                                 @csrf
+
                             <div class="form-group">
-                                <label>Chọn dịch vụ</label>
-                                <select name="partner_service_id" class="form-control" id="partner_service_select">
+                                <label>Công ty dịch vụ</label>
+                                <input type="text" id="partner_search" class="form-control mb-2" placeholder="Tìm kiếm công ty dịch vụ...">
+                                <select class="form-control" id="partner_select">
+                                    <option value="">-- Chọn công ty dịch vụ --</option>
+                                    @foreach ($partners as $partner)
+                                        <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Dịch vụ của công ty</label>
+                                <select name="partner_service_id" class="form-control" id="partner_service_select" disabled>
                                     <option value="">-- Chọn dịch vụ --</option>
                                     @foreach ($services as $service)
-                                        <option value="{{ $service->id }}" data-unit-price="{{ $service->unit_price ?? 0 }}">
-                                            [{{ $service->partner->name }}] {{ $service->name }} ({{ $service->service_type }})
+                                        <option value="{{ $service->id }}" data-partner-id="{{ $service->partner_id }}" data-unit-price="{{ $service->unit_price ?? 0 }}">
+                                            {{ $service->name }} ({{ $service->service_type }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -57,9 +69,15 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Ngày sử dụng dịch vụ</label>
-                                <input type="date" name="service_date" class="form-control" value="{{ old('service_date', $departure->start_date) }}">
-                                @error('service_date')
+                                <label>Ngày sử dụng dịch vụ (từ - đến)</label>
+                                <div class="d-flex">
+                                    <input type="date" name="service_start_date" class="form-control mr-2" value="{{ old('service_start_date', $departure->start_date) }}">
+                                    <input type="date" name="service_end_date" class="form-control" value="{{ old('service_end_date', $departure->end_date) }}">
+                                </div>
+                                @error('service_start_date')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                                @error('service_end_date')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -95,13 +113,40 @@
                             </form>
                             <script>
                                 document.addEventListener('DOMContentLoaded', function () {
-                                    var select = document.getElementById('partner_service_select');
+                                    var partnerSelect = document.getElementById('partner_select');
+                                    var partnerSearch = document.getElementById('partner_search');
+                                    var serviceSelect = document.getElementById('partner_service_select');
                                     var unitInput = document.getElementById('unit_price_input');
 
-                                    if (!select || !unitInput) return;
+                                    if (!partnerSelect || !serviceSelect || !unitInput) return;
+
+                                    function filterServicesByPartner() {
+                                        var partnerId = partnerSelect.value;
+                                        var hasVisible = false;
+
+                                        Array.prototype.forEach.call(serviceSelect.options, function (opt) {
+                                            if (!opt.value) {
+                                                // luôn hiển thị option placeholder
+                                                opt.style.display = '';
+                                                return;
+                                            }
+
+                                            var optPartnerId = opt.getAttribute('data-partner-id');
+                                            if (partnerId && optPartnerId === partnerId) {
+                                                opt.style.display = '';
+                                                hasVisible = true;
+                                            } else {
+                                                opt.style.display = 'none';
+                                            }
+                                        });
+
+                                        serviceSelect.disabled = !partnerId || !hasVisible;
+                                        serviceSelect.value = '';
+                                        unitInput.value = 0;
+                                    }
 
                                     function updateUnitPrice() {
-                                        var option = select.options[select.selectedIndex];
+                                        var option = serviceSelect.options[serviceSelect.selectedIndex];
                                         if (!option) return;
 
                                         var price = option.getAttribute('data-unit-price');
@@ -110,10 +155,27 @@
                                         }
                                     }
 
-                                    select.addEventListener('change', updateUnitPrice);
+                                    function filterPartners() {
+                                        var term = (partnerSearch.value || '').toLowerCase();
+                                        Array.prototype.forEach.call(partnerSelect.options, function (opt, index) {
+                                            if (index === 0) {
+                                                // placeholder luôn hiển thị
+                                                opt.style.display = '';
+                                                return;
+                                            }
+                                            var text = (opt.text || '').toLowerCase();
+                                            opt.style.display = text.indexOf(term) !== -1 ? '' : 'none';
+                                        });
+                                    }
 
-                                    // Khởi tạo giá khi load trang (nếu đã chọn sẵn dịch vụ)
-                                    updateUnitPrice();
+                                    partnerSelect.addEventListener('change', filterServicesByPartner);
+                                    serviceSelect.addEventListener('change', updateUnitPrice);
+                                    if (partnerSearch) {
+                                        partnerSearch.addEventListener('input', filterPartners);
+                                    }
+
+                                    // Khởi tạo: ẩn tất cả dịch vụ vì chưa chọn công ty
+                                    filterServicesByPartner();
                                 });
                             </script>
                         @else
@@ -135,7 +197,7 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Dịch vụ</th>
-                                        <th>Ngày</th>
+                                        <th>Ngày sử dụng</th>
                                         <th>SL</th>
                                         <th>Đơn giá</th>
                                         <th>Thành tiền</th>
@@ -152,7 +214,16 @@
                                                 <div class="font-weight-bold">{{ $row->partnerService->name ?? 'N/A' }}</div>
                                                 <div class="small text-muted">Đối tác: {{ $row->partnerService->partner->name ?? 'N/A' }}</div>
                                             </td>
-                                            <td>{{ $row->service_date }}</td>
+                                            <td>
+                                                @if ($row->service_start_date || $row->service_end_date)
+                                                    {{ $row->service_start_date }}
+                                                    @if ($row->service_end_date)
+                                                        - {{ $row->service_end_date }}
+                                                    @endif
+                                                @else
+                                                    {{ $row->service_date }}
+                                                @endif
+                                            </td>
                                             <td>{{ $row->qty }}</td>
                                             <td class="text-right">{{ number_format($row->unit_price, 0, ',', '.') }}</td>
                                             <td class="text-right">{{ number_format($row->total_price, 0, ',', '.') }}</td>

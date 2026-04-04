@@ -12,6 +12,7 @@ use App\Http\Controllers\admin\TourOperationController;
 use App\Http\Controllers\admin\StaffManagementController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\guide\TourGuideController;
+use App\Http\Controllers\partner\rolePartnerController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', function () {
@@ -28,7 +29,7 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     // Phân công Hướng dẫn viên cho lịch khởi hành
     Route::post('/departures/{departure}/assign-guide', [TourAssignmentController::class, 'assign'])
         ->name('admin.departures.assign-guide');
-        
+
     Route::prefix('/tours')->group(function () {
         Route::get('/', [toursController::class, 'index'])->name('admin.mana-tour.index'); // danh sách tour || done
         Route::get('/create', [toursController::class, 'create'])->name('admin.mana-tour.create'); // form tạo tour || done
@@ -161,5 +162,19 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
 
         Route::get('/reports', [StaffManagementController::class, 'myReportsIndex'])->name('admin.staff-hr.reports.index');
         Route::post('/reports', [StaffManagementController::class, 'myReportsStore'])->name('admin.staff-hr.reports.store');
+    });
+    // role partner truy cập trang quản lý dịch vụ của mình
+    Route::prefix('/partner')->group(function () {
+        Route::get('/services', [rolePartnerController::class, 'index'])->name('admin.partner.services');
+        Route::get('/services/create', [rolePartnerController::class, 'create'])->name('admin.partner.services.create');
+        Route::post('/services', [rolePartnerController::class, 'store'])->name('admin.partner.services.store');
+        Route::get('/services/{service}/edit', [rolePartnerController::class, 'edit'])->name('admin.partner.services.edit');
+        Route::put('/services/{service}', [rolePartnerController::class, 'update'])->name('admin.partner.services.update');
+        Route::post('/services/{service}/toggle-status', [rolePartnerController::class, 'toggleStatus'])->name('admin.partner.services.toggle-status');
+
+		// Yêu cầu dịch vụ cho đối tác xác nhận
+		Route::get('/requests', [rolePartnerController::class, 'requests'])->name('admin.partner.requests.index');
+        Route::post('/requests/{departureService}/confirm', [rolePartnerController::class, 'confirmRequest'])->name('admin.partner.requests.confirm');
+        Route::post('/requests/{departureService}/reject', [rolePartnerController::class, 'rejectRequest'])->name('admin.partner.requests.reject');
     });
 });

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\tour_assignments;
+use App\Models\partners;
 
 class User extends Authenticatable
 {
@@ -53,5 +54,10 @@ class User extends Authenticatable
     public function guideAssignments()
     {
         return $this->hasMany(tour_assignments::class, 'guide_id');
+    }
+
+    public function partner()
+    {
+        return $this->belongsTo(partners::class, 'partner_id');
     }
 }

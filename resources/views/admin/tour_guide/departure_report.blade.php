@@ -140,7 +140,16 @@
                                 <tbody>
                                     @foreach ($services as $service)
                                         <tr>
-                                            <td>{{ $service->service_date }}</td>
+                                            <td>
+                                                @if ($service->service_start_date || $service->service_end_date)
+                                                    {{ $service->service_start_date }}
+                                                    @if ($service->service_end_date)
+                                                        - {{ $service->service_end_date }}
+                                                    @endif
+                                                @else
+                                                    {{ $service->service_date }}
+                                                @endif
+                                            </td>
                                             <td>{{ $service->partnerService->name ?? '-' }}</td>
                                             <td>{{ $service->partnerService->partner->name ?? '-' }}</td>
                                             <td>{{ $service->qty }}</td>
