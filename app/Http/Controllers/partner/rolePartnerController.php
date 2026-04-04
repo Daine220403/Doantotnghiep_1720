@@ -237,4 +237,59 @@ class rolePartnerController extends Controller
 			->with('success', 'Bạn đã từ chối yêu cầu dịch vụ này.');
 	}
 
+	// Đối tác duyệt yêu cầu hủy dịch vụ
+	public function approveCancelRequest(departure_services $departureService)
+	{
+		$user = Auth::user();
+
+		if (!$user || $user->role !== 'partner') {
+			abort(403);
+		}
+
+		$partner = $user->partner;
+
+		if (!$partner || $departureService->partnerService->partner_id !== $partner->id) {
+			abort(403);
+		}
+
+		if ($departureService->status !== 'confirmed' || !$departureService->cancel_requested) {
+			return redirect()->route('admin.partner.requests.index')
+				->with('error', 'Chỉ có thể duyệt hủy cho các dịch vụ đã xác nhận và đang chờ hủy.');
+		}
+
+		$departureService->status = 'cancelled';
+		$departureService->cancel_requested = false;
+		$departureService->save();
+
+		return redirect()->route('admin.partner.requests.index')
+			->with('success', 'Bạn đã chấp nhận hủy dịch vụ này.');
+	}
+
+	// Đối tác từ chối yêu cầu hủy dịch vụ
+	public function rejectCancelRequest(departure_services $departureService)
+	{
+		$user = Auth::user();
+
+		if (!$user || $user->role !== 'partner') {
+			abort(403);
+		}
+
+		$partner = $user->partner;
+
+		if (!$partner || $departureService->partnerService->partner_id !== $partner->id) {
+			abort(403);
+		}
+
+		if ($departureService->status !== 'confirmed' || !$departureService->cancel_requested) {
+			return redirect()->route('admin.partner.requests.index')
+				->with('error', 'Chỉ có thể từ chối hủy cho các dịch vụ đã xác nhận và đang chờ hủy.');
+		}
+
+		$departureService->cancel_requested = false;
+		$departureService->save();
+
+		return redirect()->route('admin.partner.requests.index')
+			->with('success', 'Bạn đã từ chối yêu cầu hủy dịch vụ này.');
+	}
+
 }

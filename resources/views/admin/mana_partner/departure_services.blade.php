@@ -244,13 +244,28 @@
                                                 @endswitch
                                             </td>
                                             <td>
-                                                <form action="{{ route('admin.departures.services.destroy', [$departure->id, $row->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dịch vụ này?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                                @if ($row->status === 'pending')
+                                                    <form action="{{ route('admin.departures.services.destroy', [$departure->id, $row->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dịch vụ này?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @elseif ($row->status === 'confirmed')
+                                                    @if ($row->cancel_requested)
+                                                        <span class="text-muted small">Đang chờ đối tác duyệt hủy</span>
+                                                    @else
+                                                        <form action="{{ route('admin.departures.services.request-cancel', [$departure->id, $row->id]) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn yêu cầu hủy dịch vụ này?');">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-warning" title="Yêu cầu hủy">
+                                                                Yêu cầu hủy
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted small">Không có hành động</span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty

@@ -7,6 +7,7 @@ use App\Models\tour_departures;
 use App\Models\departure_services;
 use App\Models\partner_services;
 use App\Models\partners;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TourOperationController extends Controller
@@ -109,10 +110,44 @@ class TourOperationController extends Controller
         }
 
         $service = departure_services::where('departure_id', $departure->id)->findOrFail($id);
-
+        // Không cho xóa dịch vụ đã được duyệt/hoàn tất khi tour đã chạy
+        // hoặc nằm trong khoảng 7 ngày tính tới ngày khởi hành
+        if (in_array($service->status, ['confirmed', 'completed'])) {
+            $diffDays = now()->diffInDays(Carbon::parse($departure->start_date), false);
+            if ($diffDays <= 7) {
+                return redirect()->back()->with('error', 'Không được xóa dịch vụ đã được duyệt khi tour đã chạy hoặc trong vòng 7 ngày trước ngày khởi hành.');
+            }
+        }
         $service->delete();
 
         return redirect()->route('admin.departures.services.index', $departure->id)
             ->with('success', 'Xóa dịch vụ đối tác thành công.');
+    }
+
+    // Yêu cầu hủy dịch vụ (không xóa record, chỉ đổi trạng thái)
+    public function servicesRequestCancel($departureId, $id)
+    {
+        $departure = tour_departures::findOrFail($departureId);
+
+        if ($departure->status !== 'confirmed') {
+            return redirect()->back()->with('error', 'Chỉ được yêu cầu hủy dịch vụ khi lịch khởi hành đã được chốt đoàn.');
+        }
+
+        $service = departure_services::where('departure_id', $departure->id)->findOrFail($id);
+
+        if ($service->status !== 'confirmed') {
+            return redirect()->back()->with('error', 'Chỉ có thể yêu cầu hủy đối với dịch vụ đã được đối tác xác nhận.');
+        }
+
+        if ($service->cancel_requested) {
+            return redirect()->back()->with('error', 'Dịch vụ này đã được yêu cầu hủy trước đó.');
+        }
+
+        $service->cancel_requested = true;
+        $service->cancel_requested_at = now();
+        $service->save();
+
+        return redirect()->route('admin.departures.services.index', $departure->id)
+            ->with('success', 'Đã gửi yêu cầu hủy dịch vụ tới đối tác.');
     }
 }

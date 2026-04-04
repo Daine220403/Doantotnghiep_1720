@@ -24,6 +24,8 @@ return new class extends Migration
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
             $table->text('note')->nullable();
             $table->timestamp('confirmed_at')->nullable();
+            $table->boolean('cancel_requested')->default(false);
+            $table->timestamp('cancel_requested_at')->nullable();
             $table->timestamps();
         });
     }

@@ -47,7 +47,7 @@
                                 <th>Đơn giá (VNĐ)</th>
                                 <th>Thành tiền (VNĐ)</th>
                                 <th>Trạng thái</th>
-                                <th style="width: 140px;">Hành động</th>
+                                <th style="width: 200px;">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,25 +72,29 @@
                                     <td class="text-right">{{ number_format($item->unit_price ?? 0, 0, ',', '.') }}</td>
                                     <td class="text-right">{{ number_format($item->total_price ?? 0, 0, ',', '.') }}</td>
                                     <td>
-                                        @switch($item->status)
-                                            @case('pending')
-                                                <span class="badge badge-warning">Chờ xác nhận</span>
-                                                @break
-                                            @case('confirmed')
-                                                <span class="badge badge-success">Đã xác nhận</span><br>
-                                                @if ($item->confirmed_at)
-                                                    <small class="text-muted">{{ $item->confirmed_at }}</small>
-                                                @endif
-                                                @break
-                                            @case('completed')
-                                                <span class="badge badge-primary">Đã hoàn thành</span>
-                                                @break
-                                            @case('cancelled')
-                                                <span class="badge badge-secondary">Đã hủy</span>
-                                                @break
-                                            @default
-                                                <span class="badge badge-light">N/A</span>
-                                        @endswitch
+                                        @if ($item->cancel_requested && $item->status === 'confirmed')
+                                            <span class="badge badge-warning">Đang chờ hủy</span>
+                                        @else
+                                            @switch($item->status)
+                                                @case('pending')
+                                                    <span class="badge badge-warning">Chờ xác nhận</span>
+                                                    @break
+                                                @case('confirmed')
+                                                    <span class="badge badge-success">Đã xác nhận</span><br>
+                                                    @if ($item->confirmed_at)
+                                                        <small class="text-muted">{{ $item->confirmed_at }}</small>
+                                                    @endif
+                                                    @break
+                                                @case('completed')
+                                                    <span class="badge badge-primary">Đã hoàn thành</span>
+                                                    @break
+                                                @case('cancelled')
+                                                    <span class="badge badge-secondary">Đã hủy</span>
+                                                    @break
+                                                @default
+                                                    <span class="badge badge-light">N/A</span>
+                                            @endswitch
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($item->status === 'pending')
@@ -101,6 +105,15 @@
                                             <form action="{{ route('admin.partner.requests.reject', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn từ chối yêu cầu dịch vụ này?');">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-danger mb-1">Từ chối</button>
+                                            </form>
+                                        @elseif ($item->status === 'confirmed' && $item->cancel_requested)
+                                            <form action="{{ route('admin.partner.requests.cancel-approve', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn chấp nhận hủy dịch vụ này?');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-warning mb-1">Đồng ý hủy</button>
+                                            </form>
+                                            <form action="{{ route('admin.partner.requests.cancel-reject', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn từ chối yêu cầu hủy dịch vụ này?');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-secondary mb-1">Từ chối hủy</button>
                                             </form>
                                         @else
                                             <span class="text-muted small">Không có hành động</span>

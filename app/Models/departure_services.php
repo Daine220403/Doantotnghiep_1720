@@ -23,6 +23,8 @@ class departure_services extends Model
         'status',
         'note',
         'confirmed_at',
+        'cancel_requested',
+        'cancel_requested_at',
     ];
 
     public function departure()

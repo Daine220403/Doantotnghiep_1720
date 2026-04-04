@@ -101,6 +101,8 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         ->name('admin.departures.services.index');
     Route::post('/departures/{departure}/services', [TourOperationController::class, 'servicesStore'])
         ->name('admin.departures.services.store');
+    Route::post('/departures/{departure}/services/{id}/request-cancel', [TourOperationController::class, 'servicesRequestCancel'])
+        ->name('admin.departures.services.request-cancel');
     Route::delete('/departures/{departure}/services/{id}', [TourOperationController::class, 'servicesDestroy'])
         ->name('admin.departures.services.destroy');
 
@@ -176,5 +178,7 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
 		Route::get('/requests', [rolePartnerController::class, 'requests'])->name('admin.partner.requests.index');
         Route::post('/requests/{departureService}/confirm', [rolePartnerController::class, 'confirmRequest'])->name('admin.partner.requests.confirm');
         Route::post('/requests/{departureService}/reject', [rolePartnerController::class, 'rejectRequest'])->name('admin.partner.requests.reject');
+        Route::post('/requests/{departureService}/cancel-approve', [rolePartnerController::class, 'approveCancelRequest'])->name('admin.partner.requests.cancel-approve');
+        Route::post('/requests/{departureService}/cancel-reject', [rolePartnerController::class, 'rejectCancelRequest'])->name('admin.partner.requests.cancel-reject');
     });
 });
