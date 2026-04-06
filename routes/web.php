@@ -6,6 +6,7 @@ use App\Http\Controllers\signin_upController;
 use App\Http\Controllers\indexController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\dashboardController;
+use App\Http\Controllers\ChatbotController;
 
 Route::prefix('/')->group(function () {
     Route::get('/', [indexController::class, 'index'])->name('home'); 
@@ -28,6 +29,10 @@ Route::prefix('/')->group(function () {
         Route::post('/checkout', [paymentController::class, 'vnpay_payment'])->name('tours.checkout');
     });
 });
+
+// Chatbot API để tư vấn tour, giá, hỗ trợ đặt tour
+Route::post('/chatbot/message', [ChatbotController::class, 'handle'])
+    ->name('chatbot.message');
 
 Route::post('/vnpay_payment', [paymentController::class, 'vnpay_payment'])->name('vnpay_payment');
 

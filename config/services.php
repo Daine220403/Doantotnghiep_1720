@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // Google Gemini (Generative Language API)
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];

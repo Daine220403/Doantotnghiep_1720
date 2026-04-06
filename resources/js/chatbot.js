@@ -51,24 +51,59 @@ document.addEventListener("DOMContentLoaded", () => {
     messages.scrollTop = messages.scrollHeight;
   };
 
-  // minimal bot reply (demo)
-  const botReply = (text) => {
-    const t = text.toLowerCase();
-    let reply =
-      "Anh cho em biết điểm đến + ngày dự kiến đi + số người để em gợi ý tour phù hợp nhé 🙂";
+  // call backend chatbot (Gemini)
+  const botReply = async (text) => {
+    // show temporary "đang soạn" bubble
+    const loadingId = `loading-${Date.now()}`;
+    const loadingWrap = document.createElement("div");
+    loadingWrap.id = loadingId;
+    loadingWrap.className = "flex items-start gap-2";
+    loadingWrap.innerHTML = `
+      <div class="w-8 h-8 rounded-full bg-sky-600 text-white flex items-center justify-center text-xs font-bold">VT</div>
+      <div class="max-w-[80%] rounded-2xl rounded-tl-md bg-white border border-gray-200 px-3 py-2 text-sm text-gray-500 italic">
+        Đang soạn câu trả lời...
+      </div>
+    `;
+    messages.appendChild(loadingWrap);
+    messages.scrollTop = messages.scrollHeight;
 
-    if (t.includes("trong nước") || t.includes("trong nuoc")) {
-      reply = "Dạ tour trong nước ok anh. Anh thích biển (Phú Quốc/Đà Nẵng) hay núi (Đà Lạt/Sapa) ạ?";
-    } else if (t.includes("quốc tế") || t.includes("quoc te")) {
-      reply = "Dạ tour quốc tế ok anh. Anh thích Thái Lan, Singapore hay Hàn Quốc ạ?";
-    } else if (t.includes("giá") || t.includes("gia")) {
-      reply = "Anh dự kiến ngân sách khoảng bao nhiêu và đi mấy ngày để em báo giá tour sát nhất nha.";
-    } else if (t.includes("liên hệ") || t.includes("lien he")) {
-      reply = "Anh có thể gọi 1900 1234 hoặc để lại SĐT, bên em sẽ gọi tư vấn ngay ạ.";
+    try {
+      const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrfToken = tokenMeta ? tokenMeta.getAttribute("content") : "";
+
+      const res = await fetch("/chatbot/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken,
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      // remove loading bubble
+      loadingWrap.remove();
+
+      if (!res.ok) {
+        addBubble(
+          "Xin lỗi, hệ thống đang bận. Anh/chị vui lòng thử lại sau ít phút.",
+          "bot"
+        );
+        return;
+      }
+
+      const data = await res.json();
+      const reply = data.reply ||
+        "Xin lỗi, em chưa hiểu rõ câu hỏi. Anh/chị có thể diễn đạt lại giúp em với ạ?";
+
+      addBubble(reply, "bot");
+    } catch (e) {
+      loadingWrap.remove();
+      addBubble(
+        "Xin lỗi, hệ thống đang gặp lỗi. Anh/chị vui lòng thử lại sau ít phút.",
+        "bot"
+      );
     }
-
-    // simulate typing delay
-    setTimeout(() => addBubble(reply, "bot"), 400);
   };
 
   // submit handler
