@@ -193,15 +193,53 @@ class StaffManagementController extends Controller
     // Danh sách & duyệt đơn nghỉ phép
     public function leavesIndex(Request $request)
     {
-        $query = LeaveRequest::with(['staff', 'manager'])->orderByDesc('created_at');
+        $query = LeaveRequest::with(['staff.department', 'manager'])->orderByDesc('created_at');
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        // Lọc theo phòng ban (thông qua nhân viên)
+        if ($request->filled('department_id')) {
+            $departmentId = (int) $request->department_id;
+            $query->whereHas('staff', function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
         }
 
-        $leaves = $query->paginate(15);
+        // Lọc theo loại nghỉ
+        if ($request->filled('leave_type') && $request->leave_type !== 'all') {
+            $query->where('leave_type', $request->leave_type);
+        }
 
-        return view('admin.hr.leaves_index', compact('leaves'));
+        // Lọc theo khoảng thời gian (ngày bắt đầu/kết thúc của đơn nghỉ)
+        if ($request->filled('from_date')) {
+            $from = Carbon::parse($request->from_date)->toDateString();
+            $query->whereDate('start_date', '>=', $from);
+        }
+
+        if ($request->filled('to_date')) {
+            $to = Carbon::parse($request->to_date)->toDateString();
+            $query->whereDate('end_date', '<=', $to);
+        }
+
+        $leaves = $query->paginate(15)->appends($request->query());
+
+        // Dữ liệu phục vụ bộ lọc
+        $departments = Department::orderBy('name')->get();
+        $leaveTypes = LeaveRequest::select('leave_type')
+            ->whereNotNull('leave_type')
+            ->distinct()
+            ->orderBy('leave_type')
+            ->pluck('leave_type');
+
+        return view('admin.hr.leaves_index', [
+            'leaves' => $leaves,
+            'departments' => $departments,
+            'leaveTypes' => $leaveTypes,
+            'filters' => [
+                'leave_type' => $request->input('leave_type', 'all'),
+                'department_id' => $request->input('department_id'),
+                'from_date' => $request->input('from_date'),
+                'to_date' => $request->input('to_date'),
+            ],
+        ]);
     }
 
     public function approveLeave(LeaveRequest $leave)
