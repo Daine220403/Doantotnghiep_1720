@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
     messages.appendChild(loadingWrap);
     messages.scrollTop = messages.scrollHeight;
 
+    // call backend API
     try {
       const tokenMeta = document.querySelector('meta[name="csrf-token"]');
       const csrfToken = tokenMeta ? tokenMeta.getAttribute("content") : "";
@@ -92,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // trả lời từ backend
       const data = await res.json();
       const reply = data.reply ||
         "Xin lỗi, em chưa hiểu rõ câu hỏi. Anh/chị có thể diễn đạt lại giúp em với ạ?";

@@ -20,7 +20,7 @@ class ChatbotController extends Controller
             ], 500);
         }
 
-        $userMessage = trim((string) $request->input('message', ''));
+        $userMessage = trim((string) $request->input('message', '')); // đảm bảo luôn là string, tránh null
 
         if ($userMessage === '') {
             return response()->json([
@@ -43,7 +43,6 @@ class ChatbotController extends Controller
                 'duration_days',
                 'base_price_from',
             ]);
-
         $toursContext = $tours->isEmpty()
             ? 'Hiện không có tour nào trong danh sách.'
             : $tours->map(function ($tour, $index) {
