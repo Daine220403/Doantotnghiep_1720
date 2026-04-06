@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('staff_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('manager_id')->nullable()->constrained('users')->cascadeOnUpdate()->nullOnDelete();
             $table->date('work_date');
-            $table->enum('shift_type', ['morning', 'afternoon', 'full_day', 'night']);
+            $table->enum('shift_type', ['morning', 'afternoon', 'fullday', 'night']);
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
             $table->enum('status', ['assigned', 'cancelled'])->default('assigned')->index();

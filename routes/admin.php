@@ -140,9 +140,13 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
 
     // Quản lý nhân viên (dành cho admin & staff_manager)
     Route::prefix('/hr')->group(function () {
-        // Lịch làm việc nhân viên
+        // Danh sách nhân viên
+        Route::get('/staffs', [StaffManagementController::class, 'staffIndex'])->name('admin.hr.staffs.index');
+
+        // Lịch làm việc nhân viên (phân công theo ngày)
         Route::get('/schedules', [StaffManagementController::class, 'schedulesIndex'])->name('admin.hr.schedules.index');
         Route::post('/schedules', [StaffManagementController::class, 'schedulesStore'])->name('admin.hr.schedules.store');
+        Route::post('/schedules/copy-week', [StaffManagementController::class, 'schedulesCopyWeek'])->name('admin.hr.schedules.copy-week');
 
         // Đơn nghỉ phép
         Route::get('/leaves', [StaffManagementController::class, 'leavesIndex'])->name('admin.hr.leaves.index');

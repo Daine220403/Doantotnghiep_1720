@@ -36,6 +36,7 @@
                     </div>
                     <div class="col-md-6">
                         <p><strong>Vai trò:</strong> {{ $user->role }}</p>
+                        <p><strong>Phòng ban:</strong> {{ optional($user->department)->name ?? '-' }}</p>
                         <p><strong>Trạng thái:</strong>
                             @if ($user->status === 'active')
                                 <span class="badge badge-success">Đang hoạt động</span>

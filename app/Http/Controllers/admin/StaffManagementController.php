@@ -10,12 +10,46 @@ use App\Models\PayrollPeriod;
 use App\Models\PayrollItem;
 use App\Models\WorkReport;
 use App\Models\User;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class StaffManagementController extends Controller
 {
+    // Danh sách nhân viên kèm phòng ban
+    public function staffIndex(Request $request)
+    {
+        $departments = Department::orderBy('name')->get();
+
+        // Lấy tất cả nhân viên công ty (tài khoản nội bộ, không bao gồm khách/đối tác và admin)
+        $query = User::with('department')
+            ->whereIn('role', ['tour_manager', 'staff_manager', 'staff', 'tour_guide'])
+            ->where('status', 'active');
+
+        if ($request->filled('department_id')) {
+            $query->where('department_id', $request->department_id);
+        }
+
+        if ($request->filled('keyword')) {
+            $keyword = '%' . trim($request->keyword) . '%';
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', $keyword)
+                    ->orWhere('email', 'like', $keyword)
+                    ->orWhere('phone', 'like', $keyword);
+            });
+        }
+
+        $staffs = $query->orderBy('name')->paginate(20)->withQueryString();
+
+        return view('admin.hr.staff_index', [
+            'staffs' => $staffs,
+            'departments' => $departments,
+            'selectedDepartmentId' => $request->department_id,
+            'keyword' => $request->keyword,
+        ]);
+    }
+
     // Phân công & xem lịch làm việc của nhân viên
     public function schedulesIndex(Request $request)
     {
@@ -24,6 +58,7 @@ class StaffManagementController extends Controller
         $month = (int) $request->input('month', $today->month);
         $year = (int) $request->input('year', $today->year);
         $selectedStaffId = $request->input('staff_id');
+        $selectedDepartmentId = $request->input('department_id');
 
         $current = Carbon::create($year, $month, 1); // ngày 1 của tháng được chọn
         $startOfMonth = $current->copy()->startOfMonth(); // dùng copy() để tránh thay đổi $current
@@ -35,6 +70,12 @@ class StaffManagementController extends Controller
 
         if (!empty($selectedStaffId)) {
             $scheduleQuery->where('staff_id', $selectedStaffId);
+        }
+
+        if (!empty($selectedDepartmentId)) {
+            $scheduleQuery->whereHas('staff', function ($q) use ($selectedDepartmentId) {
+                $q->where('department_id', $selectedDepartmentId);
+            });
         }
 
         $schedules = $scheduleQuery->get();
@@ -117,16 +158,24 @@ class StaffManagementController extends Controller
             }
         }
 
-        $staffs = User::whereIn('role', ['staff'])
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->get();
+        // Lấy danh sách nhân viên nội bộ giống logic trang danh sách nhân viên
+        $staffQuery = User::whereIn('role', ['tour_manager', 'staff_manager', 'staff', 'tour_guide'])
+            ->where('status', 'active');
+
+        if (!empty($selectedDepartmentId)) {
+            $staffQuery->where('department_id', $selectedDepartmentId);
+        }
+
+        $staffs = $staffQuery->orderBy('name')->get();
+
+        $departments = Department::orderBy('name')->get();
 
         $prevMonth = $current->copy()->subMonth();
         $nextMonth = $current->copy()->addMonth();
 
         return view('admin.hr.schedules_index', [
             'staffs' => $staffs,
+            'departments' => $departments,
             'schedulesByDate' => $schedulesByDate,
             'leaveNamesByDate' => $leaveNamesByDate,
             'unavailableStaffByDate' => $unavailableStaffByDate,
@@ -137,6 +186,7 @@ class StaffManagementController extends Controller
             'nextMonth' => $nextMonth,
             'today' => $today,
             'selectedStaffId' => $selectedStaffId,
+            'selectedDepartmentId' => $selectedDepartmentId,
         ]);
     }
 
@@ -177,94 +227,302 @@ class StaffManagementController extends Controller
         return back()->with('success', 'Đã từ chối đơn nghỉ phép.');
     }
 
-    // Tạo lịch làm việc cho nhân viên (phân công theo ngày)
+    // Tạo lịch làm việc cho nhân viên (phân công theo ngày, cho phép chọn nhiều ngày + ca tương ứng)
     public function schedulesStore(Request $request)
     {
         $data = $request->validate([
             'staff_id' => ['required', 'exists:users,id'],
-            'work_date' => ['required', 'date'],
-            'shift_type' => ['required', 'in:morning,afternoon,fullday'],
+            // giữ cho tương thích cũ (1 ngày + 1 ca)
+            'work_date' => ['nullable', 'date'],
+            'shift_type' => ['nullable', 'in:morning,afternoon,fullday'],
+            // cấu trúc mới: nhiều ngày + ca tương ứng
+            'work_dates' => ['nullable', 'array'],
+            'work_dates.*' => ['nullable', 'date'],
+            'shift_types' => ['nullable', 'array'],
+            'shift_types.*' => ['nullable', 'in:morning,afternoon,fullday'],
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $workDate = Carbon::parse($data['work_date']);
+        // Gom danh sách (ngày, ca) cần phân công
+        $workItems = [];
 
-        // Không phân công nếu nhân viên đang có đơn nghỉ phép đã duyệt trong ngày đó
-        $hasApprovedLeave = LeaveRequest::where('staff_id', $data['staff_id'])
-            ->where('status', 'approved')
-            ->whereDate('start_date', '<=', $workDate->toDateString())
-            ->whereDate('end_date', '>=', $workDate->toDateString())
-            ->exists();
+        if (!empty($data['work_dates']) && is_array($data['work_dates'])) {
+            $dates = $data['work_dates'];
+            $shifts = $data['shift_types'] ?? [];
 
-        if ($hasApprovedLeave) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'staff_id' => 'Nhân viên này đang có đơn nghỉ phép đã được duyệt trong ngày chọn, không thể phân công.',
-                ]);
-        }
+            foreach ($dates as $index => $dateStr) {
+                $dateStr = $dateStr ?? null;
+                $shift = $shifts[$index] ?? null;
 
-        // Không phân công vượt quá 5 ngày làm việc (thứ 2 - thứ 6) trong cùng tuần
-        $weekStart = $workDate->copy()->startOfWeek(Carbon::MONDAY);
-        $weekEnd = $workDate->copy()->endOfWeek(Carbon::SUNDAY);
-
-        $weekSchedules = WorkSchedule::where('staff_id', $data['staff_id'])
-            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
-            ->get();
-
-        $workingDaysCount = $weekSchedules->filter(function ($schedule) {
-            return $schedule->work_date && !$schedule->work_date->isWeekend();
-        })->count();
-
-        if ($workingDaysCount >= 5) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'staff_id' => 'Nhân viên này đã được phân công đủ số ngày làm việc trong tuần, không thể phân công thêm.',
-                ]);
-        }
-
-        // Nếu chưa nhập giờ nhưng đã chọn ca, tự động gán giờ mặc định cho ca đó
-        if (empty($data['start_time']) || empty($data['end_time'])) {
-            switch ($data['shift_type']) {
-                case 'morning':
-                    $data['start_time'] = $data['start_time'] ?? '09:00';
-                    $data['end_time'] = $data['end_time'] ?? '12:00';
-                    break;
-                case 'afternoon':
-                    $data['start_time'] = $data['start_time'] ?? '13:30';
-                    $data['end_time'] = $data['end_time'] ?? '18:00';
-                    break;
-                case 'fullday':
-                    $data['start_time'] = $data['start_time'] ?? '09:00';
-                    $data['end_time'] = $data['end_time'] ?? '18:00';
-                    break;
+                if (!empty($dateStr) && !empty($shift)) {
+                    $workItems[] = [
+                        'date' => $dateStr,
+                        'shift_type' => $shift,
+                    ];
+                }
             }
+        } elseif (!empty($data['work_date']) && !empty($data['shift_type'])) {
+            // fallback: 1 ngày + 1 ca cũ
+            $workItems[] = [
+                'date' => $data['work_date'],
+                'shift_type' => $data['shift_type'],
+            ];
         }
 
-        $startTime = isset($data['start_time']) ? Carbon::createFromFormat('Y-m-d H:i', $workDate->toDateString() . ' ' . $data['start_time']) : null;
-        $endTime = isset($data['end_time']) ? Carbon::createFromFormat('Y-m-d H:i', $workDate->toDateString() . ' ' . $data['end_time']) : null;
+        if (empty($workItems)) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'work_dates' => 'Vui lòng nhập ít nhất một dòng Ngày làm việc và Ca làm.',
+                ]);
+        }
 
-        WorkSchedule::create([
-            'staff_id' => $data['staff_id'],
-            'manager_id' => Auth::id(),
-            'work_date' => $workDate->toDateString(),
-            'shift_type' => $data['shift_type'] ?? null,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'status' => 'assigned',
-            'note' => $data['note'] ?? null,
-        ]);
+        $createdCount = 0;
+        $skipMessages = [];
+        $firstWorkDate = null;
+        $weekBaseCounts = [];
+        $weekExtraCounts = [];
+
+        foreach ($workItems as $item) {
+            $workDate = Carbon::parse($item['date']);
+            $shiftType = $item['shift_type'];
+
+            if ($firstWorkDate === null) {
+                $firstWorkDate = $workDate->copy();
+            }
+
+            // Không phân công nếu nhân viên đang có đơn nghỉ phép đã duyệt trong ngày đó
+            $hasApprovedLeave = LeaveRequest::where('staff_id', $data['staff_id'])
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $workDate->toDateString())
+                ->whereDate('end_date', '>=', $workDate->toDateString())
+                ->exists();
+
+            if ($hasApprovedLeave) {
+                $skipMessages[] = 'Ngày ' . $workDate->format('d/m/Y') . ' nhân viên đang nghỉ phép, bỏ qua phân công.';
+                continue;
+            }
+
+            // Không phân công vào cuối tuần (thứ 7, CN)
+            if ($workDate->isWeekend()) {
+                $skipMessages[] = 'Ngày ' . $workDate->format('d/m/Y') . ' là cuối tuần, bỏ qua phân công.';
+                continue;
+            }
+
+            // Không phân công vượt quá 5 ngày làm việc (thứ 2 - thứ 6) trong cùng tuần
+            $weekStart = $workDate->copy()->startOfWeek(Carbon::MONDAY);
+            $weekKey = $data['staff_id'] . '|' . $weekStart->toDateString();
+
+            if (!isset($weekBaseCounts[$weekKey])) {
+                $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+
+                $weekSchedules = WorkSchedule::where('staff_id', $data['staff_id'])
+                    ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+                    ->get();
+
+                $weekBaseCounts[$weekKey] = $weekSchedules->filter(function ($schedule) {
+                    return $schedule->work_date && !$schedule->work_date->isWeekend();
+                })->count();
+
+                $weekExtraCounts[$weekKey] = 0;
+            }
+
+            $currentCount = $weekBaseCounts[$weekKey] + ($weekExtraCounts[$weekKey] ?? 0);
+
+            if ($currentCount >= 5) {
+                $skipMessages[] = 'Tuần chứa ngày ' . $workDate->format('d/m/Y') . ' nhân viên đã đủ số ngày làm việc, bỏ qua ngày này.';
+                continue;
+            }
+
+            // Xác định giờ bắt đầu/kết thúc cho ngày hiện tại
+            $startTimeStr = $data['start_time'] ?? null;
+            $endTimeStr = $data['end_time'] ?? null;
+
+            // Nếu chưa nhập giờ nhưng đã chọn ca, tự động gán giờ mặc định cho ca đó
+            if (empty($startTimeStr) || empty($endTimeStr)) {
+                switch ($shiftType) {
+                    case 'morning':
+                        $startTimeStr = $startTimeStr ?? '09:00';
+                        $endTimeStr = $endTimeStr ?? '12:00';
+                        break;
+                    case 'afternoon':
+                        $startTimeStr = $startTimeStr ?? '13:30';
+                        $endTimeStr = $endTimeStr ?? '18:00';
+                        break;
+                    case 'fullday':
+                        $startTimeStr = $startTimeStr ?? '09:00';
+                        $endTimeStr = $endTimeStr ?? '18:00';
+                        break;
+                }
+            }
+
+            $startTime = $startTimeStr
+                ? Carbon::createFromFormat('Y-m-d H:i', $workDate->toDateString() . ' ' . $startTimeStr)
+                : null;
+            $endTime = $endTimeStr
+                ? Carbon::createFromFormat('Y-m-d H:i', $workDate->toDateString() . ' ' . $endTimeStr)
+                : null;
+
+            WorkSchedule::create([
+                'staff_id' => $data['staff_id'],
+                'manager_id' => Auth::id(),
+                'work_date' => $workDate->toDateString(),
+                'shift_type' => $shiftType,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'status' => 'assigned',
+                'note' => $data['note'] ?? null,
+            ]);
+
+            $weekExtraCounts[$weekKey] = ($weekExtraCounts[$weekKey] ?? 0) + 1;
+
+            $createdCount++;
+        }
+
+        if ($createdCount === 0) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'staff_id' => 'Không thể phân công lịch làm việc cho bất kỳ ngày nào. Vui lòng kiểm tra lại giới hạn ngày làm việc trong tuần và đơn nghỉ phép.',
+                ]);
+        }
+
+        $redirectDate = $firstWorkDate ?? Carbon::today();
+
+        $message = 'Đã phân công lịch làm việc cho nhân viên (' . $createdCount . ' ngày).';
+        if (!empty($skipMessages)) {
+            $message .= ' Một số ngày bị bỏ qua: ' . implode(' ', $skipMessages);
+        }
 
         return redirect()
             ->route('admin.hr.schedules.index', [
-                'month' => $workDate->month,
-                'year' => $workDate->year,
+                'month' => $redirectDate->month,
+                'year' => $redirectDate->year,
                 'staff_id' => $request->input('staff_id_filter'),
+                'department_id' => $request->input('department_id_filter'),
             ])
-            ->with('success', 'Đã phân công lịch làm việc cho nhân viên.');
+            ->with('success', $message);
+    }
+
+    // Sao chép lịch làm việc của 1 tuần sang tuần kế tiếp (theo phòng ban tuỳ chọn)
+    public function schedulesCopyWeek(Request $request)
+    {
+        $data = $request->validate([
+            'week_start' => ['required', 'date'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+        ]);
+
+        $weekStart = Carbon::parse($data['week_start'])->startOfWeek(Carbon::MONDAY);
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $nextWeekStart = $weekStart->copy()->addWeek();
+        $nextWeekEnd = $nextWeekStart->copy()->endOfWeek(Carbon::SUNDAY);
+
+        $query = WorkSchedule::with('staff')
+            ->whereBetween('work_date', [$weekStart->toDateString(), $weekEnd->toDateString()]);
+
+        if (!empty($data['department_id'])) {
+            $departmentId = $data['department_id'];
+            $query->whereHas('staff', function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
+
+        $sourceSchedules = $query->get();
+
+        $weekBaseCounts = [];
+        $weekExtraCounts = [];
+        $copiedCount = 0;
+
+        foreach ($sourceSchedules as $schedule) {
+            if (!$schedule->work_date) {
+                continue;
+            }
+
+            $targetDate = $schedule->work_date->copy()->addWeek();
+
+            // Không sao chép nếu ra ngoài tuần kế tiếp (phòng hờ trường hợp dữ liệu lệch)
+            if ($targetDate->lt($nextWeekStart) || $targetDate->gt($nextWeekEnd)) {
+                continue;
+            }
+
+            // Không sao chép lịch vào cuối tuần
+            if ($targetDate->isWeekend()) {
+                continue;
+            }
+
+            // Không sao chép nếu nhân viên nghỉ phép ở ngày mới
+            $hasApprovedLeave = LeaveRequest::where('staff_id', $schedule->staff_id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $targetDate->toDateString())
+                ->whereDate('end_date', '>=', $targetDate->toDateString())
+                ->exists();
+
+            if ($hasApprovedLeave) {
+                continue;
+            }
+
+            // Kiểm tra giới hạn 5 ngày làm việc trong tuần cho ngày mới (tính cả các lịch mới được sao chép trong request này)
+            $weekStartForCheck = $targetDate->copy()->startOfWeek(Carbon::MONDAY);
+            $weekKey = $schedule->staff_id . '|' . $weekStartForCheck->toDateString();
+
+            if (!isset($weekBaseCounts[$weekKey])) {
+                $weekEndForCheck = $weekStartForCheck->copy()->endOfWeek(Carbon::SUNDAY);
+
+                $weekSchedules = WorkSchedule::where('staff_id', $schedule->staff_id)
+                    ->whereBetween('work_date', [$weekStartForCheck->toDateString(), $weekEndForCheck->toDateString()])
+                    ->get();
+
+                $weekBaseCounts[$weekKey] = $weekSchedules->filter(function ($item) {
+                    return $item->work_date && !$item->work_date->isWeekend();
+                })->count();
+
+                $weekExtraCounts[$weekKey] = 0;
+            }
+
+            $currentCount = $weekBaseCounts[$weekKey] + ($weekExtraCounts[$weekKey] ?? 0);
+
+            if ($currentCount >= 5) {
+                continue;
+            }
+
+            // Không tạo trùng lịch cũ nếu đã tồn tại cho nhân viên + ngày + ca
+            $exists = WorkSchedule::where('staff_id', $schedule->staff_id)
+                ->whereDate('work_date', $targetDate->toDateString())
+                ->where('shift_type', $schedule->shift_type)
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            WorkSchedule::create([
+                'staff_id' => $schedule->staff_id,
+                'manager_id' => Auth::id(),
+                'work_date' => $targetDate->toDateString(),
+                'shift_type' => $schedule->shift_type,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
+                'status' => 'assigned',
+                'note' => $schedule->note,
+            ]);
+
+            $weekExtraCounts[$weekKey] = ($weekExtraCounts[$weekKey] ?? 0) + 1;
+            $copiedCount++;
+        }
+
+        $message = 'Đã sao chép lịch làm việc sang tuần kế tiếp.';
+        if ($copiedCount === 0) {
+            $message = 'Không có lịch nào được sao chép sang tuần kế tiếp (có thể do nghỉ phép hoặc đã đủ số ngày làm việc).';
+        }
+
+        return redirect()->route('admin.hr.schedules.index', [
+            'month' => $nextWeekStart->month,
+            'year' => $nextWeekStart->year,
+            'staff_id' => $request->input('staff_id_filter'),
+            'department_id' => $request->input('department_id_filter', $data['department_id'] ?? null),
+        ])->with('success', $message);
     }
 
     // Chấm công nhân viên (xem danh sách chấm công)

@@ -163,6 +163,7 @@
                 data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Chức năng QL Nhân viên:</h6>
+                    <a class="collapse-item" href="{{ route('admin.hr.staffs.index') }}">Danh sách nhân viên</a>
                     <a class="collapse-item" href="{{ route('admin.hr.schedules.index') }}">Phân công & lịch làm
                         việc</a>
                     <a class="collapse-item" href="{{ route('admin.hr.leaves.index') }}">Duyệt nghỉ phép</a>

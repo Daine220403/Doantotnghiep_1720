@@ -36,11 +36,22 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
                             <label>Số điện thoại</label>
                             <input type="text" name="phone" value="{{ old('phone') }}" class="form-control">
                         </div>
-                        <div class="form-group col-md-6">
+                        <div class="form-group col-md-4">
+                            <label>Phòng ban (nếu là nhân viên)</label>
+                            <select name="department_id" class="form-control">
+                                <option value="">-- Chọn phòng ban --</option>
+                                @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
                             <label>Vai trò</label>
                             <select name="role" id="user-role" class="form-control" required>
                                 <option value="">-- Chọn vai trò --</option>
