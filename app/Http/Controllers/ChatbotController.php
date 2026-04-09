@@ -29,9 +29,55 @@ class ChatbotController extends Controller
             ], 422);
         }
 
-        // Lấy một số tour nổi bật để gợi ý / làm ngữ cảnh cho AI
-        $tours = Tours::query()
-            ->where('status', 'published')
+        // Bước 1: dùng AI phân tích nhanh câu hỏi để lấy intent / ngân sách / điểm đến...
+        $analysis = $this->analyzeMessageWithGemini($userMessage, $apiKey);
+
+        $intents = $analysis['intents'] ?? [];
+        if (!is_array($intents)) {
+            $intents = [];
+        }
+
+        $budgetAmount   = $analysis['budget_amount']   ?? null; // VND
+        $budgetType     = $analysis['budget_type']     ?? null; // max|min|around|null
+        $discountAmount = $analysis['discount_amount'] ?? null; // VND
+        $destination    = $analysis['destination']      ?? null;
+        $numDays        = $analysis['num_days']         ?? null;
+
+        // Bước 2: lọc tour trong DB phù hợp với phân tích trên
+        $toursQuery = Tours::query()->where('status', 'published');
+
+        // Lọc theo ngân sách nếu có
+        if (is_numeric($budgetAmount) && (in_array('consult_tour', $intents, true) || in_array('faq_price', $intents, true))) {
+            $budgetAmount = (float) $budgetAmount;
+
+            if ($budgetAmount > 0) {
+                if ($budgetType === 'max') {
+                    $toursQuery->where('base_price_from', '<=', (int) $budgetAmount);
+                } elseif ($budgetType === 'min') {
+                    $toursQuery->where('base_price_from', '>=', (int) $budgetAmount);
+                } else { // around hoặc null => cho phép +-20%
+                    $min = (int) ($budgetAmount * 0.8);
+                    $max = (int) ($budgetAmount * 1.2);
+                    $toursQuery->whereBetween('base_price_from', [$min, $max]);
+                }
+            }
+        }
+
+        // Lọc thêm theo điểm đến nếu AI bắt được destination
+        if (is_string($destination) && $destination !== '') {
+            $toursQuery->where(function ($q) use ($destination) {
+                $q->where('destination_text', 'like', '%' . $destination . '%')
+                  ->orWhere('title', 'like', '%' . $destination . '%');
+            });
+        }
+
+        // Lọc theo số ngày tour nếu có
+        if (is_numeric($numDays) && (int) $numDays > 0) {
+            $toursQuery->where('duration_days', (int) $numDays);
+        }
+
+        // Lấy một số tour sau khi đã lọc để làm ngữ cảnh cho AI
+        $tours = $toursQuery
             ->orderBy('base_price_from')
             ->limit(8)
             ->get([
@@ -66,6 +112,12 @@ class ChatbotController extends Controller
                 );
             })->implode("\n");
 
+        // Một số hướng dẫn bổ sung cho AI dựa trên kết quả phân tích intent
+        $extraInstruction = $this->buildExtraInstructionFromAnalysis($analysis);
+        $instructionBlock = $extraInstruction !== ''
+            ? "\nLƯU Ý NỘI BỘ (ĐỪNG LẶP LẠI NGUYÊN VĂN, CHỈ DÙNG LÀM NGỮ CẢNH):\n{$extraInstruction}\n"
+            : '';
+
         $prompt = <<<PROMPT
 Bạn là trợ lý du lịch ảo của một công ty lữ hành. Nhiệm vụ của bạn:
 - Tư vấn chọn tour (gợi ý theo điểm đến, ngân sách, thời gian, loại tour trong nước/quốc tế).
@@ -76,6 +128,8 @@ QUAN TRỌNG:
 - Chỉ gợi ý dựa trên danh sách tour bên dưới, không tự bịa tour mới.
 - Khi gợi ý tour, hãy nêu tên tour, thời lượng, điểm đến chính, giá từ và đường dẫn (slug) để khách có thể bấm xem chi tiết.
 - Nếu câu hỏi không liên quan đến du lịch/tour, hãy trả lời lịch sự và ngắn gọn.
+
+{$instructionBlock}
 
 DANH SÁCH MỘT SỐ TOUR HIỆN CÓ (đã kèm sẵn thẻ HTML <a href="/tours/...">Xem chi tiết tour</a>, hãy giữ nguyên các link này trong câu trả lời của bạn):
 {$toursContext}
@@ -136,5 +190,136 @@ PROMPT;
                 'reply' => 'Xin lỗi, hệ thống đang gặp lỗi. Anh/chị vui lòng thử lại sau ít phút.',
             ], 500);
         }
+    }
+
+    /**
+     * Gọi Gemini để phân tích intent / ngân sách / điểm đến từ câu hỏi của khách.
+     * Nếu có lỗi, trả về cấu trúc mặc định an toàn.
+     */
+    private function analyzeMessageWithGemini(string $userMessage, string $apiKey): array
+    {
+        $default = [
+            'intents' => [],
+            'budget_amount' => null,
+            'budget_type' => null,
+            'discount_amount' => null,
+            'destination' => null,
+            'num_days' => null,
+        ];
+
+        try {
+            $analysisPrompt = <<<PROMPT
+Bạn là hệ thống phân tích câu hỏi khách hàng về du lịch/tour. NHIỆM VỤ: chỉ trả về MỘT JSON object thuần, không giải thích, không thêm chữ nào khác.
+
+Cho câu hỏi tiếng Việt dưới đây, hãy xác định và trả về JSON với các trường:
+- "intents": Mảng các giá trị chọn trong: ["consult_tour","faq_price","faq_schedule","faq_policy","booking_guide","other"]. Có thể có nhiều intent nếu câu hỏi chứa nhiều ý.
+- "budget_amount": Số tiền khách nhắc đến dùng làm GIÁ TOUR (đơn vị VND, dạng số nguyên), hoặc null nếu không có.
+- "budget_type": "max" | "min" | "around" | null.
+- "discount_amount": Số tiền khách nhắc đến dùng làm MỨC GIẢM GIÁ (VND), hoặc null nếu không có.
+- "destination": Điểm đến chính (ví dụ "Đà Nẵng", "Phú Quốc"), hoặc null.
+- "num_days": Số ngày tour nếu khách có nói (ví dụ "3 ngày 2 đêm" -> 3), hoặc null.
+
+Quy ước xử lý tiền:
+- "giá 5tr", "khoảng 5 triệu" -> budget_amount = 5000000, budget_type = "around".
+- "tầm 5tr đổ lại", "dưới 5tr" -> budget_amount = 5000000, budget_type = "max".
+- "từ 5tr trở lên" -> budget_amount = 5000000, budget_type = "min".
+- "giảm 5tr", "giảm giá 5 triệu" -> discount_amount = 5000000.
+
+Ví dụ JSON hợp lệ cần trả về (chỉ minh hoạ cấu trúc):
+{"intents":["consult_tour"],"budget_amount":5000000,"budget_type":"around","discount_amount":null,"destination":"Đà Nẵng","num_days":3}
+
+Câu hỏi của khách:
+"{$userMessage}"
+PROMPT;
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'x-goog-api-key' => $apiKey,
+            ])->post(
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
+                [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $analysisPrompt],
+                            ],
+                        ],
+                    ],
+                ]
+            );
+
+            if (!$response->successful()) {
+                Log::warning('Gemini chatbot analysis error', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return $default;
+            }
+
+            $data = $response->json();
+            $text = data_get($data, 'candidates.0.content.parts.0.text');
+
+            if (!is_string($text) || trim($text) === '') {
+                return $default;
+            }
+
+            $decoded = json_decode($text, true);
+            if (!is_array($decoded)) {
+                return $default;
+            }
+
+            return array_merge($default, $decoded);
+        } catch (\Throwable $e) {
+            Log::error('Chatbot analysis exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return $default;
+        }
+    }
+
+    /**
+     * Sinh thêm hướng dẫn nội bộ cho AI dựa trên kết quả phân tích.
+     */
+    private function buildExtraInstructionFromAnalysis(array $analysis): string
+    {
+        $lines = [];
+
+        $intents = $analysis['intents'] ?? [];
+        if (!is_array($intents)) {
+            $intents = [];
+        }
+
+        $budgetAmount   = $analysis['budget_amount']   ?? null;
+        $discountAmount = $analysis['discount_amount'] ?? null;
+        $destination    = $analysis['destination']      ?? null;
+        $numDays        = $analysis['num_days']         ?? null;
+
+        if (is_numeric($budgetAmount) && ((float) $budgetAmount) > 0 && (in_array('consult_tour', $intents, true) || in_array('faq_price', $intents, true))) {
+            $lines[] = 'Khách đang quan tâm tới tour với ngân sách khoảng ' . number_format((float) $budgetAmount, 0, ',', '.') . ' VND. Hãy ưu tiên gợi ý các tour phù hợp khoảng giá này.';
+        }
+
+        if (is_string($destination) && $destination !== '') {
+            $lines[] = 'Khách nhắc tới điểm đến: ' . $destination . '. Nếu phù hợp, hãy ưu tiên các tour đến khu vực này.';
+        }
+
+        if (is_numeric($numDays) && (int) $numDays > 0) {
+            $lines[] = 'Khách quan tâm tới tour khoảng ' . (int) $numDays . ' ngày. Nếu có, hãy ưu tiên các tour có thời lượng tương ứng.';
+        }
+
+        if (in_array('booking_guide', $intents, true)) {
+            $lines[] = 'Khách đang hỏi về cách đặt tour / quy trình booking. Hãy mô tả ngắn gọn các bước đặt tour online (chọn tour, điền thông tin, thanh toán, nhận xác nhận).';
+        }
+
+        if (in_array('faq_policy', $intents, true)) {
+            $lines[] = 'Khách đang hỏi về chính sách đổi/hoàn tour. Hiện em không có dữ liệu chính sách chi tiết trong hệ thống, KHÔNG được tự bịa các con số phần trăm, số ngày hay điều kiện cụ thể; hãy trả lời chung chung và mời khách xem thêm trên website hoặc để lại thông tin để nhân viên hỗ trợ.';
+        }
+
+        if (is_numeric($discountAmount) && ((float) $discountAmount) > 0 && in_array('faq_policy', $intents, true)) {
+            $lines[] = 'Khách có nhắc tới mức giảm giá khoảng ' . number_format((float) $discountAmount, 0, ',', '.') . ' VND. Do không có dữ liệu khuyến mãi chi tiết, đừng khẳng định có/không chương trình giảm chính xác số tiền đó.';
+        }
+
+        return implode("\n", $lines);
     }
 }
