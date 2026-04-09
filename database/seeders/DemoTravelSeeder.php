@@ -433,18 +433,18 @@ class DemoTravelSeeder extends Seeder
 
             // ===== HR Demo Data (Departments, Staff, Work Schedule, Leave, Attendance, Payroll, Reports) =====
 
-            // Phòng ban demo
-            $csDepartmentId = DB::table('departments')->insertGetId([
-                'name' => 'Chăm sóc khách hàng',
-                'code' => 'CSKH',
-                'description' => 'Bộ phận chăm sóc khách hàng và xử lý booking.',
+            // Phòng ban demo (chỉ sử dụng 4 phòng ban chính theo yêu cầu)
+            $systemDepartmentId = DB::table('departments')->insertGetId([
+                'name' => 'Phòng Quản trị hệ thống',
+                'code' => 'SYS',
+                'description' => 'Quản lý và vận hành hệ thống phần mềm, hạ tầng.',
                 'status' => 'active',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             $operationDepartmentId = DB::table('departments')->insertGetId([
-                'name' => 'Điều hành tour',
+                'name' => 'Phòng Điều hành tour',
                 'code' => 'OPER',
                 'description' => 'Bộ phận điều phối tour và lịch khởi hành.',
                 'status' => 'active',
@@ -452,66 +452,28 @@ class DemoTravelSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            // Các phòng ban khác
-            DB::table('departments')->insert([
-                [
-                    'name' => 'Kinh doanh tour nội địa',
-                    'code' => 'SALE_DOM',
-                    'description' => 'Phụ trách bán tour trong nước.',
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'name' => 'Kinh doanh tour quốc tế',
-                    'code' => 'SALE_INT',
-                    'description' => 'Phụ trách bán tour nước ngoài.',
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'name' => 'Marketing',
-                    'code' => 'MKT',
-                    'description' => 'Truyền thông, quảng bá thương hiệu và sản phẩm.',
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'name' => 'Kế toán - Tài chính',
-                    'code' => 'FIN',
-                    'description' => 'Quản lý tài chính, kế toán và thanh toán.',
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'name' => 'Nhân sự - Hành chính',
-                    'code' => 'HR',
-                    'description' => 'Tuyển dụng, đào tạo và quản lý nhân sự.',
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
-                [
-                    'name' => 'Công nghệ thông tin',
-                    'code' => 'IT',
-                    'description' => 'Phụ trách hệ thống CNTT và hỗ trợ kỹ thuật.',
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ],
+            $csDepartmentId = DB::table('departments')->insertGetId([
+                'name' => 'Phòng Chăm sóc khách hàng',
+                'code' => 'CSKH',
+                'description' => 'Bộ phận chăm sóc khách hàng và xử lý booking.',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
-            // Lấy ID một số phòng ban dùng để gán tài khoản
-            $hrDepartmentId = DB::table('departments')->where('code', 'HR')->value('id');
-            $itDepartmentId = DB::table('departments')->where('code', 'IT')->value('id');
+            $partnerDepartmentId = DB::table('departments')->insertGetId([
+                'name' => 'Phòng Đối tác dịch vụ',
+                'code' => 'PARTNER',
+                'description' => 'Quản lý và làm việc với các đối tác cung cấp dịch vụ.',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
             // Gán phòng ban cho tài khoản demo
-            // Admin: IT (nếu có) hoặc HR
+            // Admin: Phòng Quản trị hệ thống
             DB::table('users')->where('id', $adminId)->update([
-                'department_id' => $itDepartmentId ?: $hrDepartmentId,
+                'department_id' => $systemDepartmentId,
             ]);
 
             // Quản lý tour & hướng dẫn viên: Điều hành tour
@@ -519,13 +481,18 @@ class DemoTravelSeeder extends Seeder
                 'department_id' => $operationDepartmentId,
             ]);
 
-            // Quản lý nhân sự/nhân viên CSKH: Điều hành tour / CSKH
+            // Quản lý nhân sự/nhân viên CSKH: CSKH
             DB::table('users')->where('id', $staffManagerId)->update([
-                'department_id' => $operationDepartmentId,
+                'department_id' => $csDepartmentId,
             ]);
 
             DB::table('users')->whereIn('id', [$staff1Id, $staff2Id])->update([
                 'department_id' => $csDepartmentId,
+            ]);
+
+            // Đối tác dịch vụ: Phòng Đối tác dịch vụ
+            DB::table('users')->where('id', $partnerUserId)->update([
+                'department_id' => $partnerDepartmentId,
             ]);
 
             $today = Carbon::today();

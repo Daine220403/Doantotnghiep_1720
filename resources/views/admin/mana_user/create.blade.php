@@ -42,10 +42,21 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>Phòng ban (nếu là nhân viên)</label>
-                            <select name="department_id" class="form-control">
+                            <select name="department_id" id="department-select" class="form-control">
                                 <option value="">-- Chọn phòng ban --</option>
                                 @foreach ($departments as $department)
-                                    <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                    @php
+                                        $deptRolesMap = [
+                                            'Phòng Quản trị hệ thống' => 'admin',
+                                            'Phòng Điều hành tour' => 'tour_manager,tour_guide',
+                                            'Phòng Chăm sóc khách hàng' => 'staff,staff_manager',
+                                            'Phòng Đối tác dịch vụ' => 'partner',
+                                        ];
+                                        $mappedRoles = $deptRolesMap[$department->name] ?? '';
+                                    @endphp
+                                    <option value="{{ $department->id }}"
+                                            data-roles="{{ $mappedRoles }}"
+                                            {{ old('department_id') == $department->id ? 'selected' : '' }}>
                                         {{ $department->name }}
                                     </option>
                                 @endforeach
@@ -97,6 +108,14 @@
         document.addEventListener('DOMContentLoaded', function () {
             var roleSelect = document.getElementById('user-role');
             var partnerWrapper = document.getElementById('partner-select-wrapper');
+            var departmentSelect = document.getElementById('department-select');
+
+            var allRoleOptions = roleSelect
+                ? Array.prototype.map.call(roleSelect.options, function (opt) {
+                    return opt.cloneNode(true);
+                })
+                : [];
+
             function togglePartner() {
                 if (roleSelect && partnerWrapper) {
                     if (roleSelect.value === 'partner') {
@@ -106,6 +125,51 @@
                     }
                 }
             }
+
+            function applyRoleFilterByDepartment() {
+                if (!departmentSelect || !roleSelect || !allRoleOptions.length) {
+                    togglePartner();
+                    return;
+                }
+
+                var selectedOption = departmentSelect.options[departmentSelect.selectedIndex];
+                var rolesStr = selectedOption ? (selectedOption.getAttribute('data-roles') || '') : '';
+                var allowedRoles = rolesStr ? rolesStr.split(',') : [];
+
+                var placeholder = allRoleOptions[0].cloneNode(true);
+                roleSelect.innerHTML = '';
+                roleSelect.appendChild(placeholder);
+
+                var toAppend;
+                if (allowedRoles.length > 0) {
+                    toAppend = allRoleOptions.filter(function (opt, index) {
+                        if (index === 0) return false; // bỏ placeholder
+                        return allowedRoles.indexOf(opt.value) !== -1;
+                    });
+                } else {
+                    // Không chọn phòng ban hoặc phòng không map: hiển thị tất cả vai trò còn lại
+                    toAppend = allRoleOptions.slice(1);
+                }
+
+                toAppend.forEach(function (opt) {
+                    roleSelect.appendChild(opt.cloneNode(true));
+                });
+
+                if (allowedRoles.length > 0) {
+                    roleSelect.value = allowedRoles[0];
+                } else {
+                    roleSelect.value = '';
+                }
+
+                togglePartner();
+            }
+
+            if (departmentSelect && roleSelect) {
+                departmentSelect.addEventListener('change', applyRoleFilterByDepartment);
+                // Áp dụng filter lần đầu (trường hợp old('department_id'))
+                applyRoleFilterByDepartment();
+            }
+
             if (roleSelect) {
                 roleSelect.addEventListener('change', togglePartner);
                 togglePartner();

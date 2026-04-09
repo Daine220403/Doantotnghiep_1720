@@ -18,7 +18,7 @@
         </div>
         <!-- Nav Item - Dashboard -->
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('admin.index') }}">
+            <a class="nav-link" href="{{ route('admin.dashboard') }}">
                 <i class="fas fa-fw fa-tachometer-alt"></i>
                 <span>Dashboard</span></a>
         </li>
@@ -278,7 +278,7 @@
         </li>
     @endif
 
-    @if (in_array(Auth::user()->role, ['partner', 'admin']))
+    @if (in_array(Auth::user()->role, ['partner']))
         <!-- Divider -->
         <hr class="sidebar-divider">
         <!-- Heading -->
