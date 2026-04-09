@@ -16,8 +16,7 @@
                             <tr>
                                 <th>Ngày</th>
                                 <th>Tiêu đề</th>
-                                <th>Tổng việc</th>
-                                <th>Số giờ</th>
+                                <th>File</th>
                                 <th>Trạng thái</th>
                             </tr>
                         </thead>
@@ -26,13 +25,18 @@
                                 <tr>
                                     <td>{{ $report->report_date->format('d/m/Y') }}</td>
                                     <td>{{ $report->title }}</td>
-                                    <td>{{ $report->total_tasks }}</td>
-                                    <td>{{ $report->total_hours }}</td>
+                                    <td>
+                                        @if($report->file_path)
+                                            <a href="{{ asset('storage/' . $report->file_path) }}" target="_blank">Tải xuống</a>
+                                        @else
+                                            <span class="text-muted">Không có file</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $report->status }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center">Chưa có báo cáo nào.</td>
+                                    <td colspan="4" class="text-center">Chưa có báo cáo nào.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -48,7 +52,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Gửi báo cáo mới</h6>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.staff-hr.reports.store') }}" method="POST">
+                    <form action="{{ route('admin.staff-hr.reports.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-group">
                             <label for="report_date">Ngày báo cáo</label>
@@ -59,16 +63,17 @@
                             <input type="text" class="form-control" id="title" name="title" required>
                         </div>
                         <div class="form-group">
-                            <label for="content">Nội dung công việc</label>
-                            <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
+                            <label for="report_file">File báo cáo</label>
+                            {{-- chỉ up file word hoặc pdf --}}
+                            <input type="file" class="form-control" id="report_file" name="report_file" accept=".pdf,.doc,.docx" required>
+                            <small class="form-text text-muted">Hỗ trợ: pdf, doc, docx.</small>
                         </div>
                         <div class="form-group">
-                            <label for="total_tasks">Tổng số công việc</label>
-                            <input type="number" min="0" class="form-control" id="total_tasks" name="total_tasks">
+                            <label for="content">Ghi chú (tuỳ chọn)</label>
+                            <textarea class="form-control" id="content" name="content" rows="3"></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="total_hours">Tổng số giờ</label>
-                            <input type="number" step="0.5" min="0" class="form-control" id="total_hours" name="total_hours">
+                            
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Gửi báo cáo</button>
                     </form>

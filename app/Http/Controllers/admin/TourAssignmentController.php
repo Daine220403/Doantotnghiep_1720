@@ -12,6 +12,78 @@ use Carbon\Carbon;
 
 class TourAssignmentController extends Controller
 {
+    // Danh sách lịch khởi hành cần phân công HDV
+    public function index(Request $request)
+    {
+        $today = Carbon::today()->toDateString();
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $tourName = $request->input('tour_name');
+        $tourCode = $request->input('tour_code');
+
+        $query = tour_departures::with(['tour', 'assignment.guide'])
+            ->whereDate('start_date', '>=', $today)
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereDoesntHave('assignment');
+
+        if ($startDate) {
+            $query->whereDate('start_date', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('start_date', '<=', $endDate);
+        }
+
+        if ($tourName) {
+            $query->whereHas('tour', function ($q) use ($tourName) {
+                $q->where('title', 'like', '%' . $tourName . '%');
+            });
+        }
+
+        if ($tourCode) {
+            $query->whereHas('tour', function ($q) use ($tourCode) {
+                $q->where('code', 'like', '%' . $tourCode . '%');
+            });
+        }
+
+        $departures = $query->orderBy('start_date')->get();
+
+        return view('admin.mana_guide.departures_need_assign', compact('departures', 'startDate', 'endDate', 'tourName', 'tourCode'));
+    }
+
+    // Chọn HDV phù hợp cho một lịch khởi hành cụ thể
+    public function selectGuide(tour_departures $departure)
+    {
+        // Không cho phân công cho lịch đã hủy / hoàn tất hoặc đã diễn ra
+        if (in_array($departure->status, ['cancelled', 'completed']) ||
+            $departure->start_date < Carbon::today()->toDateString()) {
+            return redirect()->back()->with('error', 'Không thể phân công Hướng dẫn viên cho lịch khởi hành này.');
+        }
+
+        $departure->load('tour', 'assignment.guide');
+
+        // Danh sách HDV đang hoạt động, không bị trùng lịch với lịch hiện tại
+        $guides = User::where('role', 'tour_guide')
+            ->where('status', 'active')
+            ->withCount('guideAssignments')
+            ->whereDoesntHave('guideAssignments', function ($q) use ($departure) {
+                $q->whereHas('departure', function ($q2) use ($departure) {
+                    $q2->where(function ($query) use ($departure) {
+                        $query->whereBetween('start_date', [$departure->start_date, $departure->end_date])
+                              ->orWhereBetween('end_date', [$departure->start_date, $departure->end_date])
+                              ->orWhere(function ($sub) use ($departure) {
+                                  $sub->where('start_date', '<=', $departure->start_date)
+                                      ->where('end_date', '>=', $departure->end_date);
+                              });
+                    });
+                });
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.mana_guide.select_guide', compact('departure', 'guides'));
+    }
+
     public function assign(tour_departures $departure, Request $request)
     {
         $request->validate([

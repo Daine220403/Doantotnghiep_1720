@@ -19,18 +19,6 @@
                     Danh sách các booking tour của khách hàng. Bạn có thể theo dõi và cập nhật trạng thái booking.
                 </p>
             </div>
-
-            <form action="" method="GET" class="d-flex align-items-center">
-                <label for="status" class="mr-2 mb-0 small text-muted">Lọc theo trạng thái:</label>
-                <select name="status" id="status" class="form-control form-control-sm" onchange="this.form.submit()">
-                    <option value="">Tất cả</option>
-                    <option value="pending" {{ (isset($status) && $status == 'pending') ? 'selected' : '' }}>Chờ xử lý</option>
-                    <option value="confirmed" {{ (isset($status) && $status == 'confirmed') ? 'selected' : '' }}>Đã xác nhận</option>
-                    <option value="paid" {{ (isset($status) && $status == 'paid') ? 'selected' : '' }}>Đã thanh toán</option>
-                    <option value="cancelled" {{ (isset($status) && $status == 'cancelled') ? 'selected' : '' }}>Đã hủy</option>
-                    <option value="completed" {{ (isset($status) && $status == 'completed') ? 'selected' : '' }}>Hoàn tất</option>
-                </select>
-            </form>
         </div>
 
         {{-- Flash message --}}
@@ -54,9 +42,61 @@
 
         {{-- Card --}}
         <div class="card shadow mb-4">
+
             <div class="card-body">
+                <form action="{{ route('admin.mana-booking.index') }}" method="GET"
+                    class="d-flex align-items-center flex-wrap">
+                    <div class="form-group mb-0 mr-2">
+                        <label for="status" class="mr-2 mb-0 small text-muted">Trạng thái:</label>
+                        <select name="status" id="status" class="form-control form-control-sm"
+                            onchange="this.form.submit()">
+                            <option value="">Tất cả</option>
+                            <option value="pending" {{ isset($status) && $status == 'pending' ? 'selected' : '' }}>Chờ xử lý
+                            </option>
+                            <option value="confirmed" {{ isset($status) && $status == 'confirmed' ? 'selected' : '' }}>Đã
+                                xác
+                                nhận</option>
+                            <option value="paid" {{ isset($status) && $status == 'paid' ? 'selected' : '' }}>Đã thanh toán
+                            </option>
+                            <option value="cancelled" {{ isset($status) && $status == 'cancelled' ? 'selected' : '' }}>Đã
+                                hủy
+                            </option>
+                            <option value="completed" {{ isset($status) && $status == 'completed' ? 'selected' : '' }}>Hoàn
+                                tất</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0 mr-2">
+                        <label for="start_date" class="mr-2 mb-0 small text-muted">Từ ngày:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control form-control-sm"
+                            value="{{ isset($startDate) && $startDate ? $startDate : '' }}" onchange="this.form.submit()">
+                    </div>
+
+                    <div class="form-group mb-0 mr-2">
+                        <label for="end_date" class="mr-2 mb-0 small text-muted">Đến ngày:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control form-control-sm"
+                            value="{{ isset($endDate) && $endDate ? $endDate : '' }}" onchange="this.form.submit()">
+                    </div>
+
+                    <div class="form-group mb-0 mr-2">
+                        <label for="customer_name" class="mr-2 mb-0 small text-muted">Tên khách:</label>
+                        <input type="text" name="customer_name" id="customer_name" placeholder="Nhập tên khách"
+                            class="form-control form-control-sm"
+                            value="{{ isset($customerName) && $customerName ? $customerName : '' }}">
+                    </div>
+
+                    <div class="form-group mb-0 mr-2">
+                        <label for="customer_phone" class="mr-2 mb-0 small text-muted">Số điện thoại:</label>
+                        <input type="text" name="customer_phone" id="customer_phone" placeholder="Nhập SĐT"
+                            class="form-control form-control-sm"
+                            value="{{ isset($customerPhone) && $customerPhone ? $customerPhone : '' }}">
+                    </div>
+
+                    <button type="submit" class="btn btn-sm btn-primary ml-2">Lọc</button>
+                    <a href="{{ route('admin.mana-booking.index') }}" class="btn btn-sm btn-secondary ml-2">Xóa lọc</a>
+                </form>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover table-sm text-center align-middle" id="dataTable"
+                    <table class="table table-bordered table-hover table-sm text-center align-middle" id=""
                         width="100%" cellspacing="0">
                         <thead class="bg-light">
                             <tr>
@@ -152,19 +192,31 @@
                                             {{ $statusLabel[$currentStatus] ?? $currentStatus }}
                                         </span>
 
-                                        <form action="{{ route('admin.mana-booking.update-status', $booking->id) }}" method="POST" class="d-inline-block">
+                                        <form action="{{ route('admin.mana-booking.update-status', $booking->id) }}"
+                                            method="POST" class="d-inline-block">
                                             @csrf
                                             @method('PUT')
                                             <div class="input-group input-group-sm">
                                                 <select name="status" class="form-control form-control-sm">
-                                                    <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
-                                                    <option value="confirmed" {{ $currentStatus == 'confirmed' ? 'selected' : '' }}>Đã xác nhận</option>
-                                                    <option value="paid" {{ $currentStatus == 'paid' ? 'selected' : '' }}>Đã thanh toán</option>
-                                                    <option value="cancelled" {{ $currentStatus == 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
-                                                    <option value="completed" {{ $currentStatus == 'completed' ? 'selected' : '' }}>Hoàn tất</option>
+                                                    <option value="pending"
+                                                        {{ $currentStatus == 'pending' ? 'selected' : '' }}>Chờ xử lý
+                                                    </option>
+                                                    <option value="confirmed"
+                                                        {{ $currentStatus == 'confirmed' ? 'selected' : '' }}>Đã xác nhận
+                                                    </option>
+                                                    <option value="paid"
+                                                        {{ $currentStatus == 'paid' ? 'selected' : '' }}>Đã thanh toán
+                                                    </option>
+                                                    <option value="cancelled"
+                                                        {{ $currentStatus == 'cancelled' ? 'selected' : '' }}>Đã hủy
+                                                    </option>
+                                                    <option value="completed"
+                                                        {{ $currentStatus == 'completed' ? 'selected' : '' }}>Hoàn tất
+                                                    </option>
                                                 </select>
                                                 <div class="input-group-append">
-                                                    <button class="btn btn-outline-primary btn-sm" type="submit">Lưu</button>
+                                                    <button class="btn btn-outline-primary btn-sm"
+                                                        type="submit">Lưu</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -175,7 +227,8 @@
                                     </td>
 
                                     <td class="text-center">
-                                        <a href="{{ route('admin.mana-booking.show', $booking->id) }}" class="btn btn-sm btn-info" title="Xem chi tiết booking">
+                                        <a href="{{ route('admin.mana-booking.show', $booking->id) }}"
+                                            class="btn btn-sm btn-info" title="Xem chi tiết booking">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>

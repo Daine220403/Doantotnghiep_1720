@@ -38,6 +38,37 @@ class toursController extends Controller
         return view('admin.mana_tour.create');
     }
 
+    // Danh sách tour cần duyệt (status = hidden)
+    public function approvalIndex()
+    {
+        $tours = Tours::with('departures')
+            ->where('status', 'hidden')
+            ->latest()
+            ->get();
+
+        return view('admin.tours_approval.index', compact('tours'));
+    }
+
+    // Duyệt tour: chuyển trạng thái sang published
+    public function approve($id)
+    {
+        $tour = Tours::findOrFail($id);
+        $tour->status = 'published';
+        $tour->save();
+
+        return redirect()->back()->with('success', 'Đã duyệt tour và mở bán.');
+    }
+
+    // Từ chối tour: chuyển về draft để chỉnh sửa lại
+    public function reject($id)
+    {
+        $tour = Tours::findOrFail($id);
+        $tour->status = 'draft';
+        $tour->save();
+
+        return redirect()->back()->with('success', 'Đã từ chối tour, chuyển về nháp để chỉnh sửa.');
+    }
+
     public function store(Request $request)
     {
         // dd($request->all());
@@ -49,7 +80,6 @@ class toursController extends Controller
             'destination_text' => 'required|string|max:255',
             'transport' => 'required|in:bus,plane,train,car',
             'base_price_from' => 'required|numeric|min:0',
-            'status' => 'required|in:draft,published,hidden',
 
             'description' => 'nullable|string',
 
@@ -97,8 +127,6 @@ class toursController extends Controller
             'transport.in' => 'Phương tiện không hợp lệ.',
             'base_price_from.required' => 'Vui lòng nhập giá tour.',
             'base_price_from.numeric' => 'Giá tour phải là số.',
-            'status.required' => 'Vui lòng chọn trạng thái.',
-            'status.in' => 'Trạng thái không hợp lệ.',
             'duration_days.required' => 'Vui lòng nhập số ngày.',
             'duration_days.integer' => 'Số ngày phải là số nguyên.',
             'duration_nights.required' => 'Vui lòng nhập số đêm.',
@@ -152,7 +180,7 @@ class toursController extends Controller
             'destination_text' => $request->destination_text,
             'transport' => $request->transport,
             'base_price_from' => $request->base_price_from,
-            'status' => $request->status,
+            'status' => 'hidden',
             'created_by' => Auth::id(),
 
         ]);

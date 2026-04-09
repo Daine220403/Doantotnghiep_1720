@@ -188,21 +188,37 @@
                                 <span>{{ $departure->capacity_booked }} / {{ $departure->capacity_total }}</span>
                             </p>
                             <p class="mb-2">
-                                <span class="text-muted">Số lượng người lớn: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'adult')->count() }}</span></span>
-                                <span class="font-weight-bold">/{{ number_format($departure->price_adult, 0, ',', '.') }} đ</span>
+                                <span class="text-muted">Số lượng người lớn: <span
+                                        class="font-weight-bold">{{ $passengers->where('passenger_type', 'adult')->count() }}</span></span>
+                                <span class="font-weight-bold">/{{ number_format($departure->price_adult, 0, ',', '.') }}
+                                    đ</span>
                             </p>
                             <p class="mb-2">
-                                <span class="text-muted">Số lượng trẻ em: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'child')->count() }}</span></span>
-                                <span class="font-weight-bold">/{{ number_format($departure->price_child, 0, ',', '.') }} đ</span>
+                                <span class="text-muted">Số lượng trẻ em: <span
+                                        class="font-weight-bold">{{ $passengers->where('passenger_type', 'child')->count() }}</span></span>
+                                <span class="font-weight-bold">/{{ number_format($departure->price_child, 0, ',', '.') }}
+                                    đ</span>
                             </p>
                             <p class="mb-2">
-                                <span class="text-muted">Số lượng trẻ nhỏ: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'infant')->count() }}</span></span>
-                                <span class="font-weight-bold">/{{ number_format($departure->price_infant, 0, ',', '.') }} đ</span>
+                                <span class="text-muted">Số lượng trẻ nhỏ: <span
+                                        class="font-weight-bold">{{ $passengers->where('passenger_type', 'infant')->count() }}</span></span>
+                                <span class="font-weight-bold">/{{ number_format($departure->price_infant, 0, ',', '.') }}
+                                    đ</span>
                             </p>
                             <p class="mb-0">
-                                <span class="text-muted">Số lượng em bé: <span class="font-weight-bold">{{ $passengers->where('passenger_type', 'youth')->count() }}</span></span>
-                                <span class="font-weight-bold">/{{ number_format($departure->price_youth, 0, ',', '.') }} đ</span>
+                                <span class="text-muted">Số lượng em bé: <span
+                                        class="font-weight-bold">{{ $passengers->where('passenger_type', 'youth')->count() }}</span></span>
+                                <span class="font-weight-bold">/{{ number_format($departure->price_youth, 0, ',', '.') }}
+                                    đ</span>
                             </p>
+                            @if ($tour)
+                                <div class="mt-3">
+                                    <a href="{{ route('admin.customer-tour.show', $tour->id) }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        Xem danh sách khách của tour này
+                                    </a>
+                                </div>
+                            @endif
                         @else
                             <p class="mb-0 text-muted">Không có thông tin lịch khởi hành.</p>
                         @endif

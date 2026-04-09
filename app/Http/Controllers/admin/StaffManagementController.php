@@ -690,32 +690,50 @@ class StaffManagementController extends Controller
     }
 
     // Kỳ lương và bảng lương
-    public function payrollsIndex()
-    {
-        $periods = PayrollPeriod::with(['items.staff'])
-            ->orderByDesc('start_date')
-            ->paginate(10);
+    // public function payrollsIndex()
+    // {
+    //     $periods = PayrollPeriod::with(['items.staff'])
+    //         ->orderByDesc('start_date')
+    //         ->paginate(10);
 
-        return view('admin.hr.payrolls_index', compact('periods'));
-    }
+    //     return view('admin.hr.payrolls_index', compact('periods'));
+    // }
 
     // Báo cáo công việc nhân viên
     public function reportsIndex(Request $request)
     {
-        $query = WorkReport::with(['staff', 'manager'])->orderByDesc('report_date');
+        $query = WorkReport::with(['staff.department', 'manager'])
+            ->orderByDesc('report_date');
+
+        if ($request->filled('department_id')) {
+            $departmentId = $request->department_id;
+            $query->whereHas('staff', function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId);
+            });
+        }
 
         if ($request->filled('staff_id')) {
             $query->where('staff_id', $request->staff_id);
         }
 
-        $reports = $query->paginate(20);
+        $reports = $query->paginate(20)->appends($request->only(['department_id', 'staff_id']));
 
-        $staffs = User::where('role', 'staff')
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->get();
+        $staffQuery = User::where('role', 'staff')
+            ->where('status', 'active');
 
-        return view('admin.hr.reports_index', compact('reports', 'staffs'));
+        if ($request->filled('department_id')) {
+            $staffQuery->where('department_id', $request->department_id);
+        }
+
+        $staffs = $staffQuery->orderBy('name')->get();
+
+        $departments = Department::where('status', 'active')->orderBy('name')->get();
+
+        return view('admin.hr.reports_index', [
+            'reports' => $reports,
+            'departments' => $departments,
+            'staffs' => $staffs,
+        ]);
     }
 
     // ===== Khu vực nhân viên tự xem / thao tác =====
@@ -919,13 +937,26 @@ class StaffManagementController extends Controller
         $data = $request->validate([
             'report_date' => ['required', 'date'],
             'title' => ['required', 'string', 'max:255'],
-            'content' => ['required', 'string'],
+            'report_file' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,jpg,jpeg,png', 'max:10240'],
+            'content' => ['nullable', 'string'],
             'total_tasks' => ['nullable', 'integer', 'min:0'],
             'total_hours' => ['nullable', 'numeric', 'min:0'],
         ]);
 
+        // Lưu file báo cáo lên storage (disk public)
+        if ($request->hasFile('report_file')) {
+            $path = $request->file('report_file')->store('work_reports', 'public');
+            $data['file_path'] = $path;
+        }
+
         $data['staff_id'] = Auth::id();
         $data['status'] = 'submitted';
+
+        // Với cấu trúc CSDL hiện tại, cột content không cho phép null
+        // nên đảm bảo luôn có giá trị (có thể là ghi chú hoặc chuỗi rỗng)
+        if (!isset($data['content'])) {
+            $data['content'] = '';
+        }
 
         WorkReport::create($data);
 

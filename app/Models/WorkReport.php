@@ -17,6 +17,7 @@ class WorkReport extends Model
         'report_date',
         'title',
         'content',
+        'file_path',
         'total_tasks',
         'total_hours',
         'status',

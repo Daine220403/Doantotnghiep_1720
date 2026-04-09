@@ -88,19 +88,7 @@
                             </div>
                         @enderror
 
-                        <div class="col-md-6 mb-3">
-                            <label>Trạng thái</label>
-                            <select name="status" class="form-control">
-                                <option value="draft">Draft (Nháp)</option>
-                                <option value="published">Published (Đang bán)</option>
-                                <option value="hidden">Hidden (Ẩn)</option>
-                            </select>
-                        </div>
-                        @error('status')
-                            <div class="col-md-12 mb-3">
-                                <div class="alert alert-danger">{{ $message }}</div>
-                            </div>
-                        @enderror
+                        
 
                         <div class="col-md-12 mb-3">
                             <label>Mô tả</label>

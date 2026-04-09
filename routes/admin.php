@@ -31,11 +31,13 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     // Hồ sơ cá nhân cho admin
     Route::get('/profile', [ProfileController::class, 'editAdmin'])->name('admin.profile.edit');
 
-    // Quản lý Hướng dẫn viên
+    // Quản lý Hướng dẫn viên (chỉ xem danh sách HDV)
     Route::get('/guides', [guideController::class, 'index'])->name('admin.mana-guide.index');
-    Route::get('/guides/{guide}/assign-tours', [guideController::class, 'showTours'])->name('admin.mana-guide.tours');
-    Route::get('/guides/{guide}/tours/{tour}/departures', [guideController::class, 'showDepartures'])->name('admin.mana-guide.tour-departures');
     // Phân công Hướng dẫn viên cho lịch khởi hành
+    Route::get('/departures/assign-guides', [TourAssignmentController::class, 'index'])
+        ->name('admin.departures.assign-guides.index');
+    Route::get('/departures/{departure}/select-guide', [TourAssignmentController::class, 'selectGuide'])
+        ->name('admin.departures.assign-guides.select');
     Route::post('/departures/{departure}/assign-guide', [TourAssignmentController::class, 'assign'])
         ->name('admin.departures.assign-guide');
 
@@ -45,6 +47,13 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/store', [toursController::class, 'store'])->name('admin.mana-tour.store'); // xử lý lưu tour mới || done
         Route::put('/{id}', [toursController::class, 'update'])->name('admin.mana-tour.update'); // xử lý cập nhật tour || done
         Route::delete('/{id}', [toursController::class, 'destroy'])->name('admin.mana-tour.destroy'); // xử lý xóa tour || 
+    });
+
+    // Duyệt tour (dành cho quản lý nhân viên / admin)
+    Route::prefix('/tours-approval')->group(function () {
+        Route::get('/', [toursController::class, 'approvalIndex'])->name('admin.tours-approval.index');
+        Route::post('/{id}/approve', [toursController::class, 'approve'])->name('admin.tours-approval.approve');
+        Route::post('/{id}/reject', [toursController::class, 'reject'])->name('admin.tours-approval.reject');
     });
 
     Route::prefix('/bookings')->group(function () {
@@ -126,7 +135,7 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
 
         // Dịch vụ của đối tác
         Route::get('/{partner}/services', [partnerController::class, 'services'])->name('admin.mana-partner.services');
-        Route::post('/{partner}/services', [partnerController::class, 'storeService'])->name('admin.mana-partner.services.store');
+        // Route::post('/{partner}/services', [partnerController::class, 'storeService'])->name('admin.mana-partner.services.store');
         Route::delete('/services/{service}', [partnerController::class, 'destroyService'])->name('admin.mana-partner.services.destroy');
     });
 
@@ -160,7 +169,7 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/attendances/{attendance}/check-out', [StaffManagementController::class, 'attendanceCheckOut'])->name('admin.hr.attendances.check-out');
 
         // Lương
-        Route::get('/payrolls', [StaffManagementController::class, 'payrollsIndex'])->name('admin.hr.payrolls.index');
+        // Route::get('/payrolls', [StaffManagementController::class, 'payrollsIndex'])->name('admin.hr.payrolls.index');
 
         // Báo cáo công việc
         Route::get('/reports', [StaffManagementController::class, 'reportsIndex'])->name('admin.hr.reports.index');

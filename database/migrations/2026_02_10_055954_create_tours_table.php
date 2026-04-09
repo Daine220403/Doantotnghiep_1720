@@ -26,7 +26,11 @@ return new class extends Migration {
             
             $table->decimal('base_price_from', 12, 2)->default(0);
 
-            $table->enum('status', ['draft', 'published',])->default('draft')->index();
+            // Trạng thái tour: 
+            // - draft: bản nháp nội bộ
+            // - hidden: nhân viên tạo xong, chờ quản lý duyệt
+            // - published: đã được duyệt và mở bán
+            $table->enum('status', ['draft', 'hidden', 'published'])->default('draft')->index();
 
             $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();

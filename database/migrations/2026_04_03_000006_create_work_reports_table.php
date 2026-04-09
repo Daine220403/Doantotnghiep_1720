@@ -15,8 +15,7 @@ return new class extends Migration
             $table->date('report_date');
             $table->string('title', 255);
             $table->text('content');
-            $table->unsignedInteger('total_tasks')->nullable();
-            $table->decimal('total_hours', 8, 2)->nullable();
+            $table->string('file_path', 255)->nullable();
             $table->enum('status', ['draft', 'submitted', 'approved', 'rejected'])->default('submitted')->index();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();

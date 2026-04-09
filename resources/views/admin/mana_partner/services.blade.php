@@ -25,7 +25,7 @@
         @endif
 
         <div class="row">
-            <div class="col-md-5">
+            {{-- <div class="col-md-5">
                 <div class="card mb-4">
                     <div class="card-header font-weight-bold">Thêm dịch vụ cho đối tác</div>
                     <div class="card-body">
@@ -79,9 +79,9 @@
                         </form>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
-            <div class="col-md-7">
+            <div class="col-md-12">
                 <div class="card mb-4">
                     <div class="card-header font-weight-bold">Danh sách dịch vụ</div>
                     <div class="card-body">
@@ -94,7 +94,7 @@
                                         <th>Loại</th>
                                         <th>Đơn giá (VNĐ)</th>
                                         <th>Trạng thái</th>
-                                        <th style="width: 80px;">Hành động</th>
+                                        {{-- <th style="width: 80px;">Hành động</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -112,7 +112,7 @@
                                                     <span class="badge badge-secondary">Tạm dừng</span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            {{-- <td>
                                                 <form action="{{ route('admin.mana-partner.services.destroy', $service->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dịch vụ này?');">
                                                     @csrf
                                                     @method('DELETE')
@@ -120,7 +120,7 @@
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
-                                            </td>
+                                            </td> --}}
                                         </tr>
                                     @empty
                                         <tr>

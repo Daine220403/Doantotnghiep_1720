@@ -12,6 +12,10 @@ class bookingController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $customerName = $request->query('customer_name');
+        $customerPhone = $request->query('customer_phone');
         // departure.tour là để lấy thông tin tour liên quan đến lịch 
         // khởi hành của booking, giúp hiển thị tên tour trong danh sách booking
         $query = bookings::with(['order', 'departure.tour'])->latest();  
@@ -20,9 +24,36 @@ class bookingController extends Controller
             $query->where('status', $status);
         }
 
+        if ($startDate) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+
+        if ($customerName) {
+            $query->whereHas('order', function ($q) use ($customerName) {
+                $q->where('contact_name', 'like', '%' . $customerName . '%');
+            });
+        }
+
+        if ($customerPhone) {
+            $query->whereHas('order', function ($q) use ($customerPhone) {
+                $q->where('contact_phone', 'like', '%' . $customerPhone . '%');
+            });
+        }
+
         $bookings = $query->get();
 
-        return view('admin.mana_booking.index', compact('bookings', 'status'));
+        return view('admin.mana_booking.index', compact(
+            'bookings',
+            'status',
+            'startDate',
+            'endDate',
+            'customerName',
+            'customerPhone'
+        ));
     }
 
     public function show($id)

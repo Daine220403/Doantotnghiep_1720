@@ -42,7 +42,7 @@
 								<th>Điện thoại</th>
 								<th>Trạng thái</th>
 								<th>Số lịch được phân công</th>
-								<th>Hành động</th>
+								<th></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -61,11 +61,7 @@
 										@endif
 									</td>
 									<td>{{ $guide->assignments_count }}</td>
-									<td>
-										<a href="{{ route('admin.mana-guide.tours', $guide->id) }}" class="btn btn-sm btn-primary">
-											<i class="fas fa-route"></i> Phân công tour
-										</a>
-									</td>
+									<td></td>
 								</tr>
 							@empty
 								<tr>
