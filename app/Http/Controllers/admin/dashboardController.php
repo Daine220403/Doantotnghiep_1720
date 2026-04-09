@@ -16,7 +16,11 @@ use Carbon\Carbon;
 
 class dashboardController extends Controller
 {
-	public function index(Request $request)
+	public function index()
+	{
+		return view('admin.index');
+	}
+	public function dashboard(Request $request)
 	{
 		$today = Carbon::today();
 		$startOfMonth = $today->copy()->startOfMonth();
@@ -136,7 +140,7 @@ class dashboardController extends Controller
 			->limit(10)
 			->get();
 
-		return view('admin.index', compact(
+		return view('admin.dashboard', compact(
 			'totalTours',
 			'upcomingDeparturesCount',
 			'todayBookings',
@@ -158,4 +162,5 @@ class dashboardController extends Controller
 			'latestBookings'
 		));
 	}
+	
 }

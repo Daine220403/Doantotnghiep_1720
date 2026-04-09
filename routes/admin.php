@@ -18,7 +18,7 @@ use App\Http\Controllers\partner\rolePartnerController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', [dashboardController::class, 'index'])->name('admin.index');
-
+    Route::get('/dashboard', [dashboardController::class, 'dashboard'])->name('admin.dashboard');
     // Quản lý tài khoản nội bộ & đối tác
     Route::prefix('/users')->group(function () {
         Route::get('/', [manaUserController::class, 'index'])->name('admin.mana-user.index');
