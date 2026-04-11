@@ -73,19 +73,19 @@ class ChatbotController extends Controller
         // =============================
         // 2. XỬ LÝ CÂU HỎI MƠ HỒ
         // =============================
-        $isConsultOnly =
-            str_contains($message, 'tư vấn') ||
-            str_contains($message, 'gợi ý') ||
-            str_contains($message, 'nên đi đâu') ||
-            str_contains($message, 'muốn đi du lịch') ||
-            str_contains($message, 'alo');
+        // $isConsultOnly =
+        //     str_contains($message, 'tư vấn') ||
+        //     str_contains($message, 'gợi ý') ||
+        //     str_contains($message, 'nên đi đâu') ||
+        //     str_contains($message, 'muốn đi du lịch') ||
+        //     str_contains($message, 'alo');
 
-        if ($isConsultOnly && !$budget && !$days && !$destination) {
-            return response()->json([
-                'ok' => true,
-                'reply' => 'Dạ anh/chị muốn đi đâu, khoảng mấy ngày và ngân sách tầm bao nhiêu ạ? Ví dụ: Đà Lạt 3 ngày khoảng 5 triệu.',
-            ]);
-        }
+        // if ($isConsultOnly && !$budget && !$days && !$destination) {
+        //     return response()->json([
+        //         'ok' => true,
+        //         'reply' => 'Dạ anh/chị muốn đi đâu, khoảng mấy ngày và ngân sách tầm bao nhiêu ạ? Ví dụ: Đà Lạt 3 ngày khoảng 5 triệu.',
+        //     ]);
+        // }
 
         // =============================
         // 3. QUERY DB

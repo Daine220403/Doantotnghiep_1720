@@ -267,9 +267,6 @@
                         <button
                             class="chatbot-quick px-3 py-1.5 text-xs font-semibold rounded-full bg-sky-50 text-sky-700 hover:bg-sky-100"
                             type="button">Tư vấn giá</button>
-                        <button
-                            class="chatbot-quick px-3 py-1.5 text-xs font-semibold rounded-full bg-sky-50 text-sky-700 hover:bg-sky-100"
-                            type="button">Liên hệ</button>
                     </div>
                 </div>
 
