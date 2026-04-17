@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Tours;
 
 class ChatbotController extends Controller
@@ -16,7 +17,7 @@ class ChatbotController extends Controller
         if (!$apiKey) {
             return response()->json([
                 'ok' => false,
-                'reply' => 'Xin lỗi, chatbot đang được cấu hình. Anh/chị vui lòng thử lại sau.',
+                'reply' => 'Xin lỗi, chatbot đang được cấu hình. Vui lòng thử lại sau.',
             ], 500);
         }
 
@@ -30,78 +31,57 @@ class ChatbotController extends Controller
         }
 
         // =============================
-        // 1. PHÂN TÍCH NHẸ Ở BACKEND
+        // 1. PARSE AI (CÓ CACHE)
         // =============================
-        $message = mb_strtolower($userMessage);
+        $parsed = Cache::remember(
+            'parse_' . md5($userMessage),
+            300, // cache 5 phút
+            fn() => $this->parseUserMessage($userMessage)
+        );
 
-        $budget = null;
-        $days = null;
-        $destination = null;
-
-        // bắt giá: 5tr, 5 triệu
-        if (preg_match('/(\d+)\s*(tr|triệu)/u', $message, $m)) {
-            $budget = (int) $m[1] * 1000000;
-        }
-
-        // bắt số ngày: 3 ngày
-        if (preg_match('/(\d+)\s*ngày/u', $message, $m)) {
-            $days = (int) $m[1];
-        }
-
-        // bắt địa điểm đơn giản
-        $locations = [
-            'đà lạt',
-            'đà nẵng',
-            'nha trang',
-            'phú quốc',
-            'hà nội',
-            'sapa',
-            'vũng tàu',
-            'huế',
-            'quy nhơn',
-            'miền tây',
-            'cần thơ',
-        ];
-
-        foreach ($locations as $loc) {
-            if (str_contains($message, $loc)) {
-                $destination = $loc;
-                break;
-            }
-        }
+        $intent = $parsed['intent'];
+        $destination = $parsed['destination'];
+        $days = $parsed['days'];
+        $budget = $parsed['budget'];
 
         // =============================
-        // 2. XỬ LÝ CÂU HỎI MƠ HỒ
+        // 2. HANDLE INTENT (NO AI)
         // =============================
-        // $isConsultOnly =
-        //     str_contains($message, 'tư vấn') ||
-        //     str_contains($message, 'gợi ý') ||
-        //     str_contains($message, 'nên đi đâu') ||
-        //     str_contains($message, 'muốn đi du lịch') ||
-        //     str_contains($message, 'alo');
+        if ($intent === 'count_tours') {
+            $total = Tours::where('status', 'published')->count();
 
-        // if ($isConsultOnly && !$budget && !$days && !$destination) {
-        //     return response()->json([
-        //         'ok' => true,
-        //         'reply' => 'Dạ anh/chị muốn đi đâu, khoảng mấy ngày và ngân sách tầm bao nhiêu ạ? Ví dụ: Đà Lạt 3 ngày khoảng 5 triệu.',
-        //     ]);
-        // }
+            return response()->json([
+                'ok' => true,
+                'reply' => "Hiện tại bên em có khoảng {$total} tour đang mở bán ạ.",
+            ]);
+        }
+
+        if ($intent === 'system_info') {
+            $domestic = Tours::where('tour_type', 'domestic')->count();
+            $international = Tours::where('tour_type', 'international')->count();
+
+            return response()->json([
+                'ok' => true,
+                'reply' => "Hiện có {$domestic} tour trong nước và {$international} tour quốc tế ạ.",
+            ]);
+        }
+
+        if ($intent === 'consult') {
+            return response()->json([
+                'ok' => true,
+                'reply' => "Dạ anh/chị muốn đi đâu, mấy ngày và ngân sách khoảng bao nhiêu để em tư vấn chuẩn hơn ạ?",
+            ]);
+        }
 
         // =============================
         // 3. QUERY DB
         // =============================
         $toursQuery = Tours::query()->where('status', 'published');
 
-        if ($budget) {
-            $min = (int) ($budget * 0.8);
-            $max = (int) ($budget * 1.2);
-            $toursQuery->whereBetween('base_price_from', [$min, $max]);
-        }
-
         if ($destination) {
             $toursQuery->where(function ($q) use ($destination) {
-                $q->where('destination_text', 'like', '%' . $destination . '%')
-                    ->orWhere('title', 'like', '%' . $destination . '%');
+                $q->where('destination_text', 'like', "%{$destination}%")
+                  ->orWhere('title', 'like', "%{$destination}%");
             });
         }
 
@@ -109,96 +89,68 @@ class ChatbotController extends Controller
             $toursQuery->where('duration_days', $days);
         }
 
+        if ($budget) {
+            $min = (int) ($budget * 0.7);
+            $max = (int) ($budget * 1.3);
+
+            $toursQuery->whereBetween('base_price_from', [$min, $max]);
+        }
+
+        $totalMatched = $toursQuery->count();
+
         $tours = $toursQuery
             ->orderBy('base_price_from')
-            ->limit(3)
+            ->limit(10)
             ->get([
                 'title',
                 'slug',
-                'tour_type',
-                'departure_location',
-                'destination_text',
-                'duration_days',
                 'base_price_from',
             ]);
 
-        // fallback nếu lọc quá chặt mà không có tour
-        if ($tours->isEmpty()) {
-            $tours = Tours::query()
-                ->where('status', 'published')
-                ->orderBy('base_price_from')
-                ->limit(3)
-                ->get([
-                    'title',
-                    'slug',
-                    'tour_type',
-                    'departure_location',
-                    'destination_text',
-                    'duration_days',
-                    'base_price_from',
-                ]);
-        }
-
         // =============================
-        // 4. BUILD CONTEXT HTML
+        // 4. BUILD CONTEXT
         // =============================
         $toursContext = $tours->isEmpty()
-            ? 'Hiện chưa có tour phù hợp.'
-            : $tours->map(function ($tour, $index) {
-                $no = $index + 1;
-                $type = $tour->tour_type === 'international' ? 'Quốc tế' : 'Trong nước';
-                $duration = $tour->duration_days ? $tour->duration_days . ' ngày' : 'Nhiều ngày';
-                $price = number_format((float) $tour->base_price_from, 0, ',', '.');
+            ? "Không tìm thấy tour phù hợp."
+            : "Tìm thấy {$totalMatched} tour phù hợp (một số gợi ý):\n\n" .
+                $tours->map(function ($tour, $i) {
+                    $price = number_format($tour->base_price_from, 0, ',', '.');
 
-                return sprintf(
-                    '%d. <strong>%s</strong> (%s)<br>
-                📍 %s<br>
-                ⏱ %s<br>
-                💰 Giá từ %s VND<br>
-                <a href="/tours/%s" target="_blank"
-                   style="display:inline-block;margin-top:6px;padding:6px 10px;background:#2563eb;color:#fff;border-radius:6px;font-size:13px;text-decoration:none;font-weight:600;">
-                   Xem chi tiết
-                </a>',
-                    $no,
-                    e($tour->title),
-                    e($type),
-                    e($tour->destination_text ?: 'Đa điểm'),
-                    e($duration),
-                    $price,
-                    e($tour->slug)
-                );
-            })->implode('<br><br>');
+                    return ($i + 1) . ". {$tour->title}\n💰 {$price} VND\n👉 /tours/{$tour->slug}";
+                })->implode("\n\n");
 
         // =============================
-        // 5. PROMPT
+        // 5. PROMPT AI
         // =============================
         $prompt = <<<PROMPT
-Bạn là trợ lý du lịch ảo của một công ty lữ hành.
+            Bạn là trợ lý du lịch chuyên nghiệp.
 
-Nhiệm vụ:
-- Tư vấn chọn tour theo điểm đến, ngân sách, thời gian.
-- Trả lời ngắn gọn, tự nhiên, thân thiện, xưng "em".
-- Chỉ gợi ý dựa trên danh sách tour được cung cấp.
-- Không tự bịa tour mới.
-- Nếu khách hỏi quá chung chung, hãy hỏi lại ngắn gọn để làm rõ nhu cầu.
-- Nếu gợi ý tour, hãy giữ nguyên thẻ HTML <a href="/tours/...">Xem chi tiết</a>.
+            QUY TẮC:
+            - Danh sách tour chỉ là một phần nhỏ từ hệ thống.
+            - Không được nói hệ thống chỉ có số tour đang hiển thị.
+            - Trả lời tự nhiên, thân thiện, xưng "em".
+            - Ưu tiên gợi ý tour từ dữ liệu cung cấp.
+            - Khi có link tour, hãy dùng thẻ <a href="..." target="_blank" 
+                style="color:blue;text-decoration:underline;"
+            >Xem chi tiết</a>
 
-DANH SÁCH TOUR:
-{$toursContext}
+            DỮ LIỆU:
+            {$toursContext}
 
-CÂU HỎI CỦA KHÁCH:
-"{$userMessage}"
+            CÂU HỎI:
+            "{$userMessage}"
 
-Hãy trả lời bằng tiếng Việt, tối đa 2-4 câu.
-PROMPT;
+            Trả lời ngắn gọn 2-4 câu.
+            PROMPT;
 
         try {
-            $response = Http::timeout(60)
-                ->retry(2, 1000)
+            $response = Http::timeout(30)
+                ->retry(2, 500)
                 ->withHeaders([
                     'Content-Type' => 'application/json',
                     'x-goog-api-key' => $apiKey,
-                ])->post(
+                ])
+                ->post(
                     'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
                     [
                         'contents' => [
@@ -212,7 +164,7 @@ PROMPT;
                 );
 
             if (!$response->successful()) {
-                Log::warning('Gemini chatbot error', [
+                Log::warning('Gemini error', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -223,8 +175,7 @@ PROMPT;
                 ]);
             }
 
-            $data = $response->json();
-            $reply = data_get($data, 'candidates.0.content.parts.0.text');
+            $reply = data_get($response->json(), 'candidates.0.content.parts.0.text');
 
             if (!is_string($reply) || trim($reply) === '') {
                 $reply = $toursContext;
@@ -244,5 +195,78 @@ PROMPT;
                 'reply' => $toursContext,
             ]);
         }
+    }
+
+    private function parseUserMessage($message)
+    {
+        $apiKey = config('services.gemini.api_key');
+
+        $prompt = <<<PROMPT
+          Phân tích câu người dùng và trả về JSON:
+
+          {
+            "intent": "count_tours | system_info | search_tour | consult | other",
+            "destination": "... hoặc null",
+            "days": số hoặc null,
+            "budget": số VND hoặc null
+          }
+
+          Chỉ trả JSON.
+
+          Câu: "{$message}"
+          PROMPT;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'x-goog-api-key' => $apiKey,
+            ])->post(
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
+                [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt],
+                            ],
+                        ],
+                    ],
+                ]
+            );
+
+            $text = data_get($response->json(), 'candidates.0.content.parts.0.text');
+
+            $text = trim($text);
+            $text = preg_replace('/```json|```/', '', $text);
+
+            $json = json_decode($text, true);
+
+            if (!$json) {
+                return $this->fallbackParse();
+            }
+
+            $validIntents = ['count_tours', 'system_info', 'search_tour', 'consult', 'other'];
+
+            return [
+                'intent' => in_array($json['intent'] ?? '', $validIntents)
+                    ? $json['intent']
+                    : 'search_tour',
+
+                'destination' => $json['destination'] ?? null,
+                'days' => is_numeric($json['days'] ?? null) ? (int)$json['days'] : null,
+                'budget' => is_numeric($json['budget'] ?? null) ? (int)$json['budget'] : null,
+            ];
+        } catch (\Throwable $e) {
+            return $this->fallbackParse();
+        }
+    }
+
+    private function fallbackParse()
+    {
+        return [
+            'intent' => 'search_tour',
+            'destination' => null,
+            'days' => null,
+            'budget' => null,
+        ];
     }
 }

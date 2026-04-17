@@ -6,7 +6,7 @@
         <div class="sidebar-brand-icon rotate-n-15">
             <i class="fas fa-laugh-wink"></i>
         </div>
-        <div class="sidebar-brand-text mx-3">Admin</div>
+        <div class="sidebar-brand-text mx-3">Xin chào</div>
     </a>
 
     @if (Auth::user()->role === 'admin')
@@ -68,7 +68,7 @@
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Chức năng tour:</h6>
                     <a class="collapse-item" href="{{ route('admin.mana-tour.index') }}">Danh sách tours</a>
-                    <a class="collapse-item" href="{{ route('admin.mana-tour.create') }}">Thêm tour</a>
+                    <a class="collapse-item" href="{{ route('admin.mana-tour.create') }}">Quản lý tours</a>
                 </div>
             </div>
         </li>

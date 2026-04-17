@@ -17,14 +17,50 @@ use Carbon\Carbon;
 class StaffBookingController extends Controller
 {
     // Danh sách tour để nhân viên chọn xem/đặt tour cho khách
-    public function index()
+    public function index(Request $request)
     {
-        $tours = Tours::withCount('bookings')
-            ->with('departures')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $tourType = $request->input('tour_type');
+        $destination = trim((string) $request->input('destination', ''));
+        $durationDays = $request->input('duration_days');
+        $priceMin = $request->input('price_min');
+        $priceMax = $request->input('price_max');
 
-        return view('admin.staff_booking.tours_index', compact('tours'));
+        $toursQuery = Tours::withCount('bookings')
+            ->with('departures')
+            ->orderBy('created_at', 'desc');
+
+        if (in_array($tourType, ['domestic', 'international'], true)) {
+            $toursQuery->where('tour_type', $tourType);
+        }
+
+        if ($destination !== '') {
+            $toursQuery->where('destination_text', 'like', '%' . $destination . '%');
+        }
+
+        if ($durationDays !== null && $durationDays !== '' && is_numeric($durationDays)) {
+            $toursQuery->where('duration_days', (int) $durationDays);
+        }
+
+        if ($priceMin !== null && $priceMin !== '') {
+            $normalizedMin = (float) str_replace(',', '', (string) $priceMin);
+            $toursQuery->where('base_price_from', '>=', $normalizedMin);
+        }
+
+        if ($priceMax !== null && $priceMax !== '') {
+            $normalizedMax = (float) str_replace(',', '', (string) $priceMax);
+            $toursQuery->where('base_price_from', '<=', $normalizedMax);
+        }
+
+        $tours = $toursQuery->get();
+
+        $destinations = Tours::query()
+            ->whereNotNull('destination_text')
+            ->where('destination_text', '<>', '')
+            ->distinct()
+            ->orderBy('destination_text')
+            ->pluck('destination_text');
+
+        return view('admin.staff_booking.tours_index', compact('tours', 'destinations'));
     }
 
     // Chi tiết 1 tour: thông tin tour + các lịch khởi hành + booking của khách

@@ -13,6 +13,83 @@
 
         <div class="card shadow mb-4">
             <div class="card-body">
+                <form method="GET" action="{{ route('admin.staff-booking.tours') }}" class="mb-4">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="small text-muted mb-1" for="tour_type">Loại tour</label>
+                            <select class="form-control" id="tour_type" name="tour_type">
+                                <option value="">Tất cả</option>
+                                <option value="domestic" {{ request('tour_type') === 'domestic' ? 'selected' : '' }}>Trong nước</option>
+                                <option value="international" {{ request('tour_type') === 'international' ? 'selected' : '' }}>Ngoài nước</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="small text-muted mb-1" for="destination">Điểm đến</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="destination"
+                                name="destination"
+                                list="destination-options"
+                                value="{{ request('destination') }}"
+                                placeholder="Nhập hoặc chọn điểm đến"
+                            >
+                            <datalist id="destination-options">
+                                @foreach ($destinations as $dest)
+                                    <option value="{{ $dest }}"></option>
+                                @endforeach
+                            </datalist>
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="small text-muted mb-1" for="duration_days">Số ngày</label>
+                            <input
+                                type="number"
+                                min="1"
+                                class="form-control"
+                                id="duration_days"
+                                name="duration_days"
+                                value="{{ request('duration_days') }}"
+                                placeholder="Ví dụ: 3"
+                            >
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="small text-muted mb-1" for="price_min">Giá từ</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1000"
+                                class="form-control"
+                                id="price_min"
+                                name="price_min"
+                                value="{{ request('price_min') }}"
+                                placeholder="0"
+                            >
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="small text-muted mb-1" for="price_max">Đến</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1000"
+                                class="form-control"
+                                id="price_max"
+                                name="price_max"
+                                value="{{ request('price_max') }}"
+                                placeholder="10000000"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center">
+                        <button type="submit" class="btn btn-primary btn-sm mr-2">Lọc</button>
+                        <a href="{{ route('admin.staff-booking.tours') }}" class="btn btn-outline-secondary btn-sm">Xóa lọc</a>
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table id="dataTable" class="table table-sm table-bordered table-hover align-middle" width="100%" cellspacing="0">
                         <thead class="bg-light">
@@ -53,7 +130,13 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted">Chưa có tour nào.</td>
+                                    <td colspan="9" class="text-center text-muted">
+                                        @if (request('destination'))
+                                            Không có dữ liệu cho điểm đến "{{ request('destination') }}".
+                                        @else
+                                            Chưa có tour nào.
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
