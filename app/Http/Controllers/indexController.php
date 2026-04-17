@@ -9,10 +9,49 @@ use App\Models\Reviews;
 use App\Models\orders;
 use App\Models\order_details;
 use App\Models\tour_departures;
+use App\Models\ContactMessage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class indexController extends Controller
 {
+    public function contact()
+    {
+        return view('contact');
+    }
+
+
+    public function contactStore(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'max:180'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'subject' => ['required', 'string', 'max:160'],
+            'message' => ['required', 'string', 'min:10', 'max:3000'],
+            'preferred_contact' => ['nullable', 'in:phone,email,zalo'],
+        ], [
+            'name.required' => 'Vui lòng nhập họ tên.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'subject.required' => 'Vui lòng nhập chủ đề.',
+            'message.required' => 'Vui lòng nhập nội dung liên hệ.',
+            'message.min' => 'Nội dung liên hệ cần ít nhất 10 ký tự.',
+        ]);
+
+        ContactMessage::create([
+            ...$validated,
+            'status' => 'new',
+            'ip_address' => $request->ip(), // Lưu địa chỉ IP của người gửi để tiện theo dõi và phân tích sau này
+            'user_agent' => (string) $request->userAgent(), // Lưu user agent để biết người gửi dùng thiết bị gì, trình duyệt nào (cũng hữu ích cho việc phân tích sau này)
+        ]);
+
+        return redirect()
+            ->route('contact')
+            ->with('success', 'VieTravel đã nhận thông tin. Chúng tôi sẽ liên hệ lại sớm nhất.');
+    }
+
+
     public function index()
     {
         $tours = Tours::with([
@@ -29,12 +68,60 @@ class indexController extends Controller
             ->take(4)
             ->get();
 
-        return view('index', compact('tours'));
+        $upcomingTours = Tours::with([
+            'images',
+            'departures' => function ($query) {
+                $query->whereDate('start_date', '>', now())
+                    ->whereIn('status', ['draft', 'open', 'confirmed'])
+                    ->orderBy('start_date');
+            },
+            'reviews'
+        ])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->where('status', 'hidden')
+            ->latest()
+            ->take(4)
+            ->get();
+
+        return view('index', compact('tours', 'upcomingTours'));
     }
 
 
     public function tours(Request $request)
     {
+        $locationFilters = $this->buildLocationFilters();
+        $selectedTourScope = (string) $request->input('tour_scope', $request->input('scope', $request->input('type', '')));
+        $selectedRegion = (string) $request->input('region', '');
+        $selectedCity = (string) $request->input('city', '');
+        $selectedScopeFilters = $selectedTourScope !== '' && $selectedTourScope !== 'all'
+            ? ($locationFilters['scope_filters'][$selectedTourScope] ?? null)
+            : null;
+
+        if ($selectedScopeFilters && $selectedRegion !== '' && $selectedRegion !== 'all') {
+            if (!array_key_exists($selectedRegion, $selectedScopeFilters['regions'])) {
+                $selectedRegion = '';
+            }
+        }
+
+        if ($selectedRegion !== '' && $selectedRegion !== 'all') {
+            $selectedRegionCities = $selectedScopeFilters
+                ? (($selectedScopeFilters['regions'][$selectedRegion]['cities'] ?? []))
+                : ($locationFilters['cities_by_region'][$selectedRegion] ?? []);
+
+            if ($selectedCity !== '' && $selectedCity !== 'all' && !in_array($selectedCity, $selectedRegionCities, true)) {
+                $selectedCity = '';
+            }
+        } elseif ($selectedCity !== '' && $selectedCity !== 'all') {
+            $availableCities = $selectedScopeFilters
+                ? ($selectedScopeFilters['all_cities'] ?? [])
+                : ($locationFilters['all_cities'] ?? []);
+
+            if (!in_array($selectedCity, $availableCities, true)) {
+                $selectedCity = '';
+            }
+        }
+
         // Khởi tạo query cơ bản cho danh sách tour,
         // load kèm các quan hệ cần dùng ở giao diện
         $query = Tours::with([
@@ -67,18 +154,33 @@ class indexController extends Controller
             // )
         }
 
-        // Lọc theo điểm đến (destination)
-        if ($destination = $request->input('destination')) {
-            if ($destination !== 'all') {
-                $query->where('destination_text', 'like', '%' . $destination . '%');
+        if (in_array($selectedTourScope, ['domestic', 'international'], true)) {
+            $query->where('tour_type', $selectedTourScope);
+        }
+
+        // Lọc theo vùng miền trước, sau đó lọc chi tiết theo thành phố
+        if ($selectedRegion !== '' && $selectedRegion !== 'all') {
+            $regionCities = $locationFilters['cities_by_region'][$selectedRegion] ?? [];
+
+            if (!empty($regionCities)) {
+                $query->where(function ($q) use ($regionCities) {
+                    foreach ($regionCities as $city) {
+                        $q->orWhere('destination_text', 'like', '%' . $city . '%');
+                    }
+                });
             }
         }
 
-        // Lọc theo loại tour (tour_type: domestic / international)
-        $tourTypes = (array) $request->input('tour_type', []);
-        $tourTypes = array_filter($tourTypes); // loại bỏ giá trị rỗng
-        if (!empty($tourTypes)) {
-            $query->whereIn('tour_type', $tourTypes);
+        if ($selectedCity !== '' && $selectedCity !== 'all') {
+            $query->where('destination_text', 'like', '%' . $selectedCity . '%');
+        }
+
+        // Lọc theo ngày khởi hành
+        if ($startDate = $request->input('start_date')) {
+            $query->whereHas('departures', function ($q) use ($startDate) {
+                $q->whereDate('start_date', $startDate)
+                    ->whereIn('status', ['open', 'confirmed', 'sold_out']);
+            });
         }
 
         // Lọc theo số ngày (duration)
@@ -96,16 +198,31 @@ class indexController extends Controller
             }
         }
 
-        // Lọc theo khoảng giá (dựa trên base_price_from)
-        $priceMin = $request->input('price_min');
-        $priceMax = $request->input('price_max');
+        $priceRangeQuery = clone $query;
+        $priceMinAvailable = 0;
+        $priceMaxAvailable = (int) (((clone $query)->max('base_price_from')) ?? 0);
+        $priceSliderStep = 500000;
 
-        if ($priceMin !== null && $priceMin !== '') {
-            $query->where('base_price_from', '>=', (float) str_replace(',', '', $priceMin));
+        if ($priceMaxAvailable > 0) {
+            $priceMaxAvailable = (int) (ceil($priceMaxAvailable / $priceSliderStep) * $priceSliderStep);
+        } else {
+            $priceMaxAvailable = 20000000;
         }
 
-        if ($priceMax !== null && $priceMax !== '') {
-            $query->where('base_price_from', '<=', (float) str_replace(',', '', $priceMax));
+        if ($priceMinAvailable >= $priceMaxAvailable) {
+            $priceMinAvailable = 0;
+        }
+
+        $requestedPriceMax = preg_replace('/[^0-9]/', '', (string) $request->input('price_max', ''));
+        $selectedPriceMax = $requestedPriceMax !== ''
+            ? (int) $requestedPriceMax
+            : $priceMaxAvailable;
+
+        $selectedPriceMax = max($priceMinAvailable, min($selectedPriceMax, $priceMaxAvailable));
+
+        // Lọc theo mức giá tối đa (dựa trên base_price_from)
+        if ($selectedPriceMax < $priceMaxAvailable) {
+            $query->where('base_price_from', '<=', $selectedPriceMax);
         }
 
         // Sắp xếp theo lựa chọn của người dùng
@@ -211,7 +328,224 @@ class indexController extends Controller
             return $tour;
         });
 
-        return view('tours.tours', compact('tours'));
+        return view('tours.tours', [
+            'tours' => $tours,
+            'locationFilters' => $locationFilters,
+            'priceFilter' => [
+                'min' => $priceMinAvailable,
+                'max' => $priceMaxAvailable,
+                'selected_max' => $selectedPriceMax,
+                'step' => $priceSliderStep,
+            ],
+            'selectedTourScope' => $selectedTourScope,
+            'selectedRegion' => $selectedRegion,
+            'selectedCity' => $selectedCity,
+        ]);
+    }
+
+    private function buildLocationFilters(): array
+    {
+        $scopeFilters = [
+            'domestic' => [
+                'label' => 'Tour trong nước',
+                'region_labels' => [
+                    'mien-bac' => 'Miền Bắc',
+                    'mien-trung' => 'Miền Trung',
+                    'mien-nam' => 'Miền Nam',
+                    'khac' => 'Khác',
+                ],
+                'regions' => [
+                    'mien-bac' => ['label' => 'Miền Bắc', 'cities' => []],
+                    'mien-trung' => ['label' => 'Miền Trung', 'cities' => []],
+                    'mien-nam' => ['label' => 'Miền Nam', 'cities' => []],
+                    'khac' => ['label' => 'Khác', 'cities' => []],
+                ],
+                'all_cities' => [],
+            ],
+            'international' => [
+                'label' => 'Tour ngoài nước',
+                'region_labels' => [
+                    'khac' => 'Quốc tế',
+                ],
+                'regions' => [
+                    'khac' => ['label' => 'Quốc tế', 'cities' => []],
+                ],
+                'all_cities' => [],
+            ],
+        ];
+
+        $citiesByRegion = [
+            'mien-bac' => [],
+            'mien-trung' => [],
+            'mien-nam' => [],
+            'khac' => [],
+        ];
+
+        Tours::query()
+            ->where('status', 'published')
+            ->get(['tour_type', 'destination_text'])
+            ->each(function ($tour) use (&$citiesByRegion, &$scopeFilters) {
+                if (!$tour->destination_text) {
+                    return;
+                }
+
+                $scopeKey = $tour->tour_type === 'international' ? 'international' : 'domestic';
+
+                if (!isset($scopeFilters[$scopeKey])) {
+                    return;
+                }
+
+                $scopeRegionKeys = array_keys($scopeFilters[$scopeKey]['regions']);
+
+                foreach ($this->extractDestinationCities($tour->destination_text) as $city) {
+                    $regionKey = $this->resolveRegionKey($city);
+                    $citiesByRegion[$regionKey][$city] = $city;
+
+                    if (!in_array($regionKey, $scopeRegionKeys, true)) {
+                        $regionKey = 'khac';
+                    }
+
+                    $scopeFilters[$scopeKey]['regions'][$regionKey]['cities'][$city] = $city;
+                    $scopeFilters[$scopeKey]['all_cities'][$city] = $city;
+                }
+            });
+
+        $regions = [
+            'mien-bac' => 'Miền Bắc',
+            'mien-trung' => 'Miền Trung',
+            'mien-nam' => 'Miền Nam',
+        ];
+
+        if (!empty($citiesByRegion['khac'])) {
+            $regions['khac'] = 'Quốc tế / Khác';
+        }
+
+        foreach ($citiesByRegion as $regionKey => $cities) {
+            $cities = array_values($cities);
+            sort($cities, SORT_NATURAL | SORT_FLAG_CASE);
+            $citiesByRegion[$regionKey] = $cities;
+        }
+
+        foreach ($scopeFilters as $scopeKey => $scopeData) {
+            foreach ($scopeData['regions'] as $regionKey => $regionData) {
+                $cities = array_values($regionData['cities']);
+                sort($cities, SORT_NATURAL | SORT_FLAG_CASE);
+                $scopeFilters[$scopeKey]['regions'][$regionKey]['cities'] = $cities;
+            }
+
+            $allCities = array_values($scopeData['all_cities']);
+            sort($allCities, SORT_NATURAL | SORT_FLAG_CASE);
+            $scopeFilters[$scopeKey]['all_cities'] = $allCities;
+
+            $scopeFilters[$scopeKey]['regions'] = collect($scopeData['regions'])
+                ->filter(fn ($regionData) => !empty($regionData['cities']))
+                ->all();
+        }
+
+        $allCities = array_values(array_unique(array_merge(...array_values($citiesByRegion))));
+        sort($allCities, SORT_NATURAL | SORT_FLAG_CASE);
+
+        $availableTourScopes = collect($scopeFilters)
+            ->filter(fn ($scopeData) => !empty($scopeData['all_cities']))
+            ->mapWithKeys(fn ($scopeData, $scopeKey) => [$scopeKey => $scopeData['label']])
+            ->all();
+
+        return [
+            'tour_scopes' => $availableTourScopes,
+            'scope_filters' => $scopeFilters,
+            'regions' => collect($regions)
+                ->filter(fn ($label, $key) => !empty($citiesByRegion[$key]))
+                ->all(),
+            'cities_by_region' => $citiesByRegion,
+            'all_cities' => $allCities,
+        ];
+    }
+
+    private function extractDestinationCities(?string $destinationText): array
+    {
+        if (!$destinationText) {
+            return [];
+        }
+
+        $cities = preg_split('/\s*[,;|\/]\s*/u', trim($destinationText)) ?: [];
+        $cities = array_filter(array_map(fn ($city) => trim($city), $cities));
+
+        if (empty($cities)) {
+            return [trim($destinationText)];
+        }
+
+        return array_values(array_unique($cities));
+    }
+
+    private function resolveRegionKey(string $city): string
+    {
+        $normalizedCity = $this->normalizeLocationValue($city);
+
+        foreach ($this->regionKeywordMap() as $regionKey => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($normalizedCity, $keyword)) {
+                    return $regionKey;
+                }
+            }
+        }
+
+        return 'khac';
+    }
+
+    private function normalizeLocationValue(string $value): string
+    {
+        return Str::of($value)
+            ->ascii()
+            ->lower()
+            ->replaceMatches('/[^a-z0-9\s]/', ' ')
+            ->replaceMatches('/\s+/', ' ')
+            ->trim()
+            ->toString();
+    }
+
+    private function regionKeywordMap(): array
+    {
+        return [
+            'mien-bac' => [
+                'ha noi',
+                'sapa',
+                'sa pa',
+                'ninh binh',
+                'ha long',
+                'cat ba',
+                'cao bang',
+                'ha giang',
+                'moc chau',
+                'yen tu',
+            ],
+            'mien-trung' => [
+                'da nang',
+                'hoi an',
+                'hue',
+                'nha trang',
+                'quy nhon',
+                'phu yen',
+                'phan thiet',
+                'mui ne',
+                'da lat',
+                'tay nguyen',
+            ],
+            'mien-nam' => [
+                'phu quoc',
+                'can tho',
+                'my tho',
+                'tien giang',
+                'vung tau',
+                'con dao',
+                'soc trang',
+                'ca mau',
+                'an giang',
+                'chau doc',
+                'tp hcm',
+                'ho chi minh',
+                'sai gon',
+            ],
+        ];
     }
 
 
@@ -367,5 +701,4 @@ class indexController extends Controller
             'seatLeft' => $seatLeft,
         ]);
     }
-
 }

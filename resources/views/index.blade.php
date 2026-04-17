@@ -74,22 +74,23 @@
                         <h3 class="text-lg font-bold mb-1">Tìm tour nhanh</h3>
                         <p class="text-sm text-gray-600 mb-4">Chọn điểm đến & ngày khởi hành</p>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="text" placeholder="Điểm đến"
+                        <form action="{{ route('tours') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <select name="tour_type[]"
                                 class="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                            <select
-                                class="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                                <option>Chọn loại tour</option>
-                                <option>Tour trong nước</option>
-                                <option>Tour quốc tế</option>
+                                <option value="">Chọn loại tour</option>
+                                <option value="domestic">Tour trong nước</option>
+                                <option value="international">Tour quốc tế</option>
                             </select>
-                            <input type="date"
+                            <input type="text" name="destination" placeholder="Điểm đến"
                                 class="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
-                            <button
-                                class="rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
+
+                            <input type="date" name="start_date"
+                                class="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:ring-4 focus:ring-sky-100 focus:border-sky-500 outline-none">
+                            <button type="submit"
+                                class="rounded-lg bg-blue-600 text-white font-semibold py-2.5 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition">
                                 Tìm tour
                             </button>
-                        </div>
+                        </form>
                     </div>
                 </div>
 
@@ -97,6 +98,97 @@
         </div>
     </section>
 
+
+    <!-- UPCOMING TOURS -->
+    <section class="py-16 bg-white">
+        <div class="max-w-screen-xl mx-auto px-4">
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Tour sắp ra mắt</h2>
+                    <p class="text-gray-600 mt-1">Những hành trình mới sẽ mở bán trong thời gian tới</p>
+                </div>
+                <a href="{{ route('tours') }}" class="text-sky-600 font-semibold hover:underline">Khám phá thêm</a>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @forelse ($upcomingTours as $tour)
+                    @php
+                        $upcomingDeparture = $tour->departures->first();
+                        $rating = round($tour->reviews_avg_rating, 1);
+                        $count = $tour->reviews_count;
+                    @endphp
+
+                    <div
+                        class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition overflow-hidden">
+
+                        <div class="relative overflow-hidden">
+                            <img src="{{ $tour->images->first() ? asset('storage/' . $tour->images->first()->url) : asset('storage/image/bg.png') }}"
+                                alt="{{ $tour->title }}"
+                                class="w-full h-52 object-cover transition duration-300 group-hover:scale-105">
+
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent">
+                            </div>
+
+                            @if ($upcomingDeparture)
+                                <span
+                                    class="absolute top-3 left-3 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-lg">
+                                    Dự kiến {{ \Carbon\Carbon::parse($upcomingDeparture->start_date)->format('d/m/Y') }}
+                                </span>
+                            @endif
+
+                            <span
+                                class="absolute top-3 right-3 text-white text-xs font-semibold px-3 py-1 rounded-lg bg-sky-600">
+                                Sắp ra mắt
+                            </span>
+                        </div>
+
+                        <div class="p-4">
+                            <h3
+                                class="font-bold text-[16px] leading-snug text-blue-700 group-hover:text-sky-600 transition line-clamp-2">
+                                {{ $tour->title }}
+                            </h3>
+
+                            <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+                                <span class="inline-flex items-center gap-1">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    {{ $tour->duration_days }}N{{ $tour->duration_nights }}Đ
+                                </span>
+                                <span class="inline-flex items-center gap-1">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ $tour->departure_location }}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-2 mt-2 text-sm">
+                                <span class="bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-lg">
+                                    {{ number_format($rating, 1) ?: '0.0' }}
+                                </span>
+                                <span class="text-gray-500">{{ $count }} đánh giá</span>
+                            </div>
+
+                            <div class="mt-4 flex items-end justify-between">
+                                <div class="text-xs text-gray-500">Giá dự kiến từ</div>
+                                <div class="text-2xl font-extrabold text-orange-500">
+                                    {{ number_format($tour->base_price_from, 0, ',', '.') }} đ
+                                </div>
+                            </div>
+
+                            <a href="{{ route('tours.show', $tour->slug) }}"
+                                class="mt-4 block text-center bg-sky-600 text-white py-2.5 rounded-xl font-semibold hover:bg-sky-700 focus:ring-4 focus:ring-sky-200">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-span-full text-center py-8 text-gray-500 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                        Chưa có tour sắp ra mắt trong thời điểm hiện tại.
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    
     <!-- FEATURED TOURS -->
     <section class="py-16 bg-gray-50">
         <div class="max-w-screen-xl mx-auto px-4">
@@ -248,6 +340,8 @@
             </div>
         </div>
     </section>
+
+    
 
 
     <!-- POPULAR DESTINATIONS -->

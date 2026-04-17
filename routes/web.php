@@ -10,6 +10,8 @@ use App\Http\Controllers\ChatbotController;
 
 Route::prefix('/')->group(function () {
     Route::get('/', [indexController::class, 'index'])->name('home'); 
+    Route::get('/lien-he', [indexController::class, 'contact'])->name('contact');
+    Route::post('/lien-he-a', [indexController::class, 'contactStore'])->name('contact.store');
 
     Route::get('/dang-nhap', [signin_upController::class, 'signin'])->name('signin');
     Route::post('/dang-nhap-store', [signin_upController::class, 'signinStore'])->name('signin.store');

@@ -10,6 +10,7 @@ use App\Http\Controllers\admin\guideController;
 use App\Http\Controllers\admin\partnerController;
 use App\Http\Controllers\admin\TourOperationController;
 use App\Http\Controllers\admin\StaffManagementController;
+use App\Http\Controllers\admin\ContactMessageController;
 use App\Http\Controllers\admin\dashboardController;
 use App\Http\Controllers\admin\manaUserController;
 use App\Http\Controllers\paymentController;
@@ -93,6 +94,12 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         // Hủy booking cho khách
         Route::post('/bookings/{id}/cancel', [StaffBookingController::class, 'cancel'])->name('admin.staff-booking.cancel');
     });
+
+    // Danh sách liên hệ từ khách hàng (dành cho admin và staff)
+    Route::get('/staff-contacts', [ContactMessageController::class, 'index'])
+        ->name('admin.staff-contacts.index');
+    Route::patch('/staff-contacts/{contact}/resolve', [ContactMessageController::class, 'markResolved'])
+        ->name('admin.staff-contacts.resolve');
 
     // Danh sách khách hàng theo tour
     Route::prefix('/customer-tours')->group(function () {

@@ -57,6 +57,17 @@
 
             <!-- FILTER (đẹp hơn + xoá lọc + range giá) -->
             <aside class="lg:col-span-1 sticky top-28 h-fit">
+                @php
+                    $selectedScopeFilter = !empty($selectedTourScope) && $selectedTourScope !== 'all'
+                        ? ($locationFilters['scope_filters'][$selectedTourScope] ?? null)
+                        : null;
+                    $regionOptions = $selectedScopeFilter
+                        ? collect($selectedScopeFilter['regions'] ?? [])->mapWithKeys(fn($region, $regionKey) => [$regionKey => $region['label']])->all()
+                        : ($locationFilters['regions'] ?? []);
+                    $cityOptions = !empty($selectedRegion) && $selectedRegion !== 'all'
+                        ? ($selectedScopeFilter['regions'][$selectedRegion]['cities'] ?? ($locationFilters['cities_by_region'][$selectedRegion] ?? []))
+                        : ($selectedScopeFilter['all_cities'] ?? ($locationFilters['all_cities'] ?? []));
+                @endphp
                 <form method="GET" action="{{ route('tours') }}"
                     class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
                     <div class="flex items-center justify-between mb-4">
@@ -65,40 +76,49 @@
                             lọc</a>
                     </div>
 
-                    <!-- Destination -->
+                    <!-- Tour scope -->
                     <div class="mb-5">
-                        <label class="text-sm font-semibold text-gray-700">Điểm đến</label>
-                        <select name="destination"
+                        <label class="text-sm font-semibold text-gray-700">Loại tour</label>
+                        <select name="tour_scope" id="tour-scope-filter"
                             class="mt-2 w-full rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
-                            <option value="all">Tất cả</option>
-                            <option value="Phú Quốc" {{ request('destination') == 'Phú Quốc' ? 'selected' : '' }}>Phú Quốc
-                            </option>
-                            <option value="Đà Nẵng" {{ request('destination') == 'Đà Nẵng' ? 'selected' : '' }}>Đà Nẵng
-                            </option>
-                            <option value="Bangkok" {{ request('destination') == 'Bangkok' ? 'selected' : '' }}>Bangkok
-                            </option>
-                            <option value="Singapore" {{ request('destination') == 'Singapore' ? 'selected' : '' }}>
-                                Singapore</option>
+                            <option value="all">Tất cả tour</option>
+                            @foreach (($locationFilters['tour_scopes'] ?? []) as $scopeValue => $scopeLabel)
+                                <option value="{{ $scopeValue }}" {{ $selectedTourScope === $scopeValue ? 'selected' : '' }}>
+                                    {{ $scopeLabel }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
-                    <!-- Tour type -->
+                    <!-- Region -->
                     <div class="mb-5">
-                        <label class="text-sm font-semibold text-gray-700">Loại tour</label>
-                        <div class="mt-2 space-y-2 text-sm">
-                            <label class="flex items-center gap-2">
-                                <input type="checkbox" name="tour_type[]" value="domestic"
-                                    {{ collect(request('tour_type', []))->contains('domestic') ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
-                                <span>Tour trong nước</span>
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <input type="checkbox" name="tour_type[]" value="international"
-                                    {{ collect(request('tour_type', []))->contains('international') ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
-                                <span>Tour quốc tế</span>
-                            </label>
-                        </div>
+                        <label class="text-sm font-semibold text-gray-700">Vùng miền</label>
+                        <select name="region" id="region-filter"
+                            class="mt-2 w-full rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
+                            <option value="all">Tất cả vùng miền</option>
+                            @foreach ($regionOptions as $regionValue => $regionLabel)
+                                <option value="{{ $regionValue }}" {{ $selectedRegion === $regionValue ? 'selected' : '' }}>
+                                    {{ $regionLabel }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- City -->
+                    <div class="mb-5">
+                        <label class="text-sm font-semibold text-gray-700">Thành phố</label>
+                        <select name="city" id="city-filter"
+                            class="mt-2 w-full rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
+                            <option value="all">Tất cả thành phố</option>
+                            @foreach ($cityOptions as $city)
+                                <option value="{{ $city }}" {{ $selectedCity === $city ? 'selected' : '' }}>
+                                    {{ $city }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="mt-2 text-xs text-gray-500">
+                            Thứ tự lọc: loại tour → vùng miền → thành phố.
+                        </p>
                     </div>
 
                     <!-- Duration -->
@@ -114,24 +134,27 @@
                         </select>
                     </div>
 
-                    <!-- Price range (UI đẹp, chưa cần JS) -->
+                    <!-- Price range -->
                     <div class="mb-6">
                         <label class="text-sm font-semibold text-gray-700">Khoảng giá</label>
-                        <div class="mt-3">
-                            <input type="range" min="0" max="100" value="40"
-                                class="w-full accent-sky-600">
-                            <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                                <span>0đ</span>
-                                <span>~ 10.000.000đ</span>
-                                <span>20.000.000đ</span>
+                        <div class="mt-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-xs font-medium text-gray-500">Giá tối đa</span>
+                                <span id="price-max-display"
+                                    class="inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-semibold text-sky-700 border border-sky-100">
+                                    {{ $priceFilter['selected_max'] >= $priceFilter['max'] ? 'Không giới hạn' : number_format($priceFilter['selected_max'], 0, ',', '.') . ' đ' }}
+                                </span>
                             </div>
-                        </div>
 
-                        <div class="mt-3 grid grid-cols-2 gap-3">
-                            <input type="text" name="price_min" value="{{ request('price_min') }}" placeholder="Từ (đ)"
-                                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500">
-                            <input type="text" name="price_max" value="{{ request('price_max') }}" placeholder="Đến (đ)"
-                                class="rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500">
+                            <input type="range" name="price_max" id="price-max-range"
+                                min="{{ $priceFilter['min'] }}" max="{{ $priceFilter['max'] }}"
+                                step="{{ $priceFilter['step'] }}" value="{{ $priceFilter['selected_max'] }}"
+                                class="mt-4 w-full accent-sky-600">
+
+                            <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+                                <span>{{ number_format($priceFilter['min'], 0, ',', '.') }} đ</span>
+                                <span>{{ number_format($priceFilter['max'], 0, ',', '.') }} đ</span>
+                            </div>
                         </div>
                     </div>
 
@@ -170,9 +193,15 @@
 
                     <div class="flex items-center gap-3">
                         <form method="GET" action="{{ route('tours') }}" class="flex items-center gap-2">
-                            @if (request('q'))
-                                <input type="hidden" name="q" value="{{ request('q') }}">
-                            @endif
+                            @foreach (request()->except(['sort', 'page']) as $key => $value)
+                                @if (is_array($value))
+                                    @foreach ($value as $item)
+                                        <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                                    @endforeach
+                                @elseif ($value !== null && $value !== '')
+                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                @endif
+                            @endforeach
                             <select name="sort" onchange="this.form.submit()"
                                 class="rounded-xl border-gray-300 text-sm focus:ring-sky-500 focus:border-sky-500">
                                 <option value="">Sắp xếp theo</option>
@@ -301,4 +330,129 @@
             </div>
         </div>
     </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scopeSelect = document.getElementById('tour-scope-filter');
+            const regionSelect = document.getElementById('region-filter');
+            const citySelect = document.getElementById('city-filter');
+            const priceMaxRange = document.getElementById('price-max-range');
+            const priceMaxDisplay = document.getElementById('price-max-display');
+            const scopeFilters = @json($locationFilters['scope_filters'] ?? []);
+            const regionLabels = @json($locationFilters['regions'] ?? []);
+            const citiesByRegion = @json($locationFilters['cities_by_region'] ?? []);
+            const allCities = @json($locationFilters['all_cities'] ?? []);
+
+            if (!scopeSelect || !regionSelect || !citySelect) {
+                return;
+            }
+
+            const buildOption = function(value, label, selectedValue) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+
+                if (value === selectedValue) {
+                    option.selected = true;
+                }
+
+                return option;
+            };
+
+            const resolveRegionOptions = function(scopeValue) {
+                if (scopeValue && scopeValue !== 'all' && scopeFilters[scopeValue]) {
+                    return Object.entries(scopeFilters[scopeValue].regions || {}).map(function(entry) {
+                        return {
+                            value: entry[0],
+                            label: entry[1].label
+                        };
+                    });
+                }
+
+                return Object.entries(regionLabels).map(function(entry) {
+                    return {
+                        value: entry[0],
+                        label: entry[1]
+                    };
+                });
+            };
+
+            const resolveCityOptions = function(scopeValue, regionValue) {
+                if (scopeValue && scopeValue !== 'all' && scopeFilters[scopeValue]) {
+                    if (regionValue && regionValue !== 'all') {
+                        return scopeFilters[scopeValue].regions?.[regionValue]?.cities || [];
+                    }
+
+                    return scopeFilters[scopeValue].all_cities || [];
+                }
+
+                if (regionValue && regionValue !== 'all') {
+                    return citiesByRegion[regionValue] || [];
+                }
+
+                return allCities;
+            };
+
+            const renderRegionOptions = function(scopeValue, selectedValue) {
+                const nextRegions = resolveRegionOptions(scopeValue);
+                const validRegionValues = nextRegions.map(function(region) {
+                    return region.value;
+                });
+                const resolvedSelectedValue = validRegionValues.includes(selectedValue) ? selectedValue : 'all';
+
+                regionSelect.innerHTML = '';
+                regionSelect.appendChild(buildOption('all', 'Tất cả vùng miền', resolvedSelectedValue));
+
+                nextRegions.forEach(function(region) {
+                    regionSelect.appendChild(buildOption(region.value, region.label, resolvedSelectedValue));
+                });
+
+                return resolvedSelectedValue;
+            };
+
+            const renderCityOptions = function(scopeValue, regionValue, selectedValue) {
+                const nextCities = resolveCityOptions(scopeValue, regionValue);
+                const isSelectedCityValid = nextCities.includes(selectedValue);
+
+                citySelect.innerHTML = '';
+                citySelect.appendChild(buildOption('all', 'Tất cả thành phố', 'all'));
+
+                nextCities.forEach(function(city) {
+                    citySelect.appendChild(buildOption(city, city, isSelectedCityValid ? selectedValue : 'all'));
+                });
+            };
+
+            const syncDependentFilters = function() {
+                const resolvedRegionValue = renderRegionOptions(scopeSelect.value, regionSelect.value || 'all');
+                renderCityOptions(scopeSelect.value, resolvedRegionValue, citySelect.value || 'all');
+            };
+
+            syncDependentFilters();
+
+            scopeSelect.addEventListener('change', function() {
+                syncDependentFilters();
+            });
+
+            regionSelect.addEventListener('change', function() {
+                renderCityOptions(scopeSelect.value, regionSelect.value, citySelect.value || 'all');
+            });
+
+            if (priceMaxRange && priceMaxDisplay) {
+                const formatter = new Intl.NumberFormat('vi-VN');
+
+                const updatePriceDisplay = function() {
+                    const selectedValue = Number(priceMaxRange.value || 0);
+                    const maxValue = Number(priceMaxRange.max || 0);
+
+                    priceMaxDisplay.textContent = selectedValue >= maxValue
+                        ? 'Không giới hạn'
+                        : formatter.format(selectedValue) + ' đ';
+                };
+
+                updatePriceDisplay();
+                priceMaxRange.addEventListener('input', updatePriceDisplay);
+                priceMaxRange.addEventListener('change', updatePriceDisplay);
+            }
+        });
+    </script>
 @endsection

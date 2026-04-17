@@ -154,7 +154,7 @@
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-600">Số chỗ còn lại</span>
-                                    <span class="font-semibold text-red-600">{{ $seatLeft }}</span>
+                                    <span id="seatLeftDisplay" class="font-semibold text-red-600">{{ $seatLeft }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-600">Điểm khởi hành</span>
@@ -234,7 +234,9 @@
             const priceInfant = {{ (int) $departure->price_infant }};
             const priceYouth = {{ (int) $departure->price_youth }};
             const singleSurcharge = {{ (int) $departure->single_room_surcharge }};
+            const maxGuests = {{ (int) $seatLeft }};
             const departureDate = new Date('{{ \Carbon\Carbon::parse($departure->start_date)->format('Y-m-d') }}');
+            const seatLeftDisplay = document.getElementById('seatLeftDisplay');
 
             function formatVND(number) {
                 return new Intl.NumberFormat('vi-VN').format(number) + ' đ';
@@ -249,6 +251,67 @@
                     age--;
                 }
                 return age;
+            }
+
+            function getInputValue(input, minValue = 0) {
+                const parsed = parseInt(input.value, 10);
+                if (Number.isNaN(parsed)) {
+                    return minValue;
+                }
+                return Math.max(parsed, minValue);
+            }
+
+            function getCurrentGuestTotal() {
+                const counts = getGuestCounts();
+                return counts.adults + counts.children + counts.infants + counts.youths;
+            }
+
+            function getGuestCounts() {
+                return {
+                    adults: getInputValue(adultQty, 1),
+                    children: getInputValue(childQty),
+                    infants: getInputValue(infantQty),
+                    youths: getInputValue(youthQty),
+                };
+            }
+
+            function updateSeatLeftDisplay() {
+                if (!seatLeftDisplay) return;
+                seatLeftDisplay.innerText = maxGuests - getCurrentGuestTotal();
+            }
+
+            function syncPreviousGuestValues() {
+                const inputs = [adultQty, childQty, infantQty, youthQty];
+
+                inputs.forEach((input) => {
+                    input.dataset.prevValue = input.value;
+                });
+            }
+
+            function enforceSeatLimit(changedInput = null) {
+                const inputs = [adultQty, childQty, infantQty, youthQty];
+
+                inputs.forEach((input) => {
+                    const minValue = input === adultQty ? 1 : 0;
+                    input.value = String(getInputValue(input, minValue));
+                });
+
+                const remainingSeats = maxGuests - getCurrentGuestTotal();
+                if (remainingSeats >= 0) {
+                    updateSeatLeftDisplay();
+                    syncPreviousGuestValues();
+                    return true;
+                }
+
+                if (changedInput) {
+                    const minValue = changedInput === adultQty ? 1 : 0;
+                    const previousValue = parseInt(changedInput.dataset.prevValue ?? minValue, 10);
+                    changedInput.value = String(Number.isNaN(previousValue) ? minValue : Math.max(previousValue, minValue));
+                }
+
+                updateSeatLeftDisplay();
+                alert(`Số lượng khách vượt quá số chỗ còn lại. Tour chỉ còn ${maxGuests} chỗ.`);
+                return false;
             }
 
             function validateAgeForRow(row) {
@@ -307,10 +370,12 @@
             function renderPassengers() {
                 if (!passengerContainer) return;
 
-                const adults = parseInt(adultQty.value) || 0;
-                const children = parseInt(childQty.value) || 0;
-                const infants = parseInt(infantQty.value) || 0;
-                const youths = parseInt(youthQty.value) || 0;
+                const {
+                    adults,
+                    children,
+                    infants,
+                    youths,
+                } = getGuestCounts();
 
                 passengerContainer.innerHTML = '';
 
@@ -384,10 +449,12 @@
             }
 
             function updateTotal() {
-                const adults = parseInt(adultQty.value) || 0;
-                const children = parseInt(childQty.value) || 0;
-                const infants = parseInt(infantQty.value) || 0;
-                const youths = parseInt(youthQty.value) || 0;
+                const {
+                    adults,
+                    children,
+                    infants,
+                    youths,
+                } = getGuestCounts();
 
                 let total = adults * priceAdult + children * priceChild + infants * priceInfant + youths * priceYouth;
 
@@ -446,22 +513,16 @@
                 totalPriceEl.innerText = formatVND(total);
             }
 
-            adultQty.addEventListener('input', () => {
+            function handleGuestQuantityChange(input) {
+                enforceSeatLimit(input);
                 renderPassengers();
                 updateTotal();
-            });
-            childQty.addEventListener('input', () => {
-                renderPassengers();
-                updateTotal();
-            });
-            infantQty.addEventListener('input', () => {
-                renderPassengers();
-                updateTotal();
-            });
-            youthQty.addEventListener('input', () => {
-                renderPassengers();
-                updateTotal();
-            });
+            }
+
+            adultQty.addEventListener('input', () => handleGuestQuantityChange(adultQty));
+            childQty.addEventListener('input', () => handleGuestQuantityChange(childQty));
+            infantQty.addEventListener('input', () => handleGuestQuantityChange(infantQty));
+            youthQty.addEventListener('input', () => handleGuestQuantityChange(youthQty));
 
             if (passengerContainer) {
                 passengerContainer.addEventListener('change', (e) => {
@@ -479,6 +540,11 @@
             const bookingForm = document.getElementById('bookingForm');
             if (bookingForm && passengerContainer) {
                 bookingForm.addEventListener('submit', (e) => {
+                    if (!enforceSeatLimit()) {
+                        e.preventDefault();
+                        return;
+                    }
+
                     const rows = passengerContainer.querySelectorAll('[data-passenger-row]');
                     let allValid = true;
                     rows.forEach((row) => {
@@ -498,6 +564,7 @@
                 });
             }
 
+            enforceSeatLimit();
             renderPassengers();
             updateTotal();
         </script>

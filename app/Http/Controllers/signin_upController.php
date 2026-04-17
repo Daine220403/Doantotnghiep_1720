@@ -13,6 +13,9 @@ class signin_upController extends Controller
 {
     public function signin()
     {
+        if (!session()->has('url.intended')) {
+            session(['url.intended' => url()->previous()]);
+        }
         return view('signin');
     }
     public function signinStore(Request $request)
@@ -41,9 +44,8 @@ class signin_upController extends Controller
         // dd($credentials);
         Auth::attempt($credentials);
         if (Auth::check()) {
-            // Đăng nhập thành công
-            
-            return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
+            // Đăng nhập thành công trả về 2 trang trước đó không nhảy về trang chủ
+            return redirect()->intended('/')->with('success', 'Đăng nhập thành công!');
         } else {
             // Đăng nhập thất bại
             return back()->withErrors(['email' => 'Sai email hoặc mật khẩu.']);
@@ -51,20 +53,16 @@ class signin_upController extends Controller
     }
     public function logout(Request $request)
     {
-        $roles = Auth::user()->role; 
+        $roles = Auth::user()->role;
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
-        if($roles === 'customer')
-        {
+
+        if ($roles === 'customer') {
             return redirect()->route('home')->with('success', 'Đăng xuất thành công!');
-        }
-        else
-        {
+        } else {
             return redirect()->route('login')->with('success', 'Đăng xuất thành công!');
         }
-        
     }
 
     public function signup()

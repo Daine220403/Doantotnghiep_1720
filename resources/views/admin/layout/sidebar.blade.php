@@ -101,7 +101,8 @@
             <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
-                    <a class="collapse-item" href="{{ route('admin.departures.assign-guides.index') }}">Phân công HDV</a>
+                    <a class="collapse-item" href="{{ route('admin.departures.assign-guides.index') }}">Phân công
+                        HDV</a>
                 </div>
             </div>
         </li>
@@ -144,8 +145,9 @@
         </li>
         <!-- Nav Item - Chức năng cá nhân Menu -->
         <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonalFunctions"
-                aria-expanded="true" aria-controls="collapsePersonalFunctions">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse"
+                data-target="#collapsePersonalFunctions" aria-expanded="true"
+                aria-controls="collapsePersonalFunctions">
                 <i class="fas fa-user"></i>
                 <span>Chức năng cá nhân</span>
             </a>
@@ -246,6 +248,20 @@
                     <a class="collapse-item" href="{{ route('admin.staff-hr.attendances.index') }}">Bảng chấm
                         công</a>
                     <a class="collapse-item" href="{{ route('admin.staff-hr.reports.index') }}">Báo cáo công việc</a>
+                </div>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseContact"
+                aria-expanded="true" aria-controls="collapseContact">
+                <i class="fas fa-user-cog"></i>
+                <span>Liên hệ</span>
+            </a>
+            <div id="collapseContact" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng liên hệ:</h6>
+                    <a class="collapse-item" href="{{ route('admin.staff-contacts.index') }}">Danh sách liên hệ</a>
                 </div>
             </div>
         </li>

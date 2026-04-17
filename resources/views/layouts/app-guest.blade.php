@@ -92,6 +92,9 @@
 
 
                 <div id="mega-menu" class="hidden w-full md:flex md:w-auto md:order-1">
+                    @php
+                        $menuTourType = request('scope', request('type'));
+                    @endphp
                     <ul class="flex flex-col md:flex-row md:space-x-8 font-medium mt-4 md:mt-0">
                         <li>
                             <a href="{{ route('home') }}"
@@ -103,18 +106,28 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('tours') }}"
+                            <a href="{{ route('tours', ['scope' => 'domestic']) }}"
                                 class="block py-2 transition
-                                    {{ request()->is('tours*')
+                                    {{ request()->is('tours*') && $menuTourType === 'domestic'
                                         ? 'text-sky-600 md:border-b-2 md:border-sky-500 font-semibold'
                                         : 'text-gray-900 md:border-b-2 md:border-transparent md:hover:border-sky-500 md:hover:text-sky-500' }}">
-                                Tours
+                                Tours trong nước
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{{ route('tours', ['scope' => 'international']) }}"
+                                class="block py-2 transition
+                                    {{ request()->is('tours*') && $menuTourType === 'international'
+                                        ? 'text-sky-600 md:border-b-2 md:border-sky-500 font-semibold'
+                                        : 'text-gray-900 md:border-b-2 md:border-transparent md:hover:border-sky-500 md:hover:text-sky-500' }}">
+                                Tour nước ngoài
                             </a>
 
                         </li>
 
                         <li>
-                            <a href="#"
+                            <a href="{{ route('contact') }}"
                                 class="block py-2 text-gray-900 md:border-b-2 md:border-transparent md:hover:border-sky-500 md:hover:text-sky-500 transition">
                                 Liên hệ
                             </a>
@@ -207,7 +220,7 @@
                     <div class="flex gap-4 text-sm text-sky-300">
                         <a href="#" class="hover:text-white transition">Điều khoản</a>
                         <a href="#" class="hover:text-white transition">Bảo mật</a>
-                        <a href="#" class="hover:text-white transition">Liên hệ</a>
+                        <a href="{{ route('contact') }}" class="hover:text-white transition">Liên hệ</a>
                     </div>
                 </div>
 
