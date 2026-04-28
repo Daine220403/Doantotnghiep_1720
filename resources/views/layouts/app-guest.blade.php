@@ -127,8 +127,22 @@
                         </li>
 
                         <li>
+                            <a href="{{ route('news') }}"
+                                class="block py-2 transition
+                                {{ request()->routeIs('news')
+                                    ? 'text-sky-600 md:border-b-2 md:border-sky-500 font-semibold'
+                                    : 'text-gray-900 md:border-b-2 md:border-transparent md:hover:border-sky-500 md:hover:text-sky-500' }}">
+                                Tin tức
+                            </a>
+
+                        </li>
+
+                        <li>
                             <a href="{{ route('contact') }}"
-                                class="block py-2 text-gray-900 md:border-b-2 md:border-transparent md:hover:border-sky-500 md:hover:text-sky-500 transition">
+                                class="block py-2 transition
+                                {{ request()->routeIs('contact')
+                                    ? 'text-sky-600 md:border-b-2 md:border-sky-500 font-semibold'
+                                    : 'text-gray-900 md:border-b-2 md:border-transparent md:hover:border-sky-500 md:hover:text-sky-500' }}">
                                 Liên hệ
                             </a>
                         </li>

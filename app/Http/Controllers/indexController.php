@@ -10,6 +10,7 @@ use App\Models\orders;
 use App\Models\order_details;
 use App\Models\tour_departures;
 use App\Models\ContactMessage;
+use App\Models\News;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -84,7 +85,13 @@ class indexController extends Controller
             ->take(4)
             ->get();
 
-        return view('index', compact('tours', 'upcomingTours'));
+        // Get featured news
+        $news = News::published()
+            ->orderByDesc('published_at')
+            ->take(4)
+            ->get();
+
+        return view('index', compact('tours', 'upcomingTours', 'news'));
     }
 
 
@@ -701,4 +708,53 @@ class indexController extends Controller
             'seatLeft' => $seatLeft,
         ]);
     }
+
+    public function news(Request $request)
+    {
+        $query = News::query()
+            ->published()
+            ->orderByDesc('published_at');
+
+        if ($search = $request->input('q')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('content', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($category = $request->input('category')) {
+            $query->where('category', $category);
+        }
+
+        $news = $query->paginate(12)->withQueryString();
+
+        $categories = News::published()
+            ->distinct()
+            ->pluck('category')
+            ->values();
+
+        return view('news', compact('news', 'categories'));
+    }
+
+    public function newsShow($slug)
+    {
+        $article = News::where('slug', $slug)
+            ->published()
+            ->firstOrFail();
+
+        // Increment views
+        $article->increment('views');
+
+        // Get related news (same category, excluding current article)
+        $relatedNews = News::where('category', $article->category)
+            ->where('id', '!=', $article->id)
+            ->published()
+            ->orderByDesc('published_at')
+            ->take(3)
+            ->get();
+
+        return view('news-show', compact('article', 'relatedNews'));
+    }
 }
+

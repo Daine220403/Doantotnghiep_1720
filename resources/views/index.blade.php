@@ -442,84 +442,78 @@
                         Cập nhật xu hướng, kinh nghiệm và mẹo hay cho chuyến đi của bạn
                     </p>
                 </div>
-                <a href="#" class="mt-4 md:mt-0 text-sky-600 font-semibold hover:underline">
+                <a href="{{ route('news') }}" class="mt-4 md:mt-0 text-sky-600 font-semibold hover:underline">
                     Xem tất cả bài viết →
                 </a>
             </div>
 
             <!-- Grid -->
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            @if ($news->count() > 0)
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                <!-- Main news -->
-                <a href="#"
-                    class="group col-span-1 lg:col-span-2 bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition">
-                    <div class="relative">
-                        <img src="{{ asset('storage/image/logo.png') }}" alt="Tin du lịch"
-                            class="w-full h-72 object-cover group-hover:scale-105 transition duration-300">
-                        <span
-                            class="absolute top-4 left-4 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                            Tin nổi bật
-                        </span>
+                    <!-- Main news (first article) -->
+                    @php $mainNews = $news->first(); @endphp
+                    <a href="{{ route('news.show', $mainNews->slug) }}"
+                        class="group col-span-1 lg:col-span-2 bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition">
+                        <div class="relative">
+                            @if ($mainNews->image)
+                                <img src="{{ asset('storage/' . $mainNews->image) }}" alt="{{ $mainNews->title }}"
+                                    class="w-full h-72 object-cover group-hover:scale-105 transition duration-300">
+                            @else
+                                <div class="w-full h-72 bg-gradient-to-br from-sky-100 to-sky-50 flex items-center justify-center">
+                                    <i class="fas fa-newspaper text-sky-300 text-5xl"></i>
+                                </div>
+                            @endif
+                            <span
+                                class="absolute top-4 left-4 bg-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                {{ $mainNews->category }}
+                            </span>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-gray-900 group-hover:text-sky-600 transition line-clamp-2">
+                                {{ $mainNews->title }}
+                            </h3>
+                            <p class="text-gray-600 mt-3 line-clamp-2">
+                                {{ $mainNews->description }}
+                            </p>
+
+                            <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+                                <span>🗓 {{ $mainNews->published_at->format('d/m/Y') }}</span>
+                                <span>👁 {{ $mainNews->views }} lượt xem</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Side news -->
+                    <div class="space-y-6">
+                        @foreach ($news->skip(1)->take(3) as $article)
+                            <a href="{{ route('news.show', $article->slug) }}"
+                                class="group flex gap-4 bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition">
+                                @if ($article->image)
+                                    <img src="{{ asset('storage/' . $article->image) }}" alt="{{ $article->title }}"
+                                        class="w-28 h-24 object-cover rounded-lg">
+                                @else
+                                    <div class="w-28 h-24 bg-gradient-to-br from-sky-100 to-sky-50 flex items-center justify-center rounded-lg">
+                                        <i class="fas fa-newspaper text-sky-300 text-xl"></i>
+                                    </div>
+                                @endif
+                                <div class="py-3 pr-3">
+                                    <h4 class="font-semibold text-gray-900 group-hover:text-sky-600 transition line-clamp-2">
+                                        {{ $article->title }}
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1">{{ $article->published_at->format('d/m/Y') }}</p>
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
-                    <div class="p-6">
-                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-sky-600 transition line-clamp-2">
-                            Kinh nghiệm du lịch Thái Lan tự túc tiết kiệm cho người mới
-                        </h3>
-                        <p class="text-gray-600 mt-3 line-clamp-2">
-                            Tổng hợp chi tiết lịch trình, chi phí, lưu ý quan trọng giúp bạn
-                            có chuyến đi Thái Lan trọn vẹn và tiết kiệm nhất.
-                        </p>
-
-                        <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
-                            <span>🗓 20/01/2026</span>
-                            <span>👁 1.250 lượt xem</span>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Side news -->
-                <div class="space-y-6">
-
-                    <!-- Item -->
-                    <a href="#"
-                        class="group flex gap-4 bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition">
-                        <img src="{{ asset('storage/image/logo.png') }}" class="w-28 h-24 object-cover rounded-lg"
-                            alt="">
-                        <div class="py-3 pr-3">
-                            <h4 class="font-semibold text-gray-900 group-hover:text-sky-600 transition line-clamp-2">
-                                10 địa điểm check-in không thể bỏ lỡ tại Phú Quốc
-                            </h4>
-                            <p class="text-xs text-gray-500 mt-1">18/01/2026</p>
-                        </div>
-                    </a>
-
-                    <a href="#"
-                        class="group flex gap-4 bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition">
-                        <img src="{{ asset('storage/image/logo.png') }}" class="w-28 h-24 object-cover rounded-lg"
-                            alt="">
-                        <div class="py-3 pr-3">
-                            <h4 class="font-semibold text-gray-900 group-hover:text-sky-600 transition line-clamp-2">
-                                Du lịch Singapore cần chuẩn bị những gì?
-                            </h4>
-                            <p class="text-xs text-gray-500 mt-1">15/01/2026</p>
-                        </div>
-                    </a>
-
-                    <a href="#"
-                        class="group flex gap-4 bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition">
-                        <img src="{{ asset('storage/image/logo.png') }}" class="w-28 h-24 object-cover rounded-lg"
-                            alt="">
-                        <div class="py-3 pr-3">
-                            <h4 class="font-semibold text-gray-900 group-hover:text-sky-600 transition line-clamp-2">
-                                Mẹo săn vé máy bay giá rẻ dịp lễ Tết
-                            </h4>
-                            <p class="text-xs text-gray-500 mt-1">12/01/2026</p>
-                        </div>
-                    </a>
 
                 </div>
-
-            </div>
+            @else
+                <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
+                    <i class="fas fa-inbox text-gray-300 text-4xl mb-4 block"></i>
+                    <p class="text-gray-500">Chưa có tin tức nào. Quay lại sau!</p>
+                </div>
+            @endif
         </div>
     </section>
 @endsection

@@ -20,6 +20,10 @@ Route::prefix('/')->group(function () {
     Route::get('/dang-ky', [signin_upController::class, 'signup'])->name('signup');
     Route::post('/dang-ky-store', [signin_upController::class, 'signupStore'])->name('signup.store');
 
+    Route::prefix('/tin-tuc')->group(function () {
+        Route::get('/', [indexController::class, 'news'])->name('news');
+        Route::get('/{slug}', [indexController::class, 'newsShow'])->name('news.show');
+    });
 
     route::prefix('/tours')->group(function () {
         Route::get('/', [indexController::class, 'tours'])->name('tours'); 
