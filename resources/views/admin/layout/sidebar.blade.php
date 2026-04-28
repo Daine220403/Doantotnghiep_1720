@@ -287,8 +287,12 @@
                 data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
-                    <a class="collapse-item" href="{{ route('guide.tours.index') }}">Danh sách tour được phân
+                    <a class="collapse-item" href="{{ route('guide.tours.index') }}">Tour được phân
                         công</a>
+                    <a class="collapse-item" href="{{ route('guide.schedules.index') }}">Lịch làm việc của tôi</a>
+                    <a class="collapse-item" href="{{ route('guide.leaves.index') }}">Xin nghỉ phép</a>
+                    <a class="collapse-item" href="{{ route('guide.attendances.index') }}">Bảng chấm công</a>
+                    <a class="collapse-item" href="{{ route('guide.reports.index') }}">Báo cáo công việc</a>
                 </div>
             </div>
         </li>

@@ -152,6 +152,14 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/departures/{departure}', [TourGuideController::class, 'showDeparture'])->name('guide.departures.show');
         Route::get('/departures/{departure}/report', [TourGuideController::class, 'report'])->name('guide.departures.report');
         Route::post('/departures/{departure}/report', [TourGuideController::class, 'storeReport'])->name('guide.departures.report.store');
+
+        // Chức năng HR cá nhân cho Hướng dẫn viên (lịch, nghỉ phép, chấm công, báo cáo)
+        Route::get('/schedules', [StaffManagementController::class, 'guideSchedules'])->name('guide.schedules.index');
+        Route::get('/leaves', [StaffManagementController::class, 'guideLeavesIndex'])->name('guide.leaves.index');
+        Route::post('/leaves', [StaffManagementController::class, 'guideLeavesStore'])->name('guide.leaves.store');
+        Route::get('/attendances', [StaffManagementController::class, 'guideAttendances'])->name('guide.attendances.index');
+        Route::get('/reports', [StaffManagementController::class, 'guideReportsIndex'])->name('guide.reports.index');
+        Route::post('/reports', [StaffManagementController::class, 'guideReportsStore'])->name('guide.reports.store');
     });
 
     // Quản lý nhân viên (dành cho admin & staff_manager)

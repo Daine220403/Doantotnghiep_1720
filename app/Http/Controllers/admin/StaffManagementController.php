@@ -963,4 +963,210 @@ class StaffManagementController extends Controller
         return redirect()->route('admin.staff-hr.reports.index')
             ->with('success', 'Đã gửi báo cáo công việc.');
     }
+
+    // ===== GUIDE FUNCTIONS (Hướng dẫn viên) =====
+
+    // Lịch làm việc của hướng dẫn viên
+    public function guideSchedules(Request $request)
+    {
+        $userId = Auth::id();
+
+        $today = Carbon::today();
+        $month = (int) $request->input('month', $today->month);
+        $year = (int) $request->input('year', $today->year);
+
+        $current = Carbon::create($year, $month, 1);
+        $startOfMonth = $current->copy()->startOfMonth();
+        $endOfMonth = $current->copy()->endOfMonth();
+
+        $schedules = WorkSchedule::where('staff_id', $userId)
+            ->whereBetween('work_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->orderBy('work_date')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->work_date->toDateString();
+            });
+
+        $prevMonth = $current->copy()->subMonth();
+        $nextMonth = $current->copy()->addMonth();
+
+        return view('admin.guide_hr.guide_schedules', [
+            'schedulesByDate' => $schedules,
+            'current' => $current,
+            'startOfMonth' => $startOfMonth,
+            'endOfMonth' => $endOfMonth,
+            'prevMonth' => $prevMonth,
+            'nextMonth' => $nextMonth,
+            'today' => $today,
+        ]);
+    }
+
+    // Đơn nghỉ phép của hướng dẫn viên
+    public function guideLeavesIndex()
+    {
+        $userId = Auth::id();
+
+        $leaves = LeaveRequest::where('staff_id', $userId)
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        return view('admin.guide_hr.guide_leaves', compact('leaves'));
+    }
+
+    public function guideLeavesStore(Request $request)
+    {
+        $data = $request->validate([
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'leave_type' => ['required', 'in:annual,sick,unpaid,other'],
+            'reason' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $data['staff_id'] = Auth::id();
+        $data['status'] = 'pending';
+
+        LeaveRequest::create($data);
+
+        return redirect()->route('guide.leaves.index')
+            ->with('success', 'Gửi đơn nghỉ phép thành công, vui lòng chờ quản lý duyệt.');
+    }
+
+    // Bảng chấm công của hướng dẫn viên
+    public function guideAttendances(Request $request)
+    {
+        $userId = Auth::id();
+
+        $today = Carbon::today();
+        $month = (int) $request->input('month', $today->month);
+        $year = (int) $request->input('year', $today->year);
+
+        $current = Carbon::create($year, $month, 1);
+        $startOfMonth = $current->copy()->startOfMonth();
+        $endOfMonth = $current->copy()->endOfMonth();
+
+        $attendances = Attendance::where('staff_id', $userId)
+            ->whereBetween('work_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->work_date->toDateString();
+            });
+
+        $schedules = WorkSchedule::where('staff_id', $userId)
+            ->whereBetween('work_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->work_date->toDateString();
+            });
+
+        $defaultStartTime = '09:00';
+        $defaultEndTime = '18:00';
+        $lateGraceMinutes = 15;
+        $earlyLeaveGraceMinutes = 15;
+
+        $dayInfos = [];
+        $cursor = $startOfMonth->copy();
+
+        while ($cursor->lte($endOfMonth)) {
+            $keyDate = $cursor->toDateString();
+            $attendance = $attendances->get($keyDate);
+            $schedule = $schedules->get($keyDate);
+
+            if ($schedule && $schedule->start_time) {
+                $expectedStart = $schedule->start_time->copy()->setDate($cursor->year, $cursor->month, $cursor->day);
+            } else {
+                $expectedStart = Carbon::createFromFormat('Y-m-d H:i', $keyDate . ' ' . $defaultStartTime);
+            }
+
+            if ($schedule && $schedule->end_time) {
+                $expectedEnd = $schedule->end_time->copy()->setDate($cursor->year, $cursor->month, $cursor->day);
+            } else {
+                $expectedEnd = Carbon::createFromFormat('Y-m-d H:i', $keyDate . ' ' . $defaultEndTime);
+            }
+
+            $dayInfo = [
+                'date' => $cursor->copy(),
+                'dayOfWeek' => $cursor->dayName,
+                'isWeekend' => $cursor->isWeekend(),
+                'attendance' => $attendance,
+                'schedule' => $schedule,
+                'expectedStart' => $expectedStart,
+                'expectedEnd' => $expectedEnd,
+                'status' => 'absent',
+                'timeStatus' => 'normal',
+            ];
+
+            if ($attendance) {
+                $dayInfo['status'] = $attendance->status;
+                if ($attendance->check_in_time && $attendance->status !== 'absent') {
+                    $checkInTime = Carbon::parse($attendance->check_in_time);
+                    if ($checkInTime->diffInMinutes($expectedStart) > $lateGraceMinutes) {
+                        $dayInfo['timeStatus'] = 'late';
+                    }
+                }
+            }
+
+            $dayInfos[] = $dayInfo;
+            $cursor->addDay();
+        }
+
+        $prevMonth = $current->copy()->subMonth();
+        $nextMonth = $current->copy()->addMonth();
+
+        return view('admin.guide_hr.guide_attendances', [
+            'attendances' => $attendances,
+            'dayInfos' => $dayInfos,
+            'defaultStartTime' => $defaultStartTime,
+            'defaultEndTime' => $defaultEndTime,
+            'lateGraceMinutes' => $lateGraceMinutes,
+            'earlyLeaveGraceMinutes' => $earlyLeaveGraceMinutes,
+            'current' => $current,
+            'startOfMonth' => $startOfMonth,
+            'endOfMonth' => $endOfMonth,
+            'prevMonth' => $prevMonth,
+            'nextMonth' => $nextMonth,
+            'today' => $today,
+        ]);
+    }
+
+    // Báo cáo công việc của hướng dẫn viên
+    public function guideReportsIndex()
+    {
+        $userId = Auth::id();
+
+        $reports = WorkReport::where('staff_id', $userId)
+            ->orderByDesc('report_date')
+            ->paginate(15);
+
+        return view('admin.guide_hr.guide_reports', compact('reports'));
+    }
+
+    public function guideReportsStore(Request $request)
+    {
+        $data = $request->validate([
+            'report_date' => ['required', 'date'],
+            'title' => ['required', 'string', 'max:255'],
+            'report_file' => ['required', 'file', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,jpg,jpeg,png', 'max:10240'],
+            'content' => ['nullable', 'string'],
+            'total_tasks' => ['nullable', 'integer', 'min:0'],
+            'total_hours' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        if ($request->hasFile('report_file')) {
+            $path = $request->file('report_file')->store('work_reports', 'public');
+            $data['file_path'] = $path;
+        }
+
+        $data['staff_id'] = Auth::id();
+        $data['status'] = 'submitted';
+
+        if (!isset($data['content'])) {
+            $data['content'] = '';
+        }
+
+        WorkReport::create($data);
+
+        return redirect()->route('guide.reports.index')
+            ->with('success', 'Đã gửi báo cáo công việc.');
+    }
 }
+
