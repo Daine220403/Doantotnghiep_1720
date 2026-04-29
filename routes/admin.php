@@ -13,6 +13,7 @@ use App\Http\Controllers\admin\StaffManagementController;
 use App\Http\Controllers\admin\ContactMessageController;
 use App\Http\Controllers\admin\dashboardController;
 use App\Http\Controllers\admin\manaUserController;
+use App\Http\Controllers\admin\PostsController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\guide\TourGuideController;
 use App\Http\Controllers\partner\rolePartnerController;
@@ -55,6 +56,17 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [toursController::class, 'approvalIndex'])->name('admin.tours-approval.index');
         Route::post('/{id}/approve', [toursController::class, 'approve'])->name('admin.tours-approval.approve');
         Route::post('/{id}/reject', [toursController::class, 'reject'])->name('admin.tours-approval.reject');
+    });
+
+    // Quản lý bài viết (dành cho quản lý nhân viên / admin)
+    Route::prefix('/posts')->group(function () {
+        Route::get('/', [PostsController::class, 'index'])->name('admin.posts.index');
+        Route::get('/create', [PostsController::class, 'create'])->name('admin.posts.create');
+        Route::post('/', [PostsController::class, 'store'])->name('admin.posts.store');
+        Route::get('/{post}', [PostsController::class, 'show'])->name('admin.posts.show');
+        Route::get('/{post}/edit', [PostsController::class, 'edit'])->name('admin.posts.edit');
+        Route::put('/{post}', [PostsController::class, 'update'])->name('admin.posts.update');
+        Route::delete('/{post}', [PostsController::class, 'destroy'])->name('admin.posts.destroy');
     });
 
     Route::prefix('/bookings')->group(function () {

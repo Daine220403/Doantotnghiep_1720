@@ -219,6 +219,22 @@
                 </div>
             </div>
         </li>
+        {{-- quản lý bài viết --}}
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseManagePosts"
+                aria-expanded="true" aria-controls="collapseManagePosts">
+                <i class="fas fa-user-cog"></i>
+                <span>Quản lý bài viết</span>
+            </a>
+            <div id="collapseManagePosts" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng quản lý bài viết:</h6>
+                    <a class="collapse-item" href="{{ route('admin.posts.index') }}">Danh sách bài viết</a>
+                    <a class="collapse-item" href="{{ route('admin.posts.create') }}">Thêm bài viết</a>
+                </div>
+            </div>
+        </li>
     @endif
 
     @if (in_array(Auth::user()->role, ['admin', 'staff']))

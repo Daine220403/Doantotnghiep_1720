@@ -78,7 +78,7 @@
 
                 <!-- Content -->
                 <div class="text-gray-800 leading-relaxed space-y-6">
-                    {!! nl2br(e($article->content)) !!}
+                    {!! $article->content !!}
                 </div>
             </article>
 
