@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->text('note')->nullable();
 
             $table->enum('status', [
-                'pending', 'confirmed', 'paid', 'cancelled', 'completed'
+                'pending', 'pending_refund', 'confirmed', 'paid', 'cancelled', 'completed'
             ])->default('pending')->index();
 
             $table->timestamps();

@@ -29,4 +29,14 @@ class bookings extends Model
     {
         return $this->hasMany(booking_passengers::class, 'booking_id');
     }
+
+    public function refundRequests()
+    {
+        return $this->hasMany(RefundRequest::class, 'booking_id');
+    }
+
+    public function latestRefundRequest()
+    {
+        return $this->hasOne(RefundRequest::class, 'booking_id')->latest();
+    }
 }

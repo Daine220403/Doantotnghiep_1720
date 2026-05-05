@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\booking_passengers;
 use App\Models\order_details;
+use App\Services\RefundService;
 
 class dashboardController extends Controller
 {
@@ -170,25 +171,16 @@ class dashboardController extends Controller
             }
         }
 
-        DB::transaction(function () use ($booking, $order) { // đảm bảo tính toàn vẹn dữ liệu khi cập nhật nhiều bảng
-            $order->status = 'cancelled';
-            $order->save();
+        try {
+            $refundService = new RefundService();
+            $refundRequest = $refundService->createRefundRequest($bookingId, $user->id);
 
-            $booking->status = 'cancelled';
-            $booking->save();
-
-            $departure = $booking->departure;
-            if ($departure) {
-                $slots = $booking->passengers->count();
-                if ($slots > 0) {
-                    $newBooked = max(0, (int) $departure->capacity_booked - $slots);
-                    $departure->capacity_booked = $newBooked;
-                    $departure->save();
-                }
-            }
-        });
-
-        return redirect()->route('dashboard')->with('success', 'Đơn đã được hủy thành công');
+            return redirect()->route('dashboard')->with('success', 
+                'Yêu cầu hủy tour đã được gửi. Chúng tôi sẽ xử lý hoàn tiền trong vòng 24-48 giờ. Mã yêu cầu: ' . $refundRequest->refund_code
+            );
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard')->with('error', $e->getMessage());
+        }
     }
 
     public function editBooking($bookingId)

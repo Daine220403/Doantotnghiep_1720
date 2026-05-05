@@ -73,14 +73,17 @@
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-                    <div
-                        class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg">
-                        🎁
+                    <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg">
+                        💰
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500">Ưu đãi & điểm thưởng</p>
-                        <p class="text-2xl font-bold text-gray-900">Đang cập nhật</p>
-                        <p class="text-xs text-gray-400 mt-1">Theo dõi các chương trình khuyến mãi dành riêng cho bạn.</p>
+                        <p class="text-sm text-gray-500">Ví tiền</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            {{ number_format($user->getOrCreateRefundWallet()->balance, 0, ',', '.') }} đ
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            Số dư có thể dùng để thanh toán tour.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -131,14 +134,16 @@
                                             $order = $booking->order;
                                             $orderId = $order->id ?? null;
                                             $totalAmount = $order->total_amount ?? 0;
-                                            $paidAmount = $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
+                                            $paidAmount =
+                                                $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
                                             $remainingAmount = max($totalAmount - $paidAmount, 0);
-                                            $isFullyPaid = $totalAmount > 0 && $paidAmount >= ($totalAmount - 1);
+                                            $isFullyPaid = $totalAmount > 0 && $paidAmount >= $totalAmount - 1;
                                             $departureDate = optional($booking->departure)->start_date;
                                             $daysBeforeDeparture = $departureDate
                                                 ? now()->diffInDays(\Carbon\Carbon::parse($departureDate), false)
                                                 : null;
-                                            $canModifyByDate = !is_null($daysBeforeDeparture) && $daysBeforeDeparture >= 7;
+                                            $canModifyByDate =
+                                                !is_null($daysBeforeDeparture) && $daysBeforeDeparture >= 7;
                                             $canCancel = $canModifyByDate && $booking->status !== 'cancelled';
                                             $canEdit = $canCancel && !$isFullyPaid;
                                         @endphp
@@ -173,11 +178,21 @@
                                                     <span class="text-yellow-600 font-semibold">Đã đặt cọc</span>
                                                 @endif
                                             </td>
-                                            
+
                                             <td class="py-2 pl-4 pr-0 text-xs text-right">
                                                 <div class="flex justify-end gap-2">
-                                                    @if ($order && $remainingAmount > 0 && $booking->status !== 'cancelled')
-                                                        <form action="{{ route('dashboard.bookings.pay', $booking->id) }}" method="POST">
+                                                    @if ($booking->status === 'pending_refund')
+                                                        <div class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-orange-50 text-orange-700 text-[11px] font-semibold">
+                                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                                                            </svg>
+                                                            Chờ hoàn tiền
+                                                        </div>
+                                                    @endif
+
+                                                    @if ($order && $remainingAmount > 0 && $booking->status !== 'cancelled' && $booking->status !== 'pending_refund')
+                                                        <form action="{{ route('dashboard.bookings.pay', $booking->id) }}"
+                                                            method="POST">
                                                             @csrf
                                                             <button type="submit"
                                                                 class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
@@ -186,7 +201,7 @@
                                                         </form>
                                                     @endif
 
-                                                    @if ($canEdit)
+                                                    @if ($canEdit && $booking->status !== 'pending_refund')
                                                         <a href="{{ route('dashboard.bookings.edit', $booking->id) }}"
                                                             class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-amber-300 bg-amber-50 text-[11px] font-semibold text-amber-700 hover:bg-amber-100">
                                                             Sửa thông tin
@@ -194,7 +209,9 @@
                                                     @endif
 
                                                     @if ($canCancel)
-                                                        <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
+                                                        <form
+                                                            action="{{ route('dashboard.bookings.cancel', $booking->id) }}"
+                                                            method="POST"
                                                             onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
                                                             @csrf
                                                             <button type="submit"
@@ -301,9 +318,10 @@
                                         $order = $booking->order;
                                         $orderId = $order->id ?? null;
                                         $totalAmount = $order->total_amount ?? 0;
-                                        $paidAmount = $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
+                                        $paidAmount =
+                                            $orderId && isset($paidByOrder[$orderId]) ? $paidByOrder[$orderId] : 0;
                                         $remainingAmount = max($totalAmount - $paidAmount, 0);
-                                        $isFullyPaid = $totalAmount > 0 && $paidAmount >= ($totalAmount - 1);
+                                        $isFullyPaid = $totalAmount > 0 && $paidAmount >= $totalAmount - 1;
                                         $departureDate = optional($booking->departure)->start_date;
                                         $daysBeforeDeparture = $departureDate
                                             ? now()->diffInDays(\Carbon\Carbon::parse($departureDate), false)
@@ -347,8 +365,18 @@
                                         </td>
                                         <td class="py-2 pl-4 pr-0 text-xs text-right">
                                             <div class="flex justify-end gap-2">
-                                                @if ($order && $remainingAmount > 0 && $booking->status !== 'cancelled')
-                                                    <form action="{{ route('dashboard.bookings.pay', $booking->id) }}" method="POST">
+                                                @if ($booking->status === 'pending_refund')
+                                                    <div class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-orange-50 text-orange-700 text-[11px] font-semibold">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                                                        </svg>
+                                                        Chờ hoàn tiền
+                                                    </div>
+                                                @endif
+
+                                                @if ($order && $remainingAmount > 0 && $booking->status !== 'cancelled' && $booking->status !== 'pending_refund')
+                                                    <form action="{{ route('dashboard.bookings.pay', $booking->id) }}"
+                                                        method="POST">
                                                         @csrf
                                                         <button type="submit"
                                                             class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold hover:bg-blue-700">
@@ -357,7 +385,7 @@
                                                     </form>
                                                 @endif
 
-                                                @if ($canEdit)
+                                                @if ($canEdit && $booking->status !== 'pending_refund')
                                                     <a href="{{ route('dashboard.bookings.edit', $booking->id) }}"
                                                         class="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-amber-300 bg-amber-50 text-[11px] font-semibold text-amber-700 hover:bg-amber-100">
                                                         Sửa thông tin
@@ -365,7 +393,8 @@
                                                 @endif
 
                                                 @if ($canCancel)
-                                                    <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}" method="POST"
+                                                    <form action="{{ route('dashboard.bookings.cancel', $booking->id) }}"
+                                                        method="POST"
                                                         onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
                                                         @csrf
                                                         <button type="submit"

@@ -23,4 +23,19 @@ class orders extends Model
     {
         return $this->hasMany(order_details::class, 'order_id');
     }
+
+    public function payments()
+    {
+        return $this->hasMany(payments::class, 'order_id');
+    }
+
+    public function refundRequests()
+    {
+        return $this->hasMany(RefundRequest::class, 'order_id');
+    }
+
+    public function latestRefundRequest()
+    {
+        return $this->hasOne(RefundRequest::class, 'order_id')->latest();
+    }
 }

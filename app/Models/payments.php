@@ -25,4 +25,9 @@ class payments extends Model
         'paid_at' => 'datetime',
         'raw_response' => 'array',
     ];
+
+    public function order()
+    {
+        return $this->belongsTo(orders::class, 'order_id');
+    }
 }

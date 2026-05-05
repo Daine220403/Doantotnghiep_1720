@@ -6,6 +6,7 @@ use App\Http\Controllers\signin_upController;
 use App\Http\Controllers\indexController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\dashboardController;
+use App\Http\Controllers\CustomerRefundWalletController;
 use App\Http\Controllers\ChatbotController;
 
 Route::prefix('/')->group(function () {
@@ -64,6 +65,11 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/dashboard/bookings/{booking}/cancel', [dashboardController::class, 'cancelBooking']) // Hủy booking cụ thể    
         ->name('dashboard.bookings.cancel');
+
+    Route::get('/refund-wallet', [CustomerRefundWalletController::class, 'index'])
+        ->name('customer.refund-wallet.index');
+    Route::get('/refund-wallet/{transaction}', [CustomerRefundWalletController::class, 'show'])
+        ->name('customer.refund-wallet.show');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

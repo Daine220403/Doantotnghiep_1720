@@ -235,6 +235,22 @@
                 </div>
             </div>
         </li>
+
+        {{-- xử lý hoàn tiền --}}
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRefundRequests"
+                aria-expanded="true" aria-controls="collapseRefundRequests">
+                <i class="fas fa-user-cog"></i>
+                <span>Xử lý hoàn tiền</span>
+            </a>
+            <div id="collapseRefundRequests" class="collapse" aria-labelledby="headingUtilities"
+                data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Chức năng xử lý hoàn tiền:</h6>
+                    <a class="collapse-item" href="{{ route('admin.refund-requests.index') }}">Danh sách yêu cầu hoàn tiền</a>
+                </div>
+            </div>
+        </li>
     @endif
 
     @if (in_array(Auth::user()->role, ['admin', 'staff']))

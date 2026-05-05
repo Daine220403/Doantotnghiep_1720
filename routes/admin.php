@@ -230,4 +230,14 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/requests/{departureService}/cancel-approve', [rolePartnerController::class, 'approveCancelRequest'])->name('admin.partner.requests.cancel-approve');
         Route::post('/requests/{departureService}/cancel-reject', [rolePartnerController::class, 'rejectCancelRequest'])->name('admin.partner.requests.cancel-reject');
     });
+
+    // Quản lý yêu cầu hoàn tiền
+    Route::prefix('/refund-requests')->group(function () {
+        Route::get('/', [\App\Http\Controllers\admin\RefundRequestController::class, 'index'])->name('admin.refund-requests.index');
+        Route::get('/{refund}', [\App\Http\Controllers\admin\RefundRequestController::class, 'show'])->name('admin.refund-requests.show');
+        Route::post('/{refund}/approve', [\App\Http\Controllers\admin\RefundRequestController::class, 'approve'])->name('admin.refund-requests.approve');
+        Route::post('/{refund}/reject', [\App\Http\Controllers\admin\RefundRequestController::class, 'reject'])->name('admin.refund-requests.reject');
+        Route::post('/{refund}/process', [\App\Http\Controllers\admin\RefundRequestController::class, 'processRefund'])->name('admin.refund-requests.process');
+        Route::post('/{refund}/test-process', [\App\Http\Controllers\admin\RefundRequestController::class, 'testProcess'])->name('admin.refund-requests.test-process');
+    });
 });

@@ -67,4 +67,40 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+    public function refundWallet()
+    {
+        return $this->hasOne(RefundWallet::class, 'user_id');
+    }
+
+    public function refundRequests()
+    {
+        return $this->hasMany(RefundRequest::class, 'user_id');
+    }
+
+    public function approvedRefundRequests()
+    {
+        return $this->hasMany(RefundRequest::class, 'approved_by');
+    }
+
+    public function walletTransactions()
+    {
+        return $this->hasMany(RefundWalletTransaction::class, 'user_id');
+    }
+
+    /**
+     * Lấy hoặc tạo ví hoàn tiền cho người dùng
+     */
+    public function getOrCreateRefundWallet()
+    {
+        return $this->refundWallet()->firstOrCreate(
+            ['user_id' => $this->id],
+            [
+                'balance' => 0,
+                'total_received' => 0,
+                'total_withdrawn' => 0,
+                'status' => 'active',
+            ]
+        );
+    }
 }
