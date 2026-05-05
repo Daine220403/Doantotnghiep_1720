@@ -184,9 +184,9 @@ class RefundRequestController extends Controller
     }
 
     /**
-     * Hoàn tiền thử nghiệm (ghi chép)
+     * Hoàn tiền qua VNPay (similar to booking payment flow)
      */
-    public function testProcess($refundId)
+    public function testProcess(Request $request, $refundId)
     {
         try {
             $refund = RefundRequest::findOrFail($refundId);
@@ -195,16 +195,195 @@ class RefundRequestController extends Controller
                 return redirect()->back()->with('error', 'Yêu cầu hoàn tiền chưa được duyệt');
             }
 
-            // Xử lý hoàn tiền thành công (bỏ qua VNPay trong test)
-            $this->refundService->processRefundSuccess($refundId, [
-                'vnp_TxnRef' => 'TEST-' . time(),
-                'vnp_TransactionNo' => rand(100000, 999999),
-                'test_mode' => true,
+            $refundAmount = $refund->refund_amount;
+            if ($refundAmount <= 0) {
+                return redirect()->back()->with('error', 'Số tiền hoàn tiền không hợp lệ');
+            }
+
+            // VNPay configuration
+            $vnp_TmnCode = "KF3WIF8C";
+            $vnp_HashSecret = "KCA2KNYAWFXVEUQ4DNH4PQC801ABVGTB";
+            $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+            $vnp_Returnurl = route('vnpay.refund.return');
+            
+            // Create a payment record for refund tracking
+            $payment = \App\Models\payments::create([
+                'order_id' => $refund->order_id,
+                'payment_code' => 'REF' . now()->format('YmdHis') . rand(100, 999),
+                'payment_type' => 'refund',
+                'method' => 'vnpay',
+                'amount' => $refundAmount,
+                'status' => 'pending',
+                'transaction_ref' => null,
+                'raw_response' => null,
             ]);
 
-            return redirect()->back()->with('success', 'Hoàn tiền test thành công!');
+            // Store refund_id reference in raw_response for later lookup
+            $payment->update(['raw_response' => ['refund_id' => $refundId]]);
+
+            $vnp_TxnRef = $payment->payment_code;
+            $vnp_OrderInfo = "Hoàn tiền tour - Mã yêu cầu: " . $refund->refund_code;
+            $vnp_OrderType = "Refund";
+            $vnp_Amount = (int)($refundAmount * 100);
+            $vnp_Locale = "vn";
+            $vnp_BankCode = "NCB";
+            $vnp_IpAddr = $request->ip();
+
+            $inputData = [
+                "vnp_Version" => "2.1.0",
+                "vnp_TmnCode" => $vnp_TmnCode,
+                "vnp_Amount" => $vnp_Amount,
+                "vnp_Command" => "pay",
+                "vnp_CreateDate" => date('YmdHis'),
+                "vnp_CurrCode" => "VND",
+                "vnp_IpAddr" => $vnp_IpAddr,
+                "vnp_Locale" => $vnp_Locale,
+                "vnp_OrderInfo" => $vnp_OrderInfo,
+                "vnp_OrderType" => $vnp_OrderType,
+                "vnp_ReturnUrl" => $vnp_Returnurl,
+                "vnp_TxnRef" => $vnp_TxnRef,
+            ];
+
+            if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+                $inputData['vnp_BankCode'] = $vnp_BankCode;
+            }
+
+            ksort($inputData);
+            $query = "";
+            $i = 0;
+            $hashdata = "";
+            foreach ($inputData as $key => $value) {
+                if ($i == 1) {
+                    $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+                } else {
+                    $hashdata .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                }
+                $query .= urlencode($key) . "=" . urlencode($value) . '&';
+            }
+
+            $vnp_Url = $vnp_Url . "?" . $query;
+            if (isset($vnp_HashSecret)) {
+                $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+                $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+            }
+
+            // Redirect to VNPay payment gateway
+            return redirect()->away($vnp_Url);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Lỗi: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Handle VNPay refund return callback
+     */
+    public function vnpayRefundReturn(Request $request)
+    {
+        $vnp_HashSecret = "KCA2KNYAWFXVEUQ4DNH4PQC801ABVGTB";
+
+        $inputData = $request->all();
+        $vnp_SecureHash = $inputData['vnp_SecureHash'] ?? null;
+        
+        $vnpData = [];
+        foreach ($inputData as $key => $value) {
+            if (substr($key, 0, 4) == "vnp_") {
+                $vnpData[$key] = $value;
+            }
+        }
+
+        unset($vnpData['vnp_SecureHash']);
+        ksort($vnpData);
+        
+        $hashData = '';
+        $i = 0;
+        foreach ($vnpData as $key => $value) {
+            if ($i == 1) {
+                $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+        
+        $txnRef = $vnpData['vnp_TxnRef'] ?? null;
+        $responseCode = $vnpData['vnp_ResponseCode'] ?? null;
+        $vnpAmount = isset($vnpData['vnp_Amount']) ? ((int)$vnpData['vnp_Amount']) / 100 : null;
+        $vnpTransactionNo = $vnpData['vnp_TransactionNo'] ?? ($vnpData['vnp_BankTranNo'] ?? null);
+
+        if ($secureHash === $vnp_SecureHash && $txnRef) {
+            // Find payment by payment_code
+            $payment = \App\Models\payments::where('payment_code', $txnRef)
+                ->where('method', 'vnpay')
+                ->where('payment_type', 'refund')
+                ->latest()
+                ->first();
+
+            if ($payment && $payment->raw_response) {
+                $rawResponse = is_array($payment->raw_response) ? $payment->raw_response : json_decode($payment->raw_response, true);
+                $refundId = $rawResponse['refund_id'] ?? null;
+
+                if ($refundId) {
+                    $refund = RefundRequest::find($refundId);
+
+                    if ($refund && $responseCode === '00') {
+                        // Payment successful
+                        $payment->status = 'success';
+                        $payment->amount = $vnpAmount ?? $payment->amount;
+                        $payment->paid_at = now();
+                        $payment->transaction_ref = $vnpTransactionNo;
+                        $payment->raw_response = $vnpData;
+                        $payment->save();
+
+                        // Process refund success
+                        $this->refundService->processRefundSuccess($refundId, [
+                            'vnp_TxnRef' => $txnRef,
+                            'vnp_TransactionNo' => $vnpTransactionNo,
+                            'vnp_BankTranNo' => $vnpData['vnp_BankTranNo'] ?? null,
+                        ]);
+
+                        return redirect()->route('admin.refund-requests.index')->with('success', 'Hoàn tiền VNPay thành công!');
+                    } else {
+                        // Payment failed
+                        $payment->status = 'failed';
+                        $payment->amount = $vnpAmount ?? $payment->amount;
+                        $payment->transaction_ref = $vnpTransactionNo;
+                        $payment->raw_response = $vnpData;
+                        $payment->save();
+
+                        $this->refundService->processRefundFailed($refundId, 'VNPay response code: ' . $responseCode);
+
+                        return redirect()->route('admin.refund-requests.show', $refundId)
+                            ->with('error', 'Hoàn tiền VNPay không thành công (mã lỗi: ' . $responseCode . ')');
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('admin.refund-requests.index')->with('error', 'Lỗi xác thực VNPay hoặc dữ liệu không hợp lệ');
+    }
+
+    // public function testProcess($refundId)
+    // {
+    //     try {
+    //         $refund = RefundRequest::findOrFail($refundId);
+            
+    //         if ($refund->status !== 'approved') {
+    //             return redirect()->back()->with('error', 'Yêu cầu hoàn tiền chưa được duyệt');
+    //         }
+
+    //         // Xử lý hoàn tiền thành công (bỏ qua VNPay trong test)
+    //         $this->refundService->processRefundSuccess($refundId, [
+    //             'vnp_TxnRef' => 'TEST-' . time(),
+    //             'vnp_TransactionNo' => rand(100000, 999999),
+    //             'test_mode' => true,
+    //         ]);
+
+    //         return redirect()->back()->with('success', 'Hoàn tiền test thành công!');
+    //     } catch (\Exception $e) {
+    //         return redirect()->back()->with('error', 'Lỗi: ' . $e->getMessage());
+    //     }
+    // }
 }

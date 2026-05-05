@@ -107,6 +107,7 @@ class dashboardController extends Controller
         $isFullyPaid = false;
         $isDeposit = false;
         $lastPaymentType = null;
+        $refundRequest = null;
 
         if ($order) {
             $paymentsQuery = payments::where('order_id', $order->id)
@@ -126,6 +127,11 @@ class dashboardController extends Controller
             $remainingAmount = max(($order->total_amount ?? 0) - $paidAmount, 0);
             $isFullyPaid = $paidAmount >= (($order->total_amount ?? 0) - 1);
             $isDeposit = ($lastPaymentType === 'deposit') || ($paidAmount > 0 && !$isFullyPaid);
+
+            // Fetch refund request if exists
+            $refundRequest = \App\Models\RefundRequest::where('booking_id', $bookingId)
+                ->latest()
+                ->first();
         }
 
         return view('bookings.show', [
@@ -136,6 +142,7 @@ class dashboardController extends Controller
             'isFullyPaid' => $isFullyPaid,
             'isDeposit' => $isDeposit,
             'lastPaymentType' => $lastPaymentType,
+            'refundRequest' => $refundRequest,
         ]);
     }
 

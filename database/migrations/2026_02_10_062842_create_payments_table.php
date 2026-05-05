@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('order_id')->index();
 
             $table->string('payment_code', 50)->unique();
-            $table->enum('payment_type', ['deposit', 'full'])->default('full');
+            $table->enum('payment_type', ['deposit', 'full','refund'])->default('full');
             $table->string('method', 50)->index();
             $table->decimal('amount', 12, 2)->default(0);
 

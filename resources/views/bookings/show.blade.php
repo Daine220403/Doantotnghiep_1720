@@ -189,6 +189,70 @@
                                     {{ optional($order->updated_at)->format('d/m/Y H:i') ?? '-' }}
                                 </dd>
                             </div>
+
+                            @if ($refundRequest)
+                                <div class="border-t border-gray-100 pt-2 mt-2">
+                                    <h3 class="font-semibold text-gray-900 text-xs mb-2">Thông tin yêu cầu hoàn tiền</h3>
+                                    <div class="flex justify-between">
+                                        <dt>Mã yêu cầu</dt>
+                                        <dd class="font-medium text-gray-900">{{ $refundRequest->refund_code }}</dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt>Trạng thái</dt>
+                                        <dd class="font-medium text-gray-900">
+                                            @switch($refundRequest->status)
+                                                @case('pending')
+                                                    <span class="text-amber-600">Chờ duyệt</span>
+                                                @break
+                                                @case('approved')
+                                                    <span class="text-blue-600">Đã duyệt</span>
+                                                @break
+                                                @case('refunded')
+                                                    <span class="text-emerald-600">Đã hoàn tiền</span>
+                                                @break
+                                                @case('rejected')
+                                                    <span class="text-rose-600">Bị từ chối</span>
+                                                @break
+                                                @case('failed')
+                                                    <span class="text-rose-600">Thất bại</span>
+                                                @break
+                                                @default
+                                                    {{ ucfirst($refundRequest->status) }}
+                                            @endswitch
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt>Số tiền hoàn</dt>
+                                        <dd class="font-semibold text-emerald-600">
+                                            {{ number_format($refundRequest->refund_amount, 0, ',', '.') }} đ
+                                        </dd>
+                                    </div>
+                                    @if ($refundRequest->status === 'rejected' && $refundRequest->rejection_reason)
+                                        <div class="flex justify-between mt-1">
+                                            <dt>Lý do từ chối</dt>
+                                            <dd class="font-medium text-rose-600 text-xs">
+                                                {{ $refundRequest->rejection_reason }}
+                                            </dd>
+                                        </div>
+                                    @endif
+                                    @if ($refundRequest->status === 'failed' && is_array($refundRequest->vnpay_response) && isset($refundRequest->vnpay_response['error']))
+                                        <div class="flex justify-between mt-1">
+                                            <dt>Lỗi</dt>
+                                            <dd class="font-medium text-rose-600 text-xs">
+                                                {{ $refundRequest->vnpay_response['error'] }}
+                                            </dd>
+                                        </div>
+                                    @endif
+                                    @if ($refundRequest->status === 'refunded' && $refundRequest->refunded_at)
+                                        <div class="flex justify-between">
+                                            <dt>Ngày hoàn tiền</dt>
+                                            <dd class="font-medium text-gray-900">
+                                                {{ optional($refundRequest->refunded_at)->format('d/m/Y H:i') }}
+                                            </dd>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </dl>
                     </div>
                 @else
