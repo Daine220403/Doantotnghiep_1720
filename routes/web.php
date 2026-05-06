@@ -49,6 +49,9 @@ Route::get('/vnpay/return', [paymentController::class, 'vnpayReturn'])->name('vn
 // URL VNPay redirect về sau khi hoàn tiền
 Route::get('/vnpay/refund/return', [\App\Http\Controllers\admin\RefundRequestController::class, 'vnpayRefundReturn'])->name('vnpay.refund.return');
 
+// Xác nhận thanh toán ví
+Route::get('/wallet/payment/confirm/{payment_id}', [paymentController::class, 'walletPaymentConfirm'])->name('wallet.payment.confirm')->middleware('auth');
+
 Route::get('/dashboard', [dashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');

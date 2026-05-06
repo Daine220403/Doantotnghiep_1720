@@ -14,7 +14,8 @@
                     <li class="opacity-60">/</li>
                     <li><a href="{{ route('tours') }}" class="hover:text-sky-600">Tours</a></li>
                     <li class="opacity-60">/</li>
-                    <li><a href="{{ route('tours.show', $tour->slug) }}" class="hover:text-sky-600">{{ $tour->title }}</a></li>
+                    <li><a href="{{ route('tours.show', $tour->slug) }}" class="hover:text-sky-600">{{ $tour->title }}</a>
+                    </li>
                     <li class="opacity-60">/</li>
                     <li class="text-gray-900 font-medium">Đặt tour</li>
                 </ol>
@@ -64,7 +65,8 @@
                     <div class="bg-white rounded-2xl border border-gray-200 p-5">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-lg font-bold text-gray-900">Thông tin đặt tour</h2>
-                            <a href="{{ route('tours.show', $tour->slug) }}" class="text-sm text-sky-600 hover:text-sky-700">
+                            <a href="{{ route('tours.show', $tour->slug) }}"
+                                class="text-sm text-sky-600 hover:text-sky-700">
                                 Chọn ngày khác
                             </a>
                         </div>
@@ -139,7 +141,8 @@
                                     <span class="text-gray-700">Em bé</span>
                                     <span id="youthBreakdown" class="font-semibold text-gray-900">0 đ</span>
                                 </div>
-                                <div id="singleRow" class="flex items-center justify-between pt-1 border-t border-dashed border-gray-200 mt-1">
+                                <div id="singleRow"
+                                    class="flex items-center justify-between pt-1 border-t border-dashed border-gray-200 mt-1">
                                     <span class="text-gray-700">Phụ thu phòng đơn</span>
                                     <span id="singleBreakdown" class="font-semibold text-gray-900">0 đ</span>
                                 </div>
@@ -154,7 +157,8 @@
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-600">Số chỗ còn lại</span>
-                                    <span id="seatLeftDisplay" class="font-semibold text-red-600">{{ $seatLeft }}</span>
+                                    <span id="seatLeftDisplay"
+                                        class="font-semibold text-red-600">{{ $seatLeft }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-600">Điểm khởi hành</span>
@@ -177,28 +181,87 @@
 
                             <!-- HÌNH THỨC THANH TOÁN -->
                             <div class="mt-3">
-                                <label class="text-sm font-semibold text-gray-700">Hình thức thanh toán</label>
+                                <label class="text-sm font-semibold text-gray-700">Phương thức thanh toán</label>
                                 <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                    <label class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
-                                        <input type="radio" name="payment_mode" value="full" class="mt-1 text-sky-600" checked>
+                                    <label
+                                        class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
+                                        <input type="radio" name="payment_method" value="bank_transfer"
+                                            class="mt-1 text-sky-600 payment-method-radio" checked>
                                         <div>
-                                            <div class="font-semibold text-gray-900">Thanh toán toàn bộ</div>
-                                            <div class="text-xs text-gray-500">Thanh toán 100% giá trị đơn tour qua VNPay.</div>
+                                            <div class="font-semibold text-gray-900">Chuyển khoản</div>
+                                            <div class="text-xs text-gray-500">Thanh toán qua VNPay</div>
                                         </div>
                                     </label>
-                                    <label class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
-                                        <input type="radio" name="payment_mode" value="deposit" class="mt-1 text-sky-600">
+
+                                    <label
+                                        class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
+                                        <input type="radio" name="payment_method" value="wallet"
+                                            class="mt-1 text-sky-600 payment-method-radio">
                                         <div>
-                                            <div class="font-semibold text-gray-900">Đặt cọc 30%</div>
-                                            <div class="text-xs text-gray-500">Thanh toán trước 30% giá trị đơn, phần còn lại thanh toán sau.</div>
+                                            <div class="font-semibold text-gray-900">Dùng ví</div>
+                                            <div class="text-xs text-gray-500">Số dư: <strong>{{ number_format($walletBalance, 0, ',', '.') }} đ</strong></div>
                                         </div>
                                     </label>
+                                </div>
+
+                                <!-- HÌNH THỨC THANH TOÁN CHI TIẾT - CHUYỂN KHOẢN -->
+                                <div id="bankTransferOptions" class="mt-4 space-y-2">
+                                    <label class="text-xs font-semibold text-gray-600">Chọn hình thức thanh toán</label>
+                                    <div class="grid grid-cols-1 gap-3 text-sm">
+                                        <label
+                                            class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
+                                            <input type="radio" name="payment_mode" value="deposit"
+                                                class="mt-1 text-sky-600" checked>
+                                            <div>
+                                                <div class="font-semibold text-gray-900">Đặt cọc 30%</div>
+                                                <div class="text-xs text-gray-500">Thanh toán trước 30% giá trị đơn, phần còn
+                                                    lại thanh toán sau.</div>
+                                            </div>
+                                        </label>
+
+                                        <label
+                                            class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
+                                            <input type="radio" name="payment_mode" value="full"
+                                                class="mt-1 text-sky-600">
+                                            <div>
+                                                <div class="font-semibold text-gray-900">Thanh toán toàn bộ</div>
+                                                <div class="text-xs text-gray-500">Thanh toán 100% giá trị đơn tour qua VNPay.
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- HÌNH THỨC THANH TOÁN CHI TIẾT - VÍ -->
+                                <div id="walletOptions" class="mt-4 space-y-2 hidden">
+                                    <label class="text-xs font-semibold text-gray-600">Chọn hình thức thanh toán</label>
+                                    <div class="grid grid-cols-1 gap-3 text-sm">
+                                        <label
+                                            class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
+                                            <input type="radio" name="payment_mode" value="wallet_deposit"
+                                                class="mt-1 text-sky-600" checked>
+                                            <div>
+                                                <div class="font-semibold text-gray-900">Đặt cọc 30%</div>
+                                                <div class="text-xs text-gray-500">Thanh toán trước 30% từ ví, phần còn lại thanh toán sau.</div>
+                                            </div>
+                                        </label>
+
+                                        <label
+                                            class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer hover:border-sky-500">
+                                            <input type="radio" name="payment_mode" value="wallet"
+                                                class="mt-1 text-sky-600">
+                                            <div>
+                                                <div class="font-semibold text-gray-900">Thanh toán toàn bộ</div>
+                                                <div class="text-xs text-gray-500">Thanh toán 100% từ ví điện tử</div>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- SUBMIT -->
                             <div class="pt-3 mt-2">
-                                <button type="submit"
+                                <button type="submit" id="submitBtn"
                                     class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200">
                                     Thanh toán VNPay
                                 </button>
@@ -210,6 +273,43 @@
         </form>
 
         <script>
+            // ============= PAYMENT METHOD HANDLING =============
+            const bankTransferOptions = document.getElementById('bankTransferOptions');
+            const walletOptions = document.getElementById('walletOptions');
+            const paymentMethodRadios = document.querySelectorAll('.payment-method-radio');
+
+            function handlePaymentMethodChange() {
+                const selectedMethod = document.querySelector('input[name="payment_method"]:checked')?.value;
+                const submitBtn = document.getElementById('submitBtn');
+
+                if (selectedMethod === 'bank_transfer') {
+                    if (bankTransferOptions) bankTransferOptions.classList.remove('hidden');
+                    if (walletOptions) walletOptions.classList.add('hidden');
+                    
+                    // Reset payment_mode to deposit for bank transfer
+                    const depositRadio = document.querySelector('input[name="payment_mode"][value="deposit"]');
+                    if (depositRadio) depositRadio.checked = true;
+                    
+                    if (submitBtn) submitBtn.textContent = 'Thanh toán VNPay';
+                } else if (selectedMethod === 'wallet') {
+                    if (bankTransferOptions) bankTransferOptions.classList.add('hidden');
+                    if (walletOptions) walletOptions.classList.remove('hidden');
+                    
+                    // Set payment_mode to wallet
+                    const walletRadio = document.querySelector('input[name="payment_mode"][value="wallet"]');
+                    if (walletRadio) walletRadio.checked = true;
+                    
+                    if (submitBtn) submitBtn.textContent = 'Thanh toán ví';
+                }
+
+                updateTotal();
+            }
+
+            paymentMethodRadios.forEach(radio => {
+                radio.addEventListener('change', handlePaymentMethodChange);
+            });
+
+            // ============= EXISTING CODE =============
             const adultQty = document.getElementById('adultQty');
             const childQty = document.getElementById('childQty');
             const infantQty = document.getElementById('infantQty');
@@ -424,13 +524,13 @@
                             </div>
                             ${type === 'adult'
                                 ? `<div class="flex flex-col gap-1 text-xs text-gray-700">
-                                        <label class="inline-flex items-center justify-between gap-2">
-                                            <span>Phòng đơn</span>
-                                            <input type="checkbox" name="passengers[${index}][single_room]" value="1" data-single-room="1"
-                                                class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
-                                        </label>
-                                        <span class="text-[11px] text-gray-500">Phụ thu: ${formatVND(singleSurcharge)}</span>
-                                   </div>`
+                                                <label class="inline-flex items-center justify-between gap-2">
+                                                    <span>Phòng đơn</span>
+                                                    <input type="checkbox" name="passengers[${index}][single_room]" value="1" data-single-room="1"
+                                                        class="rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                                                </label>
+                                                <span class="text-[11px] text-gray-500">Phụ thu: ${formatVND(singleSurcharge)}</span>
+                                           </div>`
                                 : ''}
                             <input type="hidden" name="passengers[${index}][passenger_type]" value="${type}">
                         `;

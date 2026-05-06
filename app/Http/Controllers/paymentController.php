@@ -11,6 +11,7 @@ use App\Models\orders;
 use App\Models\order_details;
 use App\Models\tour_departures;
 use App\Models\payments;
+use App\Models\RefundWallet;
 use Illuminate\Support\Facades\Auth;
 
 class paymentController extends Controller
@@ -34,7 +35,8 @@ class paymentController extends Controller
             'infants' => ['nullable', 'integer', 'min:0'],
             'youths' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string'],
-            'payment_mode' => ['required', 'in:full,deposit'],
+            'payment_method' => ['required', 'in:bank_transfer,wallet'],
+            'payment_mode' => ['required', 'in:full,deposit,wallet,wallet_deposit'],
             'passengers' => ['required', 'array'],
             'passengers.*.full_name' => ['required', 'string', 'max:150'],
             'passengers.*.passenger_type' => ['required', 'in:adult,child,infant,youth'],
@@ -50,6 +52,7 @@ class paymentController extends Controller
             'infants' => 'số lượng trẻ nhỏ',
             'youths' => 'số lượng em bé',
             'note' => 'ghi chú',
+            'payment_method' => 'phương thức thanh toán',
             'payment_mode' => 'hình thức thanh toán',
             'passengers' => 'danh sách hành khách',
             'passengers.*.full_name' => 'tên hành khách',
@@ -174,10 +177,39 @@ class paymentController extends Controller
         $discountTotal = 0;
         $totalAmount = $subtotal - $discountTotal;
 
+        $paymentMethod = $data['payment_method'] ?? 'bank_transfer';
         $paymentMode = $data['payment_mode'] ?? 'full';
-        $payNowAmount = $paymentMode === 'deposit'
-            ? round($totalAmount * 0.3, 2)
-            : $totalAmount;
+        
+        // Tính toán số tiền cần thanh toán
+        if ($paymentMethod === 'bank_transfer') {
+            // Chuyển khoản: có thể đặt cọc 30% hoặc thanh toán toàn bộ
+            $payNowAmount = $paymentMode === 'deposit'
+                ? round($totalAmount * 0.3, 2)
+                : $totalAmount;
+            $paymentType = $paymentMode === 'deposit' ? 'deposit' : 'full';
+            $paymentMethodType = 'vnpay';
+        } else {
+            // Ví: có thể đặt cọc 30% hoặc thanh toán toàn bộ 100%
+            if ($paymentMode === 'wallet_deposit') {
+                $payNowAmount = round($totalAmount * 0.3, 2);
+                $paymentType = 'deposit';
+            } else {
+                $payNowAmount = $totalAmount;
+                $paymentType = 'full';
+            }
+            $paymentMethodType = 'wallet';
+            
+            // KIỂM TRA SỐ DƯ VÍ TRƯỚC KHI TẠO ĐƠN
+            $wallet = RefundWallet::where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->first();
+            
+            $walletBalance = $wallet ? (float) $wallet->balance : 0;
+            
+            if ($walletBalance < $payNowAmount) {
+                return redirect()->back()->with('error', 'Số dư ví không đủ. Cần ' . number_format($payNowAmount, 0, ',', '.') . ' đ nhưng chỉ có ' . number_format($walletBalance, 0, ',', '.') . ' đ');
+            }
+        }
 
         // Mã đơn ngắn gọn hơn: OD + yymmddHis (không thêm random)
         $order = orders::create([
@@ -303,19 +335,25 @@ class paymentController extends Controller
 
         $departure->increment('capacity_booked', $totalGuests);
 
-        // Tạo bản ghi thanh toán pending (sử dụng payment_code làm mã giao dịch gửi sang VNPay)
+        // Tạo bản ghi thanh toán pending (sử dụng payment_code làm mã giao dịch gửi sang VNPay hoặc ví)
         $payment = payments::create([
             'order_id' => $order->id,
             'payment_code' => 'PM' . now()->format('YmdHis') . rand(100, 999),
-            'payment_type' => $paymentMode === 'deposit' ? 'deposit' : 'full',
-            'method' => 'vnpay',
+            'payment_type' => $paymentType,
+            'method' => $paymentMethodType,
             'amount' => $payNowAmount,
             'status' => 'pending',
             'transaction_ref' => null,
             'raw_response' => null,
         ]);
 
-        // Sau khi tạo đơn, chuyển sang VNPay để thanh toán
+        // Xử lý theo phương thức thanh toán
+        if ($paymentMethodType === 'wallet') {
+            // Xử lý thanh toán ví - chuyển hướng tới trang xác nhận thanh toán ví
+            return redirect()->route('wallet.payment.confirm', ['payment_id' => $payment->id]);
+        }
+
+        // VNPay payment flow
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         // URL callback từ VNPay về Laravel (không dùng file .php riêng)
         $vnp_Returnurl = route('vnpay.return');
@@ -974,4 +1012,91 @@ class paymentController extends Controller
 
         return redirect()->away($vnp_Url);
     }
+
+    // Xác nhận thanh toán ví cho đơn tour
+    public function walletPaymentConfirm(Request $request, $paymentId)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('signin')->with('error', 'Vui lòng đăng nhập để tiếp tục');
+        }
+
+        $payment = payments::where('id', $paymentId)
+            ->where('method', 'wallet')
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $order = $payment->order;
+
+        if (!$order || $order->user_id !== Auth::id()) {
+            return redirect()->route('dashboard')->with('error', 'Bạn không có quyền với đơn này');
+        }
+
+        if ($order->status === 'cancelled') {
+            return redirect()->route('dashboard')->with('error', 'Đơn này đã bị hủy');
+        }
+
+        // Kiểm tra số dư ví từ bảng refund_wallets
+        $user = Auth::user();
+        $wallet = RefundWallet::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->first();
+        
+        $walletBalance = $wallet ? (float) $wallet->balance : 0;
+
+        if ($walletBalance < $payment->amount) {
+            return redirect()->route('dashboard')->with('error', 'Số dư ví không đủ. Vui lòng nạp thêm tiền.');
+        }
+
+        // Xử lý thanh toán ví
+        $booking = bookings::where('order_id', $order->id)->first();
+
+        // Cập nhật trạng thái thanh toán
+        $payment->status = 'success';
+        $payment->transaction_ref = 'WALLET_' . now()->format('YmdHis') . rand(100, 999);
+        $payment->paid_at = now();
+        $payment->save();
+
+        // Tính tổng tiền đã thanh toán
+        $totalPaid = payments::where('order_id', $order->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $isFullPayment = $totalPaid >= ($order->total_amount - 1);
+
+        if ($isFullPayment) {
+            $order->status = 'paid';
+            if ($booking) {
+                $booking->status = 'paid';
+                $booking->save();
+            }
+        } else {
+            $order->status = 'partial_paid';
+            if ($booking) {
+                $booking->status = 'confirmed';
+                $booking->save();
+            }
+        }
+
+        $order->save();
+
+        // Trừ tiền từ ví người dùng
+        if ($wallet) {
+            try {
+                $wallet->deductBalance(
+                    $payment->amount,
+                    'withdrawal',
+                    'Thanh toán tour: ' . $order->order_code,
+                    $payment->id,
+                    'payment'
+                );
+            } catch (\Exception $e) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Không thể trừ tiền ví: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route($this->getRedirectRouteByRole())
+            ->with('success', 'Thanh toán ví thành công. Cảm ơn bạn đã đặt tour!');
+    }
 }
+

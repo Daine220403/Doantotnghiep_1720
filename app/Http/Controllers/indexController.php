@@ -702,10 +702,17 @@ class indexController extends Controller
 
         $seatLeft = max($departure->capacity_total - $departure->capacity_booked, 0);
 
+        // Lấy số dư ví từ refund_wallets
+        $wallet = \App\Models\RefundWallet::where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->first();
+        $walletBalance = $wallet ? (float) $wallet->balance : 0;
+
         return view('tours.booking', [
             'tour' => $tour,
             'departure' => $departure,
             'seatLeft' => $seatLeft,
+            'walletBalance' => $walletBalance,
         ]);
     }
 
