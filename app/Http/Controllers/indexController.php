@@ -638,17 +638,14 @@ class indexController extends Controller
 
             $userId = Auth::id();
 
-            $reviewBooking = Bookings::where('status', 'completed')
-                ->whereRelation('order', 'user_id', $userId)
+            $reviewBooking = Bookings::whereRelation('order', 'user_id', $userId)
                 ->whereRelation('departure', 'tour_id', $tour->id)
+                ->whereRelation('departure', 'status', 'completed')
+                ->latest()
                 ->first();
 
-            // Nếu có booking hợp lệ
             if ($reviewBooking) {
-
                 $canReview = true;
-
-                // Kiểm tra đã review chưa
                 $hasReviewed = Reviews::where('booking_id', $reviewBooking->id)->exists();
             }
         }
@@ -662,6 +659,46 @@ class indexController extends Controller
             'schedules',
             'relatedTours',
         ));
+    }
+
+    public function storeReview(Request $request)
+    {
+        $validated = $request->validate([
+            'tour_id' => ['required', 'exists:tours,id'],
+            'booking_id' => ['required', 'exists:bookings,id'],
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'content' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $tour = Tours::findOrFail($validated['tour_id']);
+
+        $reviewBooking = Bookings::where('id', $validated['booking_id'])
+            ->whereRelation('order', 'user_id', Auth::id())
+            ->whereRelation('departure', 'tour_id', $tour->id)
+            ->whereRelation('departure', 'status', 'completed')
+            ->first();
+
+        if (!$reviewBooking) {
+            return redirect()->route('tours.show', $tour->slug)
+                ->with('error', 'Bạn không có quyền đánh giá tour này hoặc tour chưa hoàn thành.');
+        }
+
+        if (Reviews::where('booking_id', $reviewBooking->id)->exists()) {
+            return redirect()->route('tours.show', $tour->slug)
+                ->with('error', 'Bạn đã gửi đánh giá cho chuyến đi này rồi.');
+        }
+
+        Reviews::create([
+            'tour_id' => $tour->id,
+            'user_id' => Auth::id(),
+            'booking_id' => $reviewBooking->id,
+            'rating' => $validated['rating'],
+            'content' => $validated['content'] ?? '',
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('tours.show', $tour->slug)
+            ->with('success', 'Cảm ơn bạn đã gửi đánh giá. Chúng tôi sẽ duyệt và hiển thị trong thời gian sớm nhất.');
     }
 
 

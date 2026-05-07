@@ -35,6 +35,10 @@ Route::prefix('/')->group(function () {
         // Checkout + thanh toán VNPay
         Route::post('/checkout', [paymentController::class, 'vnpay_payment'])->name('tours.checkout');
     });
+
+    Route::post('/reviews', [indexController::class, 'storeReview'])
+        ->name('reviews.store')
+        ->middleware('auth');
 });
 
 // Chatbot API để tư vấn tour, giá, hỗ trợ đặt tour

@@ -242,4 +242,12 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/{refund}/process', [\App\Http\Controllers\admin\RefundRequestController::class, 'processRefund'])->name('admin.refund-requests.process');
         Route::post('/{refund}/test-process', [\App\Http\Controllers\admin\RefundRequestController::class, 'testProcess'])->name('admin.refund-requests.test-process');
     });
+
+    // Quản lý đánh giá
+    Route::prefix('/reviews')->group(function () {
+        Route::get('/', [\App\Http\Controllers\admin\ReviewsController::class, 'index'])->name('admin.reviews.index');
+        Route::get('/{review}', [\App\Http\Controllers\admin\ReviewsController::class, 'show'])->name('admin.reviews.show');
+        Route::post('/{review}/approve', [\App\Http\Controllers\admin\ReviewsController::class, 'approve'])->name('admin.reviews.approve');
+        Route::post('/{review}/reject', [\App\Http\Controllers\admin\ReviewsController::class, 'reject'])->name('admin.reviews.reject');
+    });
 });

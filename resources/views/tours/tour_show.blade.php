@@ -301,7 +301,7 @@
                 <div class="bg-white rounded-2xl border border-gray-200 p-5">
                     @php
                         // Danh sách review đã duyệt
-                        $approvedReviews = $tour->reviews ?? collect();
+                        $approvedReviews = $reviews ?? collect();
 
                         $reviewCount = $approvedReviews->count();
                         $avgRating = $reviewCount > 0 ? round($approvedReviews->avg('rating'), 1) : 0;

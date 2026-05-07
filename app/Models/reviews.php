@@ -11,8 +11,10 @@ class reviews extends Model
     protected $fillable = [
         'user_id',
         'tour_id',
+        'booking_id',
         'rating',
-        'comment',
+        'content',
+        'status',
     ];
 
     public function user()
@@ -24,8 +26,9 @@ class reviews extends Model
     {
         return $this->belongsTo(Tours::class, 'tour_id');
     }
-    public function bookings()
+
+    public function booking()
     {
-        return $this->belongsTo(Bookings::class, 'tour_id', 'tour_id');
+        return $this->belongsTo(Bookings::class, 'booking_id');
     }
 }
