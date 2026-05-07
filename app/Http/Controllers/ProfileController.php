@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Requests\PasswordUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -24,17 +26,26 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $user = $request->user();
-
-        $user->fill($request->validated());
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
+        $request->user()->update($request->validated());
 
         return back()->with('status', 'profile-updated');
+    }
+
+    /**
+     * Update the user's password.
+     */
+    // PasswordUpdateRequest sẽ tự động xác thực mật khẩu hiện tại và mật khẩu mới
+    // RedirectResponse sẽ trả về trang trước đó với thông báo trạng thái
+    public function updatePassword(PasswordUpdateRequest $request): RedirectResponse
+    
+    {
+        $user = $request->user();
+
+        $user->update([
+            'password' => Hash::make($request->validated('password')),
+        ]);
+
+        return back()->with('status', 'password-updated');
     }
 
     /**
