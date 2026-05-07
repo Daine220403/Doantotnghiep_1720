@@ -37,8 +37,10 @@ class DatabaseSeeder extends Seeder
         //     'status' => 'active',
         // ]);
         $this->call([
+            ToursSeeder::class,
             DemoTravelSeeder::class,
             TourPolicySeeder::class,
+            NewsSeeder::class,
         ]);
     }
 }
