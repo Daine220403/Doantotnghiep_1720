@@ -26,6 +26,7 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        // dd($request->validated());
         $request->user()->update($request->validated());
 
         return back()->with('status', 'profile-updated');

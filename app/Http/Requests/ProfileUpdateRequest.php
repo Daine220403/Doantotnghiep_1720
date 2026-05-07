@@ -33,6 +33,8 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            //bắt đầu bằng 0, có thể có dấu + ở đầu, và chỉ chứa số, tối đa 10 ký tự
+            'phone' => ['nullable', 'string', 'max:10'], 
         ];
     }
 }

@@ -41,7 +41,8 @@
                                     </svg>
                                     <div>
                                         <p class="text-sm font-semibold text-emerald-900">Cập nhật thành công!</p>
-                                        <p class="text-sm text-emerald-700 mt-1">Thông tin hồ sơ của bạn đã được cập nhật.</p>
+                                        <p class="text-sm text-emerald-700 mt-1">Thông tin hồ sơ của bạn đã được cập nhật.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -58,7 +59,8 @@
                                     <label for="name" class="block text-sm font-semibold text-gray-900 mb-2">
                                         Họ và tên
                                     </label>
-                                    <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}"
+                                    <input type="text" id="name" name="name"
+                                        value="{{ old('name', $user->name) }}"
                                         class="w-full px-4 py-2 rounded-lg border @error('name') border-red-500 @else border-gray-300 @enderror bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                                         placeholder="Nhập họ và tên" />
                                     @error('name')
@@ -71,7 +73,8 @@
                                     <label for="email" class="block text-sm font-semibold text-gray-900 mb-2">
                                         Email
                                     </label>
-                                    <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}"
+                                    <input type="email" id="email" name="email"
+                                        value="{{ old('email', $user->email) }}"
                                         class="w-full px-4 py-2 rounded-lg border @error('email') border-red-500 @else border-gray-300 @enderror bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                                         placeholder="Nhập email" />
                                     @error('email')
@@ -90,7 +93,8 @@
                                         <label class="block text-sm font-semibold text-gray-900 mb-2">
                                             Ngày tham gia
                                         </label>
-                                        <input type="text" disabled value="{{ optional($user->created_at)->format('d/m/Y H:i') }}"
+                                        <input type="text" disabled
+                                            value="{{ optional($user->created_at)->format('d/m/Y H:i') }}"
                                             class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-600" />
                                     </div>
                                     <div>
@@ -108,8 +112,11 @@
                                         <label class="block text-sm font-semibold text-gray-900 mb-2">
                                             Số điện thoại
                                         </label>
-                                        <input type="text" disabled value="{{ $user->phone }}"
-                                            class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-600" />
+                                        <input type="text" name="phone" value="{{ $user->phone }}"
+                                            class="w-full px-4 py-2 rounded-lg border border-gray-300" />
+                                        @error('phone')
+                                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
                                 @endif
 
@@ -157,7 +164,7 @@
 
                         <form method="POST" action="{{ route('password.update') }}">
                             @csrf
-                            {{--method patch dùng để  --}}
+                            {{-- method patch dùng để  --}}
                             @method('PATCH')
                             <div class="space-y-6">
                                 {{-- CURRENT PASSWORD --}}
@@ -184,12 +191,14 @@
                                     @error('password')
                                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
-                                    <p class="mt-2 text-xs text-gray-500">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
+                                    <p class="mt-2 text-xs text-gray-500">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa,
+                                        chữ thường, số và ký tự đặc biệt.</p>
                                 </div>
 
                                 {{-- CONFIRM PASSWORD --}}
                                 <div>
-                                    <label for="password_confirmation" class="block text-sm font-semibold text-gray-900 mb-2">
+                                    <label for="password_confirmation"
+                                        class="block text-sm font-semibold text-gray-900 mb-2">
                                         Xác nhận mật khẩu mới
                                     </label>
                                     <input type="password" id="password_confirmation" name="password_confirmation"
@@ -254,7 +263,8 @@
                     {{-- INFO CARD --}}
                     <div class="mt-4 bg-blue-50 rounded-2xl border border-blue-200 p-6">
                         <p class="text-sm text-blue-900">
-                            <span class="font-semibold">💡 Mẹo:</span> Cập nhật hồ sơ của bạn để nhận được trải nghiệm tốt nhất khi sử dụng VieTravel.
+                            <span class="font-semibold">💡 Mẹo:</span> Cập nhật hồ sơ của bạn để nhận được trải nghiệm tốt
+                            nhất khi sử dụng VieTravel.
                         </p>
                     </div>
                 </div>
