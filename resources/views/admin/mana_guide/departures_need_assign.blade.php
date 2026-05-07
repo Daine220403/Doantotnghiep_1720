@@ -4,9 +4,9 @@
     <div class="container-fluid">
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <div>
-                <h1 class="h3 mb-1 text-gray-800">Lịch khởi hành cần phân công HDV</h1>
+                <h1 class="h3 mb-1 text-gray-800">Quản lý phân công HDV</h1>
                 <p class="mb-0 text-muted">
-                    Danh sách các lịch khởi hành sắp tới chưa có Hướng dẫn viên.
+                    Danh sách các lịch khởi hành sắp tới. Bấm vào để phân công hoặc cập nhật Hướng dẫn viên.
                 </p>
             </div>
         </div>

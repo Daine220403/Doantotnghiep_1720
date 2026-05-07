@@ -23,8 +23,7 @@ class TourAssignmentController extends Controller
 
         $query = tour_departures::with(['tour', 'assignment.guide'])
             ->whereDate('start_date', '>=', $today)
-            ->whereNotIn('status', ['cancelled', 'completed'])
-            ->whereDoesntHave('assignment');
+            ->whereNotIn('status', ['cancelled', 'completed']);
 
         if ($startDate) {
             $query->whereDate('start_date', '>=', $startDate);
@@ -159,5 +158,27 @@ class TourAssignmentController extends Controller
         }
 
         return back()->with('success', 'Cập nhật phân công Hướng dẫn viên thành công.');
+    }
+
+    // Hủy phân công HDV cho một lịch khởi hành
+    public function unassign(tour_departures $departure)
+    {
+        // Kiểm tra xem lịch có được phân công chưa
+        $assignment = tour_assignments::where('departure_id', $departure->id)->first();
+
+        if (!$assignment) {
+            return back()->with('error', 'Lịch khởi hành này không có Hướng dẫn viên được phân công.');
+        }
+
+        // Kiểm tra xem lịch có hợp lệ để hủy phân công không
+        if (in_array($departure->status, ['cancelled', 'completed']) ||
+            $departure->start_date < Carbon::today()->toDateString()) {
+            return back()->with('error', 'Không thể hủy phân công cho lịch khởi hành này.');
+        }
+
+        $guideName = $assignment->guide->name ?? 'N/A';
+        $assignment->delete();
+
+        return back()->with('success', 'Hủy phân công Hướng dẫn viên ' . $guideName . ' thành công.');
     }
 }

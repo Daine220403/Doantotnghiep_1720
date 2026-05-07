@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 class TourGuideController extends Controller
 {
     // Danh sách tour/lịch khởi hành được phân công cho hướng dẫn viên
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         // dd($user);
@@ -22,15 +22,48 @@ class TourGuideController extends Controller
             abort(403);
         }
 
-        $departures = tour_departures::with(['tour', 'assignment'])
+        // Xây dựng query với các bộ lọc
+        $query = tour_departures::with(['tour', 'assignment'])
+            ->whereHas('assignment', function ($q) use ($user) {
+                $q->where('guide_id', $user->id);
+            });
+
+        // Bộ lọc trạng thái
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        // Bộ lọc từ ngày
+        if ($request->filled('from_date')) {
+            $query->whereDate('start_date', '>=', $request->get('from_date'));
+        }
+
+        // Bộ lọc đến ngày
+        if ($request->filled('to_date')) {
+            $query->whereDate('start_date', '<=', $request->get('to_date'));
+        }
+
+        // Bộ lọc tìm kiếm theo mã hoặc tên tour
+        if ($request->filled('search')) {
+            $searchTerm = '%' . $request->get('search') . '%';
+            $query->whereHas('tour', function ($q) use ($searchTerm) {
+                $q->where('code', 'like', $searchTerm)
+                  ->orWhere('title', 'like', $searchTerm);
+            });
+        }
+
+        $departures = $query->orderBy('start_date', 'desc')->get();
+        
+        // Lấy danh sách các trạng thái từ dữ liệu hiện có
+        $statuses = tour_departures::distinct()
             ->whereHas('assignment', function ($q) use ($user) {
                 $q->where('guide_id', $user->id);
             })
-            ->whereIn('status', ['confirmed', 'running', 'completed'])
-            ->orderBy('start_date', 'asc')
-            ->get();
+            ->pluck('status')
+            ->sort()
+            ->values();
 
-        return view('admin.tour_guide.assignments_index', compact('user', 'departures'));
+        return view('admin.tour_guide.assignments_index', compact('user', 'departures', 'statuses'));
     }
 
     // Chi tiết 1 lịch khởi hành + danh sách khách

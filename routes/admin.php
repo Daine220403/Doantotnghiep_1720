@@ -42,6 +42,8 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         ->name('admin.departures.assign-guides.select');
     Route::post('/departures/{departure}/assign-guide', [TourAssignmentController::class, 'assign'])
         ->name('admin.departures.assign-guide');
+    Route::post('/departures/{departure}/unassign-guide', [TourAssignmentController::class, 'unassign'])
+        ->name('admin.departures.unassign-guide');
 
     Route::prefix('/tours')->group(function () {
         Route::get('/', [toursController::class, 'index'])->name('admin.mana-tour.index'); // danh sách tour || done

@@ -17,7 +17,7 @@
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Danh sách khách theo lịch khởi hành</span>
-            <a href="{{ route('guide.departures.report', $departure->id) }}" class="btn btn-sm btn-secondary">Xem báo cáo thống kê</a>
+            {{-- <a href="{{ route('guide.departures.report', $departure->id) }}" class="btn btn-sm btn-secondary">Xem báo cáo thống kê</a> --}}
         </div>
         <div class="card-body">
             @php

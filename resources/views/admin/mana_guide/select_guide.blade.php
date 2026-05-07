@@ -35,6 +35,44 @@
             </div>
         @endif
 
+        <!-- Thông tin Hướng dẫn viên hiện tại -->
+        @php
+            // dd($departure->assignment)
+        @endphp
+        
+        @if ($departure->assignment && $departure->assignment->guide)
+            <div class="card shadow mb-4 border-left-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-2 text-primary">
+                                <i class="fas fa-user-check"></i> Hướng dẫn viên hiện tại
+                            </h5>
+                            <p class="mb-1">
+                                <strong>Tên:</strong> {{ $departure->assignment->guide->name }}
+                            </p>
+                            <p class="mb-1">
+                                <strong>Email:</strong> {{ $departure->assignment->guide->email }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Điện thoại:</strong> {{ $departure->assignment->guide->phone ?? '-' }}
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <form action="{{ route('admin.departures.unassign-guide', $departure->id) }}" method="POST"
+                                  onsubmit="return confirm('Hủy phân công {{ $departure->assignment->guide->name }}?');"
+                                  class="mb-0">
+                                @csrf
+                                <button type="submit" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-times-circle"></i> Hủy phân công
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="card shadow mb-4">
             <div class="card-body">
                 <div class="table-responsive">
