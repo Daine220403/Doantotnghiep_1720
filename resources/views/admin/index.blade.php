@@ -59,3 +59,15 @@
         </div>
     </div>
 @endsection
+{{-- @php($user = Auth::user())
+@switch(Auth::user()->role)
+    @case('admin')
+        @include('admin.dashboard')
+        @break
+    @case('staff_manager')
+        @include('admin.staff_manager.dashboard')
+        @break
+    @default
+        
+@endswitch --}}
+

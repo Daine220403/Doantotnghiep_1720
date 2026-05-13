@@ -50,6 +50,32 @@ class TourAssignmentController extends Controller
         return view('admin.mana_guide.departures_need_assign', compact('departures', 'startDate', 'endDate', 'tourName', 'tourCode'));
     }
 
+    // Danh sách đã phân công HDV
+    public function assignedIndex(Request $request)
+    {
+        $tourName = $request->input('tour_name');
+        $tourCode = $request->input('tour_code');
+
+        $query = tour_departures::with(['tour', 'assignment.guide'])
+            ->whereHas('assignment');
+
+        if ($tourName) {
+            $query->whereHas('tour', function ($q) use ($tourName) {
+                $q->where('title', 'like', '%' . $tourName . '%');
+            });
+        }
+
+        if ($tourCode) {
+            $query->whereHas('tour', function ($q) use ($tourCode) {
+                $q->where('code', 'like', '%' . $tourCode . '%');
+            });
+        }
+
+        $departures = $query->orderBy('start_date')->get();
+
+        return view('admin.mana_guide.assigned_departures', compact('departures', 'tourName', 'tourCode'));
+    }
+
     // Chọn HDV phù hợp cho một lịch khởi hành cụ thể
     public function selectGuide(tour_departures $departure)
     {

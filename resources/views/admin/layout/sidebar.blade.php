@@ -144,8 +144,8 @@
             <div id="collapseThree" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Chức năng hướng dẫn viên:</h6>
-                    <a class="collapse-item" href="{{ route('admin.departures.assign-guides.index') }}">Phân công
-                        HDV</a>
+                    <a class="collapse-item" href="{{ route('admin.departures.assign-guides.index') }}">Phân công HDV</a>
+                    <a class="collapse-item" href="{{ route('admin.departures.assigned-guides.index') }}">Danh sách đã phân công</a>
                 </div>
             </div>
         </li>

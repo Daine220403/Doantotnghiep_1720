@@ -41,6 +41,8 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     // Phân công Hướng dẫn viên cho lịch khởi hành
     Route::get('/departures/assign-guides', [TourAssignmentController::class, 'index'])
         ->name('admin.departures.assign-guides.index');
+    Route::get('/departures/assigned-guides', [TourAssignmentController::class, 'assignedIndex'])
+        ->name('admin.departures.assigned-guides.index');
     Route::get('/departures/{departure}/select-guide', [TourAssignmentController::class, 'selectGuide'])
         ->name('admin.departures.assign-guides.select');
     Route::post('/departures/{departure}/assign-guide', [TourAssignmentController::class, 'assign'])

@@ -13,12 +13,29 @@ use App\Models\partners;
 use App\Models\User;
 use App\Models\LeaveRequest;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class dashboardController extends Controller
 {
 	public function index()
 	{
-		return view('admin.index');
+		$user = Auth::user()->role;
+		// dd($user);
+		switch ($user) 
+		{
+			case 'tour_guide':
+				return redirect()->route('guide.dashboard');
+			case 'staff':
+				return redirect()->route('staff.dashboard');
+			case 'staff_manager':
+				return redirect()->route('staff_manager.dashboard');
+			case 'tour_manager':
+				return redirect()->route('tour_manager.dashboard');
+			case 'admin':
+			default:
+				return redirect()->route('admin.dashboard');
+		}
+		// return view('admin.index');
 	}
 	public function dashboard(Request $request)
 	{
