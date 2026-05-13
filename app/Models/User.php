@@ -88,6 +88,26 @@ class User extends Authenticatable
         return $this->hasMany(RefundWalletTransaction::class, 'user_id');
     }
 
+    public function attendance()
+    {
+        return $this->hasMany(Attendance::class, 'staff_id');
+    }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class, 'user_id');
+    }
+
+    public function workSchedules()
+    {
+        return $this->hasMany(WorkSchedule::class, 'user_id');
+    }
+
+    public function workReports()
+    {
+        return $this->hasMany(WorkReport::class, 'user_id');
+    }
+
     /**
      * Lấy hoặc tạo ví hoàn tiền cho người dùng
      */

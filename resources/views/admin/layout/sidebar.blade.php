@@ -9,6 +9,49 @@
         <div class="sidebar-brand-text mx-3">Xin chào</div>
     </a>
 
+    <!-- Dashboard Links based on Role -->
+    <hr class="sidebar-divider">
+    <div class="sidebar-heading">
+        Dashboard
+    </div>
+
+    @if (Auth::user()->role === 'admin')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard Admin</span>
+            </a>
+        </li>
+    @elseif (Auth::user()->role === 'tour_guide')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('guide.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard Hướng Dẫn</span>
+            </a>
+        </li>
+    @elseif (Auth::user()->role === 'staff')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('staff.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard Nhân Viên</span>
+            </a>
+        </li>
+    @elseif (Auth::user()->role === 'staff_manager')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('staff_manager.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard QL Nhân Viên</span>
+            </a>
+        </li>
+    @elseif (Auth::user()->role === 'tour_manager')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('tour_manager.dashboard') }}">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Dashboard QL Tour</span>
+            </a>
+        </li>
+    @endif
+
     @if (Auth::user()->role === 'admin')
         <!-- Divider -->
         <hr class="sidebar-divider">

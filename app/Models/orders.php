@@ -38,4 +38,8 @@ class orders extends Model
     {
         return $this->hasOne(RefundRequest::class, 'order_id')->latest();
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

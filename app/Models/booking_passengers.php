@@ -18,4 +18,9 @@ class booking_passengers extends Model
         'single_room',
         'single_room_surcharge',
     ];
+
+    public function booking()
+    {
+        return $this->belongsTo(bookings::class, 'booking_id');
+    }
 }

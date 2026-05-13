@@ -37,4 +37,12 @@ class WorkSchedule extends Model
     {
         return $this->belongsTo(User::class, 'manager_id');
     }
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'work_schedule_id');
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'staff_id');
+    }
 }

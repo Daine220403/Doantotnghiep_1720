@@ -36,4 +36,8 @@ class Attendance extends Model
     {
         return $this->belongsTo(WorkSchedule::class, 'work_schedule_id');
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'staff_id');
+    }
 }

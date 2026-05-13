@@ -89,6 +89,73 @@ class TourGuideController extends Controller
         return view('admin.tour_guide.departure_show', compact('user', 'departure'));
     }
 
+    // Dashboard cho hướng dẫn viên
+    public function dashboard()
+    {
+        $user = Auth::user();
+        
+        if (!$user || ($user->role !== 'tour_guide' && $user->role !== 'admin') || $user->status !== 'active') {
+            abort(403);
+        }
+
+        $today = \Carbon\Carbon::today();
+
+        // Lịch khởi hành sắp tới (7 ngày)
+        $upcomingDepartures = tour_departures::with(['tour', 'assignment'])
+            ->whereHas('assignment', function ($q) use ($user) {
+                $q->where('guide_id', $user->id);
+            })
+            ->whereDate('start_date', '>=', $today)
+            ->whereDate('start_date', '<=', $today->copy()->addDays(7))
+            ->orderBy('start_date')
+            ->get();
+
+        // Tổng số lịch khởi hành được phân công
+        $totalAssignedDepartures = tour_departures::whereHas('assignment', function ($q) use ($user) {
+            $q->where('guide_id', $user->id);
+        })->count();
+
+        // Tổng số lịch đang chạy hoặc sắp chạy
+        $activeOrUpcomingCount = tour_departures::whereHas('assignment', function ($q) use ($user) {
+            $q->where('guide_id', $user->id);
+        })->whereIn('status', ['pending', 'confirmed', 'running'])->count();
+
+        // Tổng số khách trong lịch sắp tới
+        $totalPassengersUpcoming = bookings::whereIn('departure_id', 
+            tour_departures::whereHas('assignment', function ($q) use ($user) {
+                $q->where('guide_id', $user->id);
+            })->where('start_date', '>=', $today)->pluck('id')
+        )->sum('passenger_count');
+
+        // Lịch đã hoàn thành gần đây
+        $completedDepartures = tour_departures::with('tour')
+            ->whereHas('assignment', function ($q) use ($user) {
+                $q->where('guide_id', $user->id);
+            })
+            ->where('status', 'completed')
+            ->orderBy('end_date', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Lịch đang chạy
+        $runningDepartures = tour_departures::with(['tour', 'bookings.passengers'])
+            ->whereHas('assignment', function ($q) use ($user) {
+                $q->where('guide_id', $user->id);
+            })
+            ->where('status', 'running')
+            ->get();
+
+        return view('admin.tour_guide.dashboard', compact(
+            'user',
+            'upcomingDepartures',
+            'totalAssignedDepartures',
+            'activeOrUpcomingCount',
+            'totalPassengersUpcoming',
+            'completedDepartures',
+            'runningDepartures'
+        ));
+    }
+
     // Báo cáo thống kê cho 1 lịch khởi hành
     public function report($departureId)
     {

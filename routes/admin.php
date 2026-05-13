@@ -17,6 +17,9 @@ use App\Http\Controllers\admin\PostsController;
 use App\Http\Controllers\paymentController;
 use App\Http\Controllers\guide\TourGuideController;
 use App\Http\Controllers\partner\rolePartnerController;
+use App\Http\Controllers\admin\StaffDashboardController;
+use App\Http\Controllers\admin\StaffManagerDashboardController;
+use App\Http\Controllers\admin\TourManagerDashboardController;
 
 Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', [dashboardController::class, 'index'])->name('admin.index');
@@ -250,4 +253,25 @@ Route::prefix('/admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/{review}/approve', [\App\Http\Controllers\admin\ReviewsController::class, 'approve'])->name('admin.reviews.approve');
         Route::post('/{review}/reject', [\App\Http\Controllers\admin\ReviewsController::class, 'reject'])->name('admin.reviews.reject');
     });
+});
+
+// Dashboard cho Hướng dẫn viên
+Route::prefix('/guide')->middleware(['auth', 'guide'])->group(function () {
+    Route::get('/dashboard', [TourGuideController::class, 'dashboard'])->name('guide.dashboard');
+    Route::get('/show/{departure}', [TourGuideController::class, 'showDeparture'])->name('guide.show');
+});
+
+// Dashboard cho Nhân viên
+Route::prefix('/staff')->middleware(['auth', 'staff'])->group(function () {
+    Route::get('/dashboard', [StaffDashboardController::class, 'dashboard'])->name('staff.dashboard');
+});
+
+// Dashboard cho Quản lý nhân viên
+Route::prefix('/staff-manager')->middleware(['auth', 'staff_manager'])->group(function () {
+    Route::get('/dashboard', [StaffManagerDashboardController::class, 'dashboard'])->name('staff_manager.dashboard');
+});
+
+// Dashboard cho Quản lý tour
+Route::prefix('/tour-manager')->middleware(['auth', 'tour_manager'])->group(function () {
+    Route::get('/dashboard', [TourManagerDashboardController::class, 'dashboard'])->name('tour_manager.dashboard');
 });
