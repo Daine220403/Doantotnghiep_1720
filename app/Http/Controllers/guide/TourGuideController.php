@@ -48,12 +48,12 @@ class TourGuideController extends Controller
             $searchTerm = '%' . $request->get('search') . '%';
             $query->whereHas('tour', function ($q) use ($searchTerm) {
                 $q->where('code', 'like', $searchTerm)
-                  ->orWhere('title', 'like', $searchTerm);
+                    ->orWhere('title', 'like', $searchTerm);
             });
         }
 
         $departures = $query->orderBy('start_date', 'desc')->get();
-        
+
         // Lấy danh sách các trạng thái từ dữ liệu hiện có
         $statuses = tour_departures::distinct()
             ->whereHas('assignment', function ($q) use ($user) {
@@ -93,7 +93,7 @@ class TourGuideController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        
+
         if (!$user || ($user->role !== 'tour_guide' && $user->role !== 'admin') || $user->status !== 'active') {
             abort(403);
         }
@@ -121,11 +121,22 @@ class TourGuideController extends Controller
         })->whereIn('status', ['pending', 'confirmed', 'running'])->count();
 
         // Tổng số khách trong lịch sắp tới
-        $totalPassengersUpcoming = bookings::whereIn('departure_id', 
-            tour_departures::whereHas('assignment', function ($q) use ($user) {
-                $q->where('guide_id', $user->id);
-            })->where('start_date', '>=', $today)->pluck('id')
-        )->sum('passenger_count');
+        // $totalPassengersUpcoming = bookings::whereIn('departure_id', 
+        //     tour_departures::whereHas('assignment', function ($q) use ($user) {
+        //         $q->where('guide_id', $user->id);
+        //     })->where('start_date', '>=', $today)->pluck('id')
+        // )->sum('capacity_booked');
+
+        $totalPassengersUpcoming = tour_departures::whereHas('assignment', function ($q) use ($user) {
+            $q->where('guide_id', $user->id);
+        })
+            ->where('start_date', '>=', $today)
+            ->sum('capacity_booked');
+        // select sum(capacity_booked) from tour_departures
+        // join bookings on bookings.departure_id = tour_departures.id
+        // where tour_departures.start_date >= today
+        // and tour_departures.id in (select departure_id from assignments where guide_id = user.id)
+
 
         // Lịch đã hoàn thành gần đây
         $completedDepartures = tour_departures::with('tour')
