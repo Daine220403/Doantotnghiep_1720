@@ -43,6 +43,7 @@ class ChatbotController extends Controller
     $destination = $parsed['destination'];
     $days = $parsed['days'];
     $budget = $parsed['budget'];
+    $tourType = $parsed['tour_type'] ?? null;
 
     // =============================
     // 2. HANDLE INTENT (NO AI)
@@ -56,9 +57,47 @@ class ChatbotController extends Controller
       ]);
     }
 
+    // if ($intent === 'system_info') {
+    //   $domestic = Tours::where('tour_type', 'domestic')->count();
+    //   $international = Tours::where('tour_type', 'international')->count();
+
+    //   return response()->json([
+    //     'ok' => true,
+    //     'reply' => "Hiện có {$domestic} tour trong nước và {$international} tour quốc tế ạ.",
+    //   ]);
+    // }
+
     if ($intent === 'system_info') {
-      $domestic = Tours::where('tour_type', 'domestic')->count();
-      $international = Tours::where('tour_type', 'international')->count();
+
+      if ($tourType === 'domestic') {
+        $count = Tours::where('status', 'published')
+          ->where('tour_type', 'domestic')
+          ->count();
+
+        return response()->json([
+          'ok' => true,
+          'reply' => "Hiện tại bên em có khoảng {$count} tour trong nước ạ.",
+        ]);
+      }
+
+      if ($tourType === 'international') {
+        $count = Tours::where('status', 'published')
+          ->where('tour_type', 'international')
+          ->count();
+
+        return response()->json([
+          'ok' => true,
+          'reply' => "Hiện tại bên em có khoảng {$count} tour quốc tế ạ.",
+        ]);
+      }
+
+      $domestic = Tours::where('status', 'published')
+        ->where('tour_type', 'domestic')
+        ->count();
+
+      $international = Tours::where('status', 'published')
+        ->where('tour_type', 'international')
+        ->count();
 
       return response()->json([
         'ok' => true,
@@ -66,7 +105,7 @@ class ChatbotController extends Controller
       ]);
     }
 
-    if ($intent === 'consult') {
+    if ($intent === 'consult') { //ngân sách thấp, khách chỉ muốn hỏi tư vấn chung chung
       return response()->json([
         'ok' => true,
         'reply' => "Dạ anh/chị muốn đi đâu, mấy ngày và ngân sách khoảng bao nhiêu để em tư vấn chuẩn hơn ạ?",
@@ -77,7 +116,9 @@ class ChatbotController extends Controller
     // 3. QUERY DB
     // =============================
     $toursQuery = Tours::query()->where('status', 'published');
-
+    if ($tourType) {
+      $toursQuery->where('tour_type', $tourType);
+    }
     if ($destination) {
       $toursQuery->where(function ($q) use ($destination) {
         $q->where('destination_text', 'like', "%{$destination}%")
@@ -214,20 +255,54 @@ class ChatbotController extends Controller
   {
     $apiKey = config('services.gemini.api_key');
 
+    // $prompt = <<<PROMPT
+    //       Phân tích câu người dùng và trả về JSON:
+
+    //       {
+    //         "intent": "count_tours | system_info | search_tour | consult | other",
+    //         "destination": "... hoặc null",
+    //         "days": số hoặc null,
+    //         "budget": số VND hoặc null
+    //       }
+
+    //       Chỉ trả JSON.
+
+    //       Câu: "{$message}"
+    //       PROMPT;
+
     $prompt = <<<PROMPT
-          Phân tích câu người dùng và trả về JSON:
+              Phân tích câu người dùng và trả về JSON:
 
-          {
-            "intent": "count_tours | system_info | search_tour | consult | other",
-            "destination": "... hoặc null",
-            "days": số hoặc null,
-            "budget": số VND hoặc null
-          }
+              {
+                "intent": "count_tours | system_info | search_tour | consult | other",
+                "destination": "... hoặc null",
+                "tour_type": "domestic | international | null",
+                "days": số hoặc null,
+                "budget": số VND hoặc null
+              }
 
-          Chỉ trả JSON.
+              QUY TẮC:
 
-          Câu: "{$message}"
-          PROMPT;
+              - Nếu người dùng hỏi:
+                + "bao nhiêu"
+                + "có mấy"
+                + "số lượng"
+                + "thống kê"
+              => intent = "system_info"
+
+              - Nếu người dùng muốn tìm/xem/gợi ý tour
+              => intent = "search_tour"
+
+              - "tour trong nước"
+              => tour_type = "domestic"
+
+              - "tour ngoài nước", "tour quốc tế"
+              => tour_type = "international"
+
+              Chỉ trả JSON.
+
+              Câu: "{$message}"
+              PROMPT;
 
     try {
       $response = Http::withHeaders([
@@ -259,14 +334,33 @@ class ChatbotController extends Controller
 
       $validIntents = ['count_tours', 'system_info', 'search_tour', 'consult', 'other'];
 
+      // return [
+      //   'intent' => in_array($json['intent'] ?? '', $validIntents)
+      //     ? $json['intent']
+      //     : 'search_tour',
+
+      //   'destination' => $json['destination'] ?? null,
+      //   'days' => is_numeric($json['days'] ?? null) ? (int)$json['days'] : null,
+      //   'budget' => is_numeric($json['budget'] ?? null) ? (int)$json['budget'] : null,
+      // ];
       return [
         'intent' => in_array($json['intent'] ?? '', $validIntents)
           ? $json['intent']
           : 'search_tour',
 
         'destination' => $json['destination'] ?? null,
-        'days' => is_numeric($json['days'] ?? null) ? (int)$json['days'] : null,
-        'budget' => is_numeric($json['budget'] ?? null) ? (int)$json['budget'] : null,
+
+        'tour_type' => in_array($json['tour_type'] ?? '', ['domestic', 'international'])
+          ? $json['tour_type']
+          : null,
+
+        'days' => is_numeric($json['days'] ?? null)
+          ? (int)$json['days']
+          : null,
+
+        'budget' => is_numeric($json['budget'] ?? null)
+          ? (int)$json['budget']
+          : null,
       ];
     } catch (\Throwable $e) {
       return $this->fallbackParse();
